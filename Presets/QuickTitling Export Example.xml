@@ -1,0 +1,57 @@
+<preset>
+    <name description="Name to identify this preset" name="Preset Name">Name</name>
+    <description description="Use this text area to describe the preset in detail." name="Description">This is just a preset example file.</description>
+    <z_scale description="Determines the depth distance between objects in the title.  This affects the size of the shadows as well.  A value of 0 will place all objects on the same level, 1 is default.  This is a float variable with any positive value allowed." name="Z Depth Scale">1</z_scale>
+    <length description="Length of this title preset.  This must be a positive integer value." name="Scene Length">300</length>
+    <shadowsize description="Distance of the shadow casting lamp, determines the overall size of the shadows.  This must be a positive integer value." name="Shadow Distance">1.0</shadowsize>
+    <shadowamount description="Overall opacity of the shadow, this must be a float value from 0 to 1.  0 is no shadows, 1 is full shadows." name="Shadow Amount">0.0</shadowamount>
+    <shadowsoft description="The amount of blur applied to the shadow.  This must be a positive float value.  A value of 0 results in fully sharp shadows." name="Shadow Softness">1.0</shadowsoft>
+    <shadowx description="Horizontal position of the shadow casting lamp.  This can be a float with any value.  -1 is the left side of the screen, 0 is centered, and 1 is the right side of the screen." name="Shadow Lamp X Position">0.0</shadowx>
+    <shadowy description="Vertical position of the shadow casting lamp.  This can be a float value with any value.  0.56 will usually be around the top of the screen, 0 at the center, and -0.56 around the bottom." name="Shadow Lamp Y Position">0.0</shadowy>
+    <qualityshadows description="This will switch shadows to ray tracing mode, making them more accurate and smooth, but greatly increasing render times.  This is a boolean value of True or False." name="High Quality Shadows">False</qualityshadows>
+    <objects>
+        <name description="Name to identify this object in the preset." name="Object Name">Text Object</name>
+        <type description="String value to determine what type of object this is.  Valid values are: TEXT, IMAGE, BOX, CIRCLE" name="Object Type">TEXT</type>
+        <x description="Horizontal location of this object.  0 is centered, 1 is the right side of screen, -1 is the left side of screen.  This is a float variable with any value allowed." name="Object X Location">0.29999998211860657</x>
+        <y description="Vertical location of this object.  0 is centered, 0.56 will usually be around the top of the screen, and -0.56 will be around the bottom of the screen.  This is a float variable with any value allowed." name="Object Y Location">-0.35999998450279236</y>
+        <z description="Offset for 3d positioning of this object.  This value will affect the position and size of this object, as well as position above or below other objects.  This is a float variable with any value allowed." name="Object Z Location">0.32999998331069946</z>
+        <rot_x description="Rotation of the object along the X axis, or forward and back tilting.  This value is a float expressed in Degrees." name="X Rotation">0</rot_x>
+        <rot_y description="Rotation of the object along the Y axis, or left and right wobble.  This value is a float expressed in Degrees." name="Y Rotation">0</rot_y>
+        <rot_z description="Rotation of the object along the Z axis, or spin.  This value is a float expressed in Degrees." name="Z Rotation">0</rot_z>
+        <scale description="Overall scaling of this object.  1 is the original size, 0.5 is half size, 2 is double size.  Only values above 0 are allowed." name="Overall Object Scale">1.5699999332427979</scale>
+        <width description="Multiplies the size of the object on the horizontal axis.  1 is the original size, .5 is half width, and 2 is double width.  Only values above 0 are allowed." name="Object Width Multiplier">1.0</width>
+        <height description="Multiplies the size of the object on the vertical axis.  1 is the original size, .5 is half height, and 2 is double height.  Only values above 0 are allowed." name="Object Height Multiplier">1.0</height>
+        <shear description="Creates an italic effect by shearing the object.  0 is no shearing, 1 is full forward lean, -1 is full backward lean.  Only values from -1 to 1 are allowed." name="Shearing">0</shear>
+        <set_material description="This will allow the material to be manually set, otherwise a unique material is created for this object.  This is a boolean variable with valid values of True or False" name="Manually Set Material">False</set_material>
+        <material description="Name of the material for this object.  This is only used if set_material is True.  Multiple objects can use the same material name to create identical settings.  Setting this to No Preset will disable set_material." name="Object Material Name">No Preset</material>
+        <cast_shadows description="Allow this object to cast shadows on objects behind it.  This is a boolean variable with valid values of True or False." name="Cast Shadows">True</cast_shadows>
+        <use_shadeless description="Give this material a solid color with no shading or specularity.  This is a boolean variable set to True or False." name="Shadeless">False</use_shadeless>
+        <use_transparency description="Enables transparency on this object.  This is a boolean value and must be set to True or False." name="Enable Transparency">False</use_transparency>
+        <alpha description="If transparency is enabled, this will determine how transparent the object is.  Value must be a float from 0 to 1.  1 is fully visible, 0 is fully transparent, or invisible." name="Object Opacity">1.0</alpha>
+        <diffuse_color description="Color of this object in 8bit rgb values.  This must be 3 integers from 0 to 255 separated by commas." name="Color Of The Material">255, 255, 255</diffuse_color>
+        <specular_intensity description="Determines how bright the shiny reflections of this material are.  This must be a float value from 0 to 1.  0 is not shiny at all, 1 is fully shiny." name="Material Specularity">0.5</specular_intensity>
+        <specular_hardness description="Determines how sharp the shiny reflections are on this material.  This must be an integer value from 1 to 511.  Higher values result in sharper reflections." name="Specular Hardness">50</specular_hardness>
+        <specular_color description="Color of the reflections in 8bit rgb values.  This must be 3 integers from 0 to 255 separated by commas." name="Color Of The Specularity">255, 255, 255</specular_color>
+        <extrude description="Amount of 3d extrusion to apply to this object.  Only valid for BOX, CIRCLE and TEXT type objects.  This must be a float variable with a value of 0 or more." name="Extrusion Amount">0.41999998688697815</extrude>
+        <bevel description="Size of a beveled edge to add to this object.  Only valid for BOX, CIRCLE and TEXT type objects.  This must be a float variable with a value of 0 or more." name="Bevel Size">0.029999999329447746</bevel>
+        <bevel_resolution description="Number of subdivisions to use on beveled edges.  This must be an integer with a value of 0 or more.  0 will result in a sharp cut edge, higher values will result in more rounded edges." name="Bevel Resolution">0</bevel_resolution>
+        <text description="If this is a text object, this will be the text displayed by it." name="Text">None</text>
+        <font description="Name of the font used for text objects.  If the font is not loaded, the default Bfont will be used." name="Font Name">04b03b</font>
+        <word_wrap description="Enables word-wrapping on text objects to limit the text line width.  This is a boolean with values of True or False." name="Word Wrapping">True</word_wrap>
+        <wrap_width description="If word-wrap is enabled, this will determine the width of the text box.  Float values from 0.01 and up are allowed.  The actual size varies based on object scale.  At a scale of 1, 1 is the full width of the screen, 0.5 is half width, 0.01 will result in one word per line." name="Word Wrap Width">1.0</wrap_width>
+        <align description="Determines the position of the text within the wrapping box.  Valid values are: LEFT, CENTER, RIGHT, JUSTIFY, FLUSH." name="Text Alignment">CENTER</align>
+        <texture description="If this object is of the type IMAGE, this is the path to the image or video to be displayed." name="Path To The Image Texture" />
+        <alpha_texture description="If this object is of the type IMAGE, and transparency is enabled, this is the path to the image or video that will control how transparent this image is." name="Path To The Transparent Texture" />
+        <animations>
+            <variable description="This describes the variable that will be animated.  Only one animation for each variable is allowed.  Valid values are: Alpha, X Slide, Y Slide, Z Slide, X Rotate, Y Rotate, Z Rotate, Width, Height, Depth." name="Animation Variable Name">Alpha</variable>
+            <animate_in description="This will determine if this animation will change this variable from the beginning of the title.  This is a boolean variable with valid values of True or False" name="Animate Variable In">True</animate_in>
+            <animate_out description="This will determine if this animation will change this variable at the end of the title.  This is a boolean variable with valid values of True or False." name="Animate Variable Out">True</animate_out>
+            <in_length description="Length in frames of the animation applied to the beginning of the title.  This must be a positive integer value." name="Length Of In Animation">15</in_length>
+            <out_length description="Length in frames of the animation applied to the ending of the title.  This must be a positive integer value." name="Length Of Out Animation">15</out_length>
+            <in_offset description="Distance in frames the animation will be offset from the beginning of the title.  Positive values result in a delayed animation, negative values result in an animation beginning before the start of the title.  Positive or negative integer values are allowed." name="Frame Offset Of In Animation">0</in_offset>
+            <out_offset description="Distance in frames the animation will be offset from the end of the title.  Positive values result in a delayed animation, negative values result in an animation beginning before the start of the title.  Positive or negative integer values are allowed." name="Frame Offset Of Out Animation">0</out_offset>
+            <in_amount description="Beginning value of the starting animation.  This is a float with any value allowed, but depending on the variable being animated, some values will not make sense." name="Amount Of In Animation">0</in_amount>
+            <out_amount description="Ending value of the end animation.  This is a float with any value allowed, but depending on the variable being animated, some values will not make sense." name="Amount Of Out Animation">0</out_amount>
+        </animations>
+    </objects>
+</preset>
