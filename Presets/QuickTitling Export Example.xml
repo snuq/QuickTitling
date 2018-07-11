@@ -1,4 +1,5 @@
 <preset>
+    <description>This is an example of the import and export format for QuickTitling presets.  Note that in an actual preset file, the description and name values do not need to be set, they are simply for the benefit of understanding the file.  Any value may be left out, the default value will be used.  Add multiple objects tags to add multiple objects to your title.  Add multiple animations tags to add multiple animations to your objects.</description>
     <name description="Name to identify this preset" name="Preset Name">Name</name>
     <description description="Use this text area to describe the preset in detail." name="Description">This is just a preset example file.</description>
     <z_scale description="Determines the depth distance between objects in the title.  This affects the size of the shadows as well.  A value of 0 will place all objects on the same level, 1 is default.  This is a float variable with any positive value allowed." name="Z Depth Scale">1</z_scale>
@@ -38,10 +39,17 @@
         <text description="If this is a text object, this will be the text displayed by it." name="Text">None</text>
         <font description="Name of the font used for text objects.  If the font is not loaded, the default Bfont will be used." name="Font Name">04b03b</font>
         <word_wrap description="Enables word-wrapping on text objects to limit the text line width.  This is a boolean with values of True or False." name="Word Wrapping">True</word_wrap>
-        <wrap_width description="If word-wrap is enabled, this will determine the width of the text box.  Float values from 0.01 and up are allowed.  The actual size varies based on object scale.  At a scale of 1, 1 is the full width of the screen, 0.5 is half width, 0.01 will result in one word per line." name="Word Wrap Width">1.0</wrap_width>
+        <wrap_width description="If word-wrap is enabled, this will determine the width of the text box.  Float values from 0.01 and up are allowed.  1 is the full width of the screen, 0.5 is half width, 0.01 will result in one word per line." name="Word Wrap Width">0.9</wrap_width>
         <align description="Determines the position of the text within the wrapping box.  Valid values are: LEFT, CENTER, RIGHT, JUSTIFY, FLUSH." name="Text Alignment">CENTER</align>
+        <outline description="Enables a beveled copy of the object that looks like an outline.  This is a boolean with values of True or False." name="Enable Object Outline">False</outline>
+        <outline_size description="Controls the size of the outline.  Float values above 0 are allowed." name="Size Of The Outline">1</outline_size>
+        <outline_alpha description="Alpha transparency of the outline.  Float values between from 0 to 1 are allowed.  0 will be fully transparent, 1 fully opaque." name="Alpha Transparency Of Outline">1</outline_alpha>
+        <outline_diffuse_color description="Color of the outline in 8bit rgb values.  This must be 3 integers from 0 to 255 separated by commas." name="Color Of The Outline">0, 0, 0<outline_diffuse_color>
         <texture description="If this object is of the type IMAGE, this is the path to the image or video to be displayed." name="Path To The Image Texture" />
         <alpha_texture description="If this object is of the type IMAGE, and transparency is enabled, this is the path to the image or video that will control how transparent this image is." name="Path To The Transparent Texture" />
+        <loop description="If a video is used for the texture or alpha texture, this will enable looping on it.  This is a boolean variable with valid values of True or False" name="Loop Video Texture">True</loop>
+        <frame_offset description="If a video is used for the texture or alpha texture, this will offset the beginning of the video by the number of frames.  Integer values from 0 and up are allowed." name="Starting Frame Offset For Video Textures">0</frame_offset>
+        <frame_length description="Manually set the length of the video texture with this variable.  This will be changed to the length of the video when a new video is loaded." name="Length Of The Video Texture In Frames">1</frame_length>
         <animations>
             <variable description="This describes the variable that will be animated.  Only one animation for each variable is allowed.  Valid values are: Alpha, X Slide, Y Slide, Z Slide, X Rotate, Y Rotate, Z Rotate, Width, Height, Depth." name="Animation Variable Name">Alpha</variable>
             <animate_in description="This will determine if this animation will change this variable from the beginning of the title.  This is a boolean variable with valid values of True or False" name="Animate Variable In">True</animate_in>
@@ -52,6 +60,10 @@
             <out_offset description="Distance in frames the animation will be offset from the end of the title.  Positive values result in a delayed animation, negative values result in an animation beginning before the start of the title.  Positive or negative integer values are allowed." name="Frame Offset Of Out Animation">0</out_offset>
             <in_amount description="Beginning value of the starting animation.  This is a float with any value allowed, but depending on the variable being animated, some values will not make sense." name="Amount Of In Animation">0</in_amount>
             <out_amount description="Ending value of the end animation.  This is a float with any value allowed, but depending on the variable being animated, some values will not make sense." name="Amount Of Out Animation">0</out_amount>
+            <cycle_type description="Enable a cyclic animation for this value.  Valid types are: NONE - no animation, SINE - animation follows a sine wave, TANGENT - animation follows a tangent wave pattern, RANDOM - animation follows a randomized curve." name="Animation Cycle Type">NONE</cycle_type>
+            <cycle_x_scale description="Horizontal scaling of the cyclic animation.  Any float value above 0 is allowed, larger numbers result in slower animations." name="Animation Cycle Horizontal Scale">1</cycle_x_scale>
+            <cycle_y_scale description="Vertical scaling of the cyclic animation.  Any non-zero float value is allowed, larger numbers result in more of an animation effect.  Use a negative value to invert the animation curve." name="Animation Cycle Vertical Scale">1</cycle_y_scale>
+            <cycle_offset description="Horizontal offset of the cyclic animation in frames.  Any float value is allowed, positive numbers result in the curve moving forward, negative numbers move the curve back." name="Animation Cycle Horizontal Offset">0</cycle_offset>
         </animations>
     </objects>
 </preset>

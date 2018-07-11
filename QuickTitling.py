@@ -663,14 +663,32 @@ def load_quicktitle(filepath, preset):
             newobject.align = align
         else:
             newobject.align = 'CENTER'
+        newobject.outline = to_bool(title_object.findtext('outline', default="False"))
+        newobject.outline_size = abs(float(title_object.findtext('outline_size', default="1")))
+        outline_alpha = abs(float(title_object.findtext('outline_alpha', default='1')))
+        if outline_alpha > 1:
+            outline_alpha = 1
+        newobject.outline_alpha = outline_alpha
+        outline_color = title_object.findtext('outline_diffuse_color', default="0, 0, 0").replace(' ', '').split(',')
+        if len(outline_color) != 3:
+            newobject.outline_diffuse_color = (0, 0, 0)
+        else:
+            newobject.outline_diffuse_color = (int(outline_color[0]) / 255.0, int(outline_color[1]) / 255.0, int(outline_color[2]) / 255.0)
         newobject.texture = title_object.findtext('texture', default="")
         newobject.alpha_texture = title_object.findtext('alpha_texture', default="")
-        diffuse_color = title_object.findtext('diffuse_color', default="1, 1, 1").replace(' ', '').split(',')
+        newobject.loop = to_bool(title_object.findtext('loop', default='True'))
+        newobject.frame_offset = abs(int(title_object.findtext('frame_offset', default='0')))
+        frame_length = abs(int(title_object.findtext('frame_length', default='1')))
+        if frame_length > 1:
+            newobject.frame_length = frame_length
+        else:
+            newobject.frame_length = 1
+        diffuse_color = title_object.findtext('diffuse_color', default="255, 255, 255").replace(' ', '').split(',')
         if len(diffuse_color) != 3:
             newobject.diffuse_color = (1, 1, 1)
         else:
             newobject.diffuse_color = (int(diffuse_color[0]) / 255.0, int(diffuse_color[1]) / 255.0, int(diffuse_color[2]) / 255.0)
-        specular_color = title_object.findtext('specular_color', default="1, 1, 1").replace(' ', '').split(',')
+        specular_color = title_object.findtext('specular_color', default="255, 255, 255").replace(' ', '').split(',')
         if len(specular_color) != 3:
             newobject.specular_color = (1, 1, 1)
         else:
@@ -687,6 +705,13 @@ def load_quicktitle(filepath, preset):
             newanimation.out_offset = int(animation.findtext('out_offset', default="0"))
             newanimation.in_amount = float(animation.findtext('in_amount', default="0"))
             newanimation.out_amount = float(animation.findtext('out_amount', default="0"))
+            cycle_type = animation.findtext('cycle_type', default='NONE')
+            if cycle_type not in ['NONE', 'SINE', 'TANGENT', 'RANDOM']:
+                cycle_type = 'NONE'
+            newanimation.cycle_type = cycle_type
+            newanimation.cycle_x_scale = abs(float(animation.findtext('cycle_x_scale', default='1')))
+            newanimation.cycle_y_scale = float(animation.findtext('cycle_y_scale', default='1'))
+            newanimation.cycle_offset = float(animation.findtext('cycle_offset', default='0'))
     return preset
 
 
@@ -1168,7 +1193,7 @@ def set_animations(title_object, object_preset, material, scene, z_offset, pos_m
                 fcurve.update()
 
 
-def setup_object(title_object, object_preset, material):
+def setup_object(title_object, object_preset, material, scale_multiplier):
     #settings for different title_object types
     if object_preset.type == 'IMAGE':
         #set up image type
@@ -1307,14 +1332,14 @@ def setup_object(title_object, object_preset, material):
 
     if object_preset.type == 'TEXT':
         #set up the text settings
-        title_object.data.body = object_preset.text
+        text_formatted = object_preset.text.encode().decode('unicode_escape')
+        title_object.data.body = text_formatted
         title_object.data.align_x = object_preset.align
         title_object.data.shear = object_preset.shear
         if object_preset.font in bpy.data.fonts:
             title_object.data.font = bpy.data.fonts[object_preset.font]
         if object_preset.word_wrap:
-            #box_size = (1.0/title_object.scale[0])*2
-            box_size = 1.94
+            box_size = (1.0/title_object.scale[0])*scale_multiplier*2
             title_object.data.text_boxes[0].width = box_size * object_preset.wrap_width
             title_object.data.text_boxes[0].x = -(box_size / 2) * object_preset.wrap_width
         else:
@@ -1334,6 +1359,13 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
     if scene.frame_end != quicktitle.length:
         scene.frame_end = quicktitle.length
         update_all = True
+
+    #Fix sequence length if needed
+    if sequence.frame_offset_start != 0:
+        sequence.frame_start = sequence.frame_start + sequence.frame_offset_start
+        sequence.frame_offset_start = 0
+    if sequence.frame_offset_end != 0:
+        sequence.frame_offset_end = 0
 
     #attempt to find and update the shadow lamp
     if quicktitle.shadowlamp_internal_name in scene.objects:
@@ -1479,7 +1511,7 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
                 material.use_cast_shadows = False
                 material.use_cast_buffer_shadows = False
 
-            setup_object(title_object, object_preset, material)
+            setup_object(title_object, object_preset, material, scale_multiplier)
 
             set_animations(title_object, object_preset, material, scene, z_offset, pos_multiplier)
 
@@ -1523,7 +1555,7 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
                 #adjust object
                 outline_object.location = (pos_multiplier * object_preset.x, pos_multiplier * object_preset.y, object_preset.z - z_offset - .001)
                 outline_object.scale = (scale_multiplier * object_preset.scale * object_preset.width, scale_multiplier * object_preset.scale * object_preset.height, object_preset.scale)
-                setup_object(outline_object, object_preset, material)
+                setup_object(outline_object, object_preset, material, scale_multiplier)
                 set_animations(outline_object, object_preset, material, scene, z_offset, pos_multiplier)
                 #outline_object.data.offset = object_preset.outline_size / 100
                 outline_object.data.extrude = 0
@@ -1780,7 +1812,7 @@ class QuickTitleAnimation(bpy.types.PropertyGroup):
 
 class QuickTitleObject(bpy.types.PropertyGroup):
     #Preset for objects stored in a title scene
-    
+
     #Basic variables for all object types:
     name = bpy.props.StringProperty(
         name="Object Name",
@@ -2156,11 +2188,12 @@ class QuickTitlingPanel(bpy.types.Panel):
         row = layout.row()
         row.separator()
 
-        row = layout.row()
+        bottom = layout.box()
+        row = bottom.row()
         modified = " (Modified)" if current_edited else ""
         if not quicktitle_sequence:
             row.label("Edit This Preset:"+modified)
-            row = layout.row()
+            row = bottom.row()
             split = row.split()
             split.operator('quicktitler.save_preset')
             split.enabled = current_edited
@@ -2168,23 +2201,23 @@ class QuickTitlingPanel(bpy.types.Panel):
 
         else:
             row.label("Edit Selected Title:"+modified)
-            row = layout.row()
+            row = bottom.row()
             split = row.split()
             split.operator('quicktitler.save_preset')
             split.enabled = current_edited
             row.operator('quicktitler.preset_export', text='Export')
 
-        row = layout.row()
+        row = bottom.row()
         row.prop(quicktitle_preset, 'name')
 
-        row = layout.row()
+        row = bottom.row()
         row.prop(quicktitle_preset, 'description')
 
-        row = layout.row()
+        row = bottom.row()
         row.prop(quicktitle_preset, 'length')
         row.prop(quicktitle_preset, 'z_scale')
 
-        row = layout.row()
+        row = bottom.row()
         row.label("Objects:")
         preset_objects = quicktitle_preset.objects
         current_object_index = quicktitle_preset.selected_object
@@ -2193,13 +2226,13 @@ class QuickTitlingPanel(bpy.types.Panel):
         else:
             current_object = None
 
-        row = layout.row()
+        row = bottom.row()
         row.template_list("QuickTitleObjectListItem", "", quicktitle_preset, 'objects', quicktitle_preset, 'selected_object', rows=2)
         col = row.column(align=True)
         col.operator("quicktitler.object_up", text="", icon="TRIA_UP").index = quicktitle_preset.selected_object
         col.operator("quicktitler.object_down", text="", icon="TRIA_DOWN").index = quicktitle_preset.selected_object
 
-        row = layout.row(align=True)
+        row = bottom.row(align=True)
         row.label("Add:")
         row.operator('quicktitler.add_object', text='Text', icon=quicktitle_object_icon('TEXT')).type = 'TEXT'
         row.operator('quicktitler.add_object', text='Image', icon=quicktitle_object_icon('IMAGE')).type = 'IMAGE'
@@ -2208,7 +2241,7 @@ class QuickTitlingPanel(bpy.types.Panel):
 
         if current_object:
             # Object settings
-            outline = layout.box()
+            outline = bottom.box()
 
             row = outline.row()
             row.prop(current_object, 'name', text='Object Name', icon=quicktitle_object_icon(current_object.type))
@@ -2360,7 +2393,7 @@ class QuickTitlingPanel(bpy.types.Panel):
                         row.prop(animation, 'cycle_offset')
 
         # Shadow section
-        outline = layout.box()
+        outline = bottom.box()
 
         row = outline.row()
         split = row.split(percentage=.1)
@@ -2781,8 +2814,16 @@ class QuickTitlingPresetExport(bpy.types.Operator, ExportHelper):
             Tree.SubElement(objects, 'word_wrap', name='Word Wrapping').text = str(title_object.word_wrap)
             Tree.SubElement(objects, 'wrap_width', name='Word Wrap Width').text = str(title_object.wrap_width)
             Tree.SubElement(objects, 'align', name='Text Alignment').text = title_object.align
+            Tree.SubElement(objects, 'outline', name='Enable Object Outline').text = str(title_object.outline)
+            Tree.SubElement(objects, 'outline_size', name='Size Of The Outline').text = str(title_object.outline_size)
+            Tree.SubElement(objects, 'outline_alpha', name='Alpha Transparency Of Outline').text = str(title_object.outline_alpha)
+            outline_color = str(round(title_object.outline_diffuse_color[0] * 255))+', '+str(round(title_object.outline_diffuse_color[1] * 255))+', '+str(round(title_object.outline_diffuse_color[2] * 255))
+            Tree.SubElement(objects, 'outline_diffuse_color', name='Color Of The Outline').text = outline_color
             Tree.SubElement(objects, 'texture', name='Path To The Image Texture').text = title_object.texture
             Tree.SubElement(objects, 'alpha_texture', name='Path To The Transparent Texture').text = title_object.alpha_texture
+            Tree.SubElement(objects, 'loop', name='Loop Video Textures').text = str(title_object.loop)
+            Tree.SubElement(objects, 'frame_offset', name='Starting Frame Offset For Video Textures').text = str(title_object.frame_offset)
+            Tree.SubElement(objects, 'frame_length', name='Length Of The Video Texture In Frames').text = str(title_object.frame_length)
             for animation in title_object.animations:
                 object_animations = Tree.SubElement(objects, 'animations')
                 Tree.SubElement(object_animations, 'variable', name='Animation Variable Name').text = animation.variable
@@ -2794,6 +2835,10 @@ class QuickTitlingPresetExport(bpy.types.Operator, ExportHelper):
                 Tree.SubElement(object_animations, 'out_offset', name='Frame Offset Of Out Animation').text = str(animation.out_offset)
                 Tree.SubElement(object_animations, 'in_amount', name='Amount Of In Animation').text = str(animation.in_amount)
                 Tree.SubElement(object_animations, 'out_amount', name='Amount Of Out Animation').text = str(animation.out_amount)
+                Tree.SubElement(object_animations, 'cycle_type', name='Animation Cycle Type').text = animation.cycle_type
+                Tree.SubElement(object_animations, 'cycle_x_scale', name='Animation Cycle Horizontal Scale').text = str(animation.cycle_x_scale)
+                Tree.SubElement(object_animations, 'cycle_y_scale', name='Animation Cycle Vertical Scale').text = str(animation.cycle_y_scale)
+                Tree.SubElement(object_animations, 'cycle_offset', name='Animation Cycle Horizontal Offset').text = str(animation.cycle_offset)
         tree = Tree.ElementTree(root)
         if not self.filepath.endswith('.xml'):
             self.filepath = self.filepath + '.xml'
