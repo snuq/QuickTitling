@@ -1306,7 +1306,10 @@ def setup_object(title_object, object_preset, material, scale_multiplier):
         if object_preset.font in bpy.data.fonts:
             title_object.data.font = bpy.data.fonts[object_preset.font]
         if object_preset.word_wrap:
-            box_size = (1.0/title_object.scale[0])*scale_multiplier*2
+            x_scale = title_object.scale[0]
+            if x_scale == 0:
+                x_scale = 0.001
+            box_size = (1.0/x_scale)*scale_multiplier*2
             title_object.data.text_boxes[0].width = box_size * object_preset.wrap_width
             title_object.data.text_boxes[0].x = -(box_size / 2) * object_preset.wrap_width
         else:

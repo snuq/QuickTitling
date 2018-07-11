@@ -399,6 +399,7 @@ If you wish to edit an object, it is recommended to rename it, this will prevent
    * Newly added objects are named
    * Circles are now actually circles
    * Now keeps track of if a title is edited and displays this
-   * Added video settings (loop, frame offst, length), only shown if the loaded texture is a video
+   * Added video settings (loop, frame offset, length), only shown if the loaded texture is a video
    * Added outline options for all but image type, uses a beveled copy of the object to create an outline
    * Added animation oscillations and animation presets for these
+   * Word wrapping behaves better now, changing the text scale does not change the wrapping size.
