@@ -373,32 +373,32 @@ If you wish to edit an object, it is recommended to rename it, this will prevent
 
 ## Changelog
 ### 0.1
-    * First stand-alone version, just separated from VSE Quick Functions, no changes
+   * First stand-alone version, just separated from VSE Quick Functions, no changes
 ### 0.2
-    * Updated interface - made it look better, and its now easier to tell when a scene is being edited
-    * When a title scene is edited, changes now happen in realtime
-    * Added word-wrapping
-    * The values in the interface are now a bit more sane - bevel is multiplied by 100, X location of 1 is the edge of the screen
-    * Added shadow offset option
-    * Added specular material options
-    * Added ability to use ray traced shadows
+   * Updated interface - made it look better, and its now easier to tell when a scene is being edited
+   * When a title scene is edited, changes now happen in realtime
+   * Added word-wrapping
+   * The values in the interface are now a bit more sane - bevel is multiplied by 100, X location of 1 is the edge of the screen
+   * Added shadow offset option
+   * Added specular material options
+   * Added ability to use ray traced shadows
 ### 0.5
-    * Implemented adding multiple objects of 4 basic types: image, box, circle, and text
-    * Implemented presets
-    * Implemented saving/loading presets
-    * Reworked interface
-    * Added animation abilities and presets
-    * Implemented new way of handling materials
-    * Implemented saving preset preview images
+   * Implemented adding multiple objects of 4 basic types: image, box, circle, and text
+   * Implemented presets
+   * Implemented saving/loading presets
+   * Reworked interface
+   * Added animation abilities and presets
+   * Implemented new way of handling materials
+   * Implemented saving preset preview images
 ### 0.5.1
-    * Fixed bug not checking vertices for curve objects properly, oops
-    * Fixed bug where Blender 2.78 changed the variable name for text 'align' to 'align_x'
+   * Fixed bug not checking vertices for curve objects properly, oops
+   * Fixed bug where Blender 2.78 changed the variable name for text 'align' to 'align_x'
 ### 0.6
-    * Changed interface and workflow, should make a lot more sense now
-    * Built-in titles are now shown in preset menu, with preview images
-    * Newly added objects are named
-    * Circles are now actually circles
-    * Now keeps track of if a title is edited and displays this
-    * Added video settings (loop, frame offst, length), only shown if the loaded texture is a video
-    * Added outline options for all but image type, uses a beveled copy of the object to create an outline
-    * Added animation oscillations and animation presets for these
+   * Changed interface and workflow, should make a lot more sense now
+   * Built-in titles are now shown in preset menu, with preview images
+   * Newly added objects are named
+   * Circles are now actually circles
+   * Now keeps track of if a title is edited and displays this
+   * Added video settings (loop, frame offst, length), only shown if the loaded texture is a video
+   * Added outline options for all but image type, uses a beveled copy of the object to create an outline
+   * Added animation oscillations and animation presets for these
