@@ -3107,17 +3107,29 @@ class QuickTitleSettings(bpy.types.PropertyGroup):
     quicktitles = bpy.props.CollectionProperty(type=QuickTitle)
 
 
+classes = [QuickTitleAnimation, QuickTitleObject, QuickTitle, QuickTitleObjectListItem,
+           QuickTitleAnimationListItem, QuickTitlingPanel, QuickTitlingSavePreset, QuickTitlingReplaceWithImage,
+           QuickTitlingObjectMoveUp, QuickTitlingObjectMoveDown, QuickTitlingObjectAdd, QuickTitlingObjectSelect,
+           QuickTitlingObjectDelete, QuickTitlingAnimationApply, QuickTitlingAnimationAdd, QuickTitlingAnimationDelete,
+           QuickTitlingAnimationMenu, QuickTitlingPresetDelete, QuickTitlingPresetExport, QuickTitlingPresetImport,
+           QuickTitlingPresetMenu, QuickTitlingPresetSelect, QuickTitlingPresetLoad, QuickTitlingLoadFont,
+           QuickTitlingFontMenu, QuickTitlingChangeFont, QuickTitlingMaterialMenu, QuickTitlingChangeMaterial,
+           QuickTitlingCreate, QuickTitleSettings]
+
+
 def register():
-    #Register operators
-    bpy.utils.register_module(__name__)
+    #Register classes
+    for cls in classes:
+        bpy.utils.register_class(cls)
 
     #Group properties
     bpy.types.Scene.quicktitler = bpy.props.PointerProperty(type=QuickTitleSettings)
 
 
 def unregister():
-    #Unregister operators
-    bpy.utils.unregister_module(__name__)
+    #Unregister classes
+    for cls in reversed(classes):
+        bpy.utils.unregister_class(cls)
 
 
 if __name__ == "__main__":
