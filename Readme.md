@@ -13,7 +13,14 @@ Or support me by hiring Creative Life Productions if you have a need for the ser
 
 
 ## Installation
-Once installed, the interface can be found in the sequence editor properties panel.  
+* Download the release or master zip file to a location you can find easily.  
+* Open Blender, and from the 'File' menu, select 'User Preferences'.
+* In this new window, click on the "Add-ons" tab at the top.
+* Click the 'Install Add-on from File...' button at the bottom of this window.
+* Browse to and select the zip file you downloaded, click the 'Install Add-on from File' button.
+* You should now see the addon displayed in the preferences window, click the checkbox next to the name to enable it.
+* Click the 'Save User Settings' button to ensure this addon is loaded next time Blender starts.
+* Once installed, the interface can be found in the sequence editor properties panel.  
 
 
 ## Title Editing
@@ -362,3 +369,36 @@ QuickTitling generates standard blender scenes that can be edited after they are
 New objects can be added and scene or render settings can be changed without issues.  
 If you wish to change a material, any settings not covered by the QuickTitling interface should be able to be changed without reverting.  Extra textures can be added to objects, just for an image type make sure they are using texture slots other than the first two.  
 If you wish to edit an object, it is recommended to rename it, this will prevent QuickTitling from finding the object.  After you rename it, delete it from the object list or it will be re-created on the next update.
+
+
+## Changelog
+### 0.1
+    * First stand-alone version, just separated from VSE Quick Functions, no changes
+### 0.2
+    * Updated interface - made it look better, and its now easier to tell when a scene is being edited
+    * When a title scene is edited, changes now happen in realtime
+    * Added word-wrapping
+    * The values in the interface are now a bit more sane - bevel is multiplied by 100, X location of 1 is the edge of the screen
+    * Added shadow offset option
+    * Added specular material options
+    * Added ability to use ray traced shadows
+### 0.5
+    * Implemented adding multiple objects of 4 basic types: image, box, circle, and text
+    * Implemented presets
+    * Implemented saving/loading presets
+    * Reworked interface
+    * Added animation abilities and presets
+    * Implemented new way of handling materials
+    * Implemented saving preset preview images
+### 0.5.1
+    * Fixed bug not checking vertices for curve objects properly, oops
+    * Fixed bug where Blender 2.78 changed the variable name for text 'align' to 'align_x'
+### 0.6
+    * Changed interface and workflow, should make a lot more sense now
+    * Built-in titles are now shown in preset menu, with preview images
+    * Newly added objects are named
+    * Circles are now actually circles
+    * Now keeps track of if a title is edited and displays this
+    * Added video settings (loop, frame offst, length), only shown if the loaded texture is a video
+    * Added outline options for all but image type, uses a beveled copy of the object to create an outline
+    * Added animation oscillations and animation presets for these
