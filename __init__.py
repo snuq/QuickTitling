@@ -25,7 +25,6 @@ Future Todo:
     Selecting objects in the sequencer viewer
     Moving objects in the sequencer viewer (drag/drop)
 
-
 Version History:
     0.1
         First stand-alone version, just separated from VSE Quick Functions, no changes
