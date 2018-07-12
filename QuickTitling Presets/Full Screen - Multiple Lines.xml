@@ -1,0 +1,263 @@
+<preset>
+  <name>Full Screen - Multiple Lines</name>
+  <z_scale>2.0</z_scale>
+  <shadowsize>1.8819999694824219</shadowsize>
+  <shadowsoft>4.0</shadowsoft>
+  <shadowx>-0.0989999994635582</shadowx>
+  <shadowy>0.09600000083446503</shadowy>
+  <objects>
+    <name>Line Bottom</name>
+    <type>BOX</type>
+    <y>-0.48000001907348633</y>
+    <rot_x>45.0</rot_x>
+    <scale>2.0</scale>
+    <width>0.40000006556510925</width>
+    <height>0.009999999776482582</height>
+    <material>QuickTitler BOX Material.004</material>
+    <diffuse_color>190, 255, 255</diffuse_color>
+    <specular_color>255, 255, 255</specular_color>
+    <extrude>0.10000000149011612</extrude>
+    <bevel>0.029999999329447746</bevel>
+    <wrap_width>0.8999999761581421</wrap_width>
+    <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
+    <animations>
+      <variable>X Slide</variable>
+      <in_length>20</in_length>
+      <out_length>20</out_length>
+      <in_amount>-6.0</in_amount>
+      <out_amount>6.0</out_amount>
+      <cycle_type>TANGENT</cycle_type>
+      <cycle_x_scale>4.0</cycle_x_scale>
+      <cycle_y_scale>2.0</cycle_y_scale>
+      <cycle_offset>5.699999809265137</cycle_offset>
+    </animations>
+  </objects>
+  <objects>
+    <name>Line Top</name>
+    <type>BOX</type>
+    <y>0.48000001907348633</y>
+    <rot_x>45.0</rot_x>
+    <scale>2.0</scale>
+    <width>0.40000006556510925</width>
+    <height>0.009999999776482582</height>
+    <material>QuickTitler BOX Material.003</material>
+    <diffuse_color>190, 255, 255</diffuse_color>
+    <specular_color>255, 255, 255</specular_color>
+    <extrude>0.10000000149011612</extrude>
+    <bevel>0.029999999329447746</bevel>
+    <wrap_width>0.8999999761581421</wrap_width>
+    <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
+    <animations>
+      <variable>X Slide</variable>
+      <in_length>20</in_length>
+      <out_length>20</out_length>
+      <in_amount>-6.0</in_amount>
+      <out_amount>6.0</out_amount>
+      <cycle_type>TANGENT</cycle_type>
+      <cycle_x_scale>4.0</cycle_x_scale>
+      <cycle_y_scale>2.0</cycle_y_scale>
+    </animations>
+  </objects>
+  <objects>
+    <name>Line Top Very Small</name>
+    <type>BOX</type>
+    <y>0.40800002217292786</y>
+    <rot_x>45.0</rot_x>
+    <width>0.7960000038146973</width>
+    <height>0.009999999776482582</height>
+    <material>QuickTitler BOX Material.007</material>
+    <diffuse_color>255, 255, 255</diffuse_color>
+    <specular_color>255, 255, 255</specular_color>
+    <extrude>0.10000000149011612</extrude>
+    <bevel>0.029999999329447746</bevel>
+    <wrap_width>0.8999999761581421</wrap_width>
+    <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
+    <animations>
+      <variable>X Slide</variable>
+      <in_length>20</in_length>
+      <out_length>20</out_length>
+      <in_amount>-6.0</in_amount>
+      <out_amount>6.0</out_amount>
+      <cycle_type>TANGENT</cycle_type>
+      <cycle_y_scale>2.0</cycle_y_scale>
+      <cycle_offset>10.0</cycle_offset>
+    </animations>
+  </objects>
+  <objects>
+    <name>Line Bottom Very Small</name>
+    <type>BOX</type>
+    <y>-0.40800002217292786</y>
+    <rot_x>45.0</rot_x>
+    <width>0.7960000038146973</width>
+    <height>0.009999999776482582</height>
+    <material>QuickTitler BOX Material.008</material>
+    <diffuse_color>255, 255, 255</diffuse_color>
+    <specular_color>255, 255, 255</specular_color>
+    <extrude>0.10000000149011612</extrude>
+    <bevel>0.029999999329447746</bevel>
+    <wrap_width>0.8999999761581421</wrap_width>
+    <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
+    <animations>
+      <variable>X Slide</variable>
+      <in_length>20</in_length>
+      <out_length>20</out_length>
+      <in_amount>-6.0</in_amount>
+      <out_amount>6.0</out_amount>
+      <cycle_type>TANGENT</cycle_type>
+      <cycle_y_scale>2.0</cycle_y_scale>
+      <cycle_offset>15.0</cycle_offset>
+    </animations>
+  </objects>
+  <objects>
+    <name>Text</name>
+    <type>TEXT</type>
+    <y>-0.05999999865889549</y>
+    <rot_x>8.133000373840332</rot_x>
+    <rot_y>8.28600025177002</rot_y>
+    <scale>2.4099998474121094</scale>
+    <material>QuickTitler TEXT Material.002</material>
+    <diffuse_color>184, 184, 184</diffuse_color>
+    <specular_intensity>1.0</specular_intensity>
+    <specular_hardness>115</specular_hardness>
+    <specular_color>255, 255, 255</specular_color>
+    <extrude>0.08999999612569809</extrude>
+    <bevel>0.029999999329447746</bevel>
+    <bevel_resolution>2</bevel_resolution>
+    <text>Text</text>
+    <wrap_width>0.8999999761581421</wrap_width>
+    <outline>True</outline>
+    <outline_size>0.5799999237060547</outline_size>
+    <outline_diffuse_color>51, 51, 51</outline_diffuse_color>
+    <animations>
+      <variable>Y Rotate</variable>
+      <animate_in>False</animate_in>
+      <animate_out>False</animate_out>
+      <in_length>0</in_length>
+      <out_length>0</out_length>
+      <in_amount>0.0</in_amount>
+      <out_amount>0.0</out_amount>
+      <cycle_type>SINE</cycle_type>
+      <cycle_x_scale>4.0</cycle_x_scale>
+      <cycle_y_scale>0.5</cycle_y_scale>
+    </animations>
+    <animations>
+      <variable>X Rotate</variable>
+      <animate_in>False</animate_in>
+      <animate_out>False</animate_out>
+      <in_length>0</in_length>
+      <out_length>0</out_length>
+      <in_amount>0.0</in_amount>
+      <out_amount>0.0</out_amount>
+      <cycle_type>SINE</cycle_type>
+      <cycle_x_scale>4.0</cycle_x_scale>
+      <cycle_y_scale>0.5</cycle_y_scale>
+    </animations>
+    <animations>
+      <variable>X Slide</variable>
+      <in_amount>-2.0</in_amount>
+      <out_amount>2.0</out_amount>
+    </animations>
+  </objects>
+  <objects>
+    <name>Line Bottom Small</name>
+    <type>BOX</type>
+    <y>-0.34800001978874207</y>
+    <rot_x>45.0</rot_x>
+    <scale>1.5</scale>
+    <width>0.5379999876022339</width>
+    <height>0.009999999776482582</height>
+    <material>QuickTitler BOX Material.005</material>
+    <diffuse_color>168, 163, 255</diffuse_color>
+    <specular_color>255, 255, 255</specular_color>
+    <extrude>0.10000000149011612</extrude>
+    <bevel>0.029999999329447746</bevel>
+    <wrap_width>0.8999999761581421</wrap_width>
+    <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
+    <animations>
+      <variable>X Slide</variable>
+      <in_length>20</in_length>
+      <out_length>20</out_length>
+      <in_amount>-6.0</in_amount>
+      <out_amount>6.0</out_amount>
+      <cycle_type>TANGENT</cycle_type>
+      <cycle_x_scale>2.0</cycle_x_scale>
+      <cycle_y_scale>2.0</cycle_y_scale>
+      <cycle_offset>5.699999809265137</cycle_offset>
+    </animations>
+  </objects>
+  <objects>
+    <name>Line Top Small</name>
+    <type>BOX</type>
+    <y>0.34800001978874207</y>
+    <rot_x>45.0</rot_x>
+    <scale>1.5</scale>
+    <width>0.5379999876022339</width>
+    <height>0.009999999776482582</height>
+    <material>QuickTitler BOX Material.006</material>
+    <diffuse_color>168, 163, 255</diffuse_color>
+    <specular_color>255, 255, 255</specular_color>
+    <extrude>0.10000000149011612</extrude>
+    <bevel>0.029999999329447746</bevel>
+    <wrap_width>0.8999999761581421</wrap_width>
+    <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
+    <animations>
+      <variable>X Slide</variable>
+      <in_length>20</in_length>
+      <out_length>20</out_length>
+      <in_amount>-6.0</in_amount>
+      <out_amount>6.0</out_amount>
+      <cycle_type>TANGENT</cycle_type>
+      <cycle_x_scale>2.0</cycle_x_scale>
+      <cycle_y_scale>2.0</cycle_y_scale>
+    </animations>
+  </objects>
+  <objects>
+    <name>BG</name>
+    <type>BOX</type>
+    <scale>1.179999828338623</scale>
+    <material>QuickTitler BOX Material.002</material>
+    <alpha>0.5</alpha>
+    <diffuse_color>14, 30, 18</diffuse_color>
+    <specular_intensity>0.40000003576278687</specular_intensity>
+    <specular_hardness>10</specular_hardness>
+    <specular_color>255, 255, 255</specular_color>
+    <wrap_width>0.8999999761581421</wrap_width>
+    <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
+    <animations>
+      <variable>X Rotate</variable>
+      <animate_in>False</animate_in>
+      <animate_out>False</animate_out>
+      <in_length>0</in_length>
+      <out_length>0</out_length>
+      <in_amount>0.0</in_amount>
+      <out_amount>0.0</out_amount>
+      <cycle_type>SINE</cycle_type>
+      <cycle_x_scale>2.0</cycle_x_scale>
+      <cycle_y_scale>2.0</cycle_y_scale>
+    </animations>
+    <animations>
+      <variable>Alpha</variable>
+      <in_amount>0.0</in_amount>
+      <out_amount>0.0</out_amount>
+    </animations>
+  </objects>
+  <objects>
+    <name>BG 2</name>
+    <type>BOX</type>
+    <z>-0.6360000371932983</z>
+    <rot_x>8.519999504089355</rot_x>
+    <scale>1.239999771118164</scale>
+    <material>QuickTitler BOX Material.009</material>
+    <diffuse_color>44, 81, 39</diffuse_color>
+    <specular_intensity>0.7599999904632568</specular_intensity>
+    <specular_hardness>115</specular_hardness>
+    <specular_color>255, 255, 255</specular_color>
+    <wrap_width>0.8999999761581421</wrap_width>
+    <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
+    <animations>
+      <variable>Alpha</variable>
+      <in_amount>0.0</in_amount>
+      <out_amount>0.0</out_amount>
+    </animations>
+  </objects>
+</preset>

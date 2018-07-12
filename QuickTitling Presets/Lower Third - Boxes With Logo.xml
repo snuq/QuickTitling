@@ -1,0 +1,133 @@
+<preset>
+  <name>Lower Third - Boxes With Logo</name>
+  <z_scale>0.5</z_scale>
+  <shadowsize>1.3450000286102295</shadowsize>
+  <shadowamount>0.0</shadowamount>
+  <objects>
+    <name>Lower Text</name>
+    <type>TEXT</type>
+    <x>0.3499999940395355</x>
+    <y>-0.43700000643730164</y>
+    <scale>0.7000002861022949</scale>
+    <cast_shadows>False</cast_shadows>
+    <material>QuickTitler TEXT Material.012</material>
+    <use_shadeless>True</use_shadeless>
+    <diffuse_color>0, 0, 0</diffuse_color>
+    <specular_color>255, 255, 255</specular_color>
+    <text>Lower Text</text>
+    <wrap_width>0.7600002288818359</wrap_width>
+    <align>LEFT</align>
+    <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
+    <animations>
+      <variable>Alpha</variable>
+      <in_offset>60</in_offset>
+      <out_offset>-30</out_offset>
+      <in_amount>0.0</in_amount>
+      <out_amount>0.0</out_amount>
+    </animations>
+  </objects>
+  <objects>
+    <name>Background 1</name>
+    <type>BOX</type>
+    <y>-0.4099999964237213</y>
+    <width>0.4359999895095825</width>
+    <height>0.043999992311000824</height>
+    <material>QuickTitler BOX Material.021</material>
+    <diffuse_color>61, 49, 132</diffuse_color>
+    <specular_intensity>0.5299999713897705</specular_intensity>
+    <specular_color>141, 96, 255</specular_color>
+    <extrude>0.25</extrude>
+    <bevel>0.18000000715255737</bevel>
+    <wrap_width>0.8999999761581421</wrap_width>
+    <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
+    <animations>
+      <variable>X Rotate</variable>
+      <in_length>30</in_length>
+      <out_length>30</out_length>
+      <in_offset>30</in_offset>
+      <in_amount>90.0</in_amount>
+      <out_amount>90.0</out_amount>
+    </animations>
+    <animations>
+      <variable>Y Slide</variable>
+      <in_length>30</in_length>
+      <out_length>30</out_length>
+      <in_offset>30</in_offset>
+      <in_amount>-0.25</in_amount>
+      <out_amount>-0.25</out_amount>
+    </animations>
+  </objects>
+  <objects>
+    <name>Top Text</name>
+    <type>TEXT</type>
+    <x>0.36000001430511475</x>
+    <y>-0.3360000252723694</y>
+    <cast_shadows>False</cast_shadows>
+    <material>QuickTitler TEXT Material.013</material>
+    <use_shadeless>True</use_shadeless>
+    <diffuse_color>1, 1, 1</diffuse_color>
+    <specular_intensity>0.0</specular_intensity>
+    <specular_color>255, 255, 255</specular_color>
+    <text>Top Text</text>
+    <wrap_width>0.8999999761581421</wrap_width>
+    <align>LEFT</align>
+    <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
+    <animations>
+      <variable>Alpha</variable>
+      <in_offset>30</in_offset>
+      <out_offset>-30</out_offset>
+      <in_amount>0.0</in_amount>
+      <out_amount>0.0</out_amount>
+    </animations>
+  </objects>
+  <objects>
+    <name>Background 2</name>
+    <type>BOX</type>
+    <x>-0.17100000381469727</x>
+    <y>-0.30300000309944153</y>
+    <width>0.3880000114440918</width>
+    <height>0.061000000685453415</height>
+    <material>QuickTitler BOX Material.022</material>
+    <diffuse_color>255, 255, 255</diffuse_color>
+    <specular_intensity>1.0</specular_intensity>
+    <specular_color>255, 255, 255</specular_color>
+    <extrude>0.25</extrude>
+    <bevel>0.1770000010728836</bevel>
+    <wrap_width>0.8999999761581421</wrap_width>
+    <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
+    <animations>
+      <variable>Y Slide</variable>
+      <in_length>30</in_length>
+      <out_length>30</out_length>
+      <in_amount>-0.3500000238418579</in_amount>
+      <out_amount>-0.3499999940395355</out_amount>
+    </animations>
+    <animations>
+      <variable>X Rotate</variable>
+      <in_length>30</in_length>
+      <out_length>30</out_length>
+      <in_amount>90.0</in_amount>
+      <out_amount>90.0</out_amount>
+    </animations>
+  </objects>
+  <objects>
+    <name>Logo Image</name>
+    <type>IMAGE</type>
+    <x>-0.7289999723434448</x>
+    <y>-0.3179999887943268</y>
+    <scale>0.17799998819828033</scale>
+    <cast_shadows>False</cast_shadows>
+    <material>QuickTitler IMAGE Material.001</material>
+    <use_shadeless>True</use_shadeless>
+    <diffuse_color>255, 255, 255</diffuse_color>
+    <specular_intensity>0.0</specular_intensity>
+    <specular_color>255, 255, 255</specular_color>
+    <wrap_width>0.8999999761581421</wrap_width>
+    <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
+    <animations>
+      <variable>X Slide</variable>
+      <in_amount>-1.0</in_amount>
+      <out_amount>-1.0</out_amount>
+    </animations>
+  </objects>
+</preset>
