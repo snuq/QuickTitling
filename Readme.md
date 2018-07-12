@@ -76,6 +76,8 @@ The QuickTitling panel is divided into two sections:
    * Export Button
       
       Allows you to export your title preset to an xml file to share with others, or save for later.  
+      If you are exporting an existing title, a preview image will be generated in the same folder as the xml.  
+      Export to the script preset folder (<Blender's addon script folder>/QuickTitling/QuickTitling Presets) to have your title show up in the built-in titles.  
       
    * Preset Name
    
@@ -402,4 +404,6 @@ If you wish to edit an object, it is recommended to rename it, this will prevent
    * Added video settings (loop, frame offset, length), only shown if the loaded texture is a video
    * Added outline options for all but image type, uses a beveled copy of the object to create an outline
    * Added animation oscillations and animation presets for these
-   * Word wrapping behaves better now, changing the text scale does not change the wrapping size.
+   * Word wrapping behaves better now, changing the text scale does not change the wrapping size
+   * Exported presets are cleaner now - default variables are not saved and xml files have line returns and indenting
+   * Updated and added new presets
