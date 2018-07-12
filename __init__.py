@@ -17,9 +17,6 @@
 # ##### END GPL LICENSE BLOCK #####
 
 """
-Todo Before Release:
-    Add more builtin presets
-
 Future Todo:
     Overlays in the sequencer viewer to show information about objects (selected object, animations, layers)
     Selecting objects in the sequencer viewer
