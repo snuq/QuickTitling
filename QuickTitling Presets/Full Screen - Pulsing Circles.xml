@@ -1,0 +1,197 @@
+<preset>
+  <name>Full Screen - Pulsing Circles</name>
+  <z_scale>0.6100000143051147</z_scale>
+  <objects>
+    <name>Text</name>
+    <type>TEXT</type>
+    <y>-0.029999999329447746</y>
+    <scale>1.4500000476837158</scale>
+    <material>QuickTitler TEXT Material.009</material>
+    <diffuse_color>0, 0, 0</diffuse_color>
+    <specular_color>255, 255, 255</specular_color>
+    <text>Text</text>
+    <wrap_width>0.7500001192092896</wrap_width>
+    <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
+    <animations>
+      <variable>Alpha</variable>
+      <in_amount>0.0</in_amount>
+      <out_amount>0.0</out_amount>
+    </animations>
+  </objects>
+  <objects>
+    <name>Circle BG 1</name>
+    <type>CIRCLE</type>
+    <scale>0.9100000858306885</scale>
+    <material>QuickTitler CIRCLE Material.001</material>
+    <diffuse_color>255, 255, 255</diffuse_color>
+    <specular_color>255, 255, 255</specular_color>
+    <wrap_width>0.8999999761581421</wrap_width>
+    <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
+    <animations>
+      <variable>Height</variable>
+      <animate_in>False</animate_in>
+      <animate_out>False</animate_out>
+      <in_length>0</in_length>
+      <out_length>0</out_length>
+      <in_amount>0.0</in_amount>
+      <out_amount>0.0</out_amount>
+      <cycle_type>RANDOM</cycle_type>
+      <cycle_x_scale>2.0</cycle_x_scale>
+    </animations>
+    <animations>
+      <variable>Width</variable>
+      <animate_in>False</animate_in>
+      <animate_out>False</animate_out>
+      <in_length>0</in_length>
+      <out_length>0</out_length>
+      <in_amount>0.0</in_amount>
+      <out_amount>0.0</out_amount>
+      <cycle_type>RANDOM</cycle_type>
+      <cycle_x_scale>2.0</cycle_x_scale>
+    </animations>
+    <animations>
+      <variable>Z Slide</variable>
+      <in_amount>-10.0</in_amount>
+      <out_amount>-10.0</out_amount>
+    </animations>
+    <animations>
+      <variable>Alpha</variable>
+      <in_amount>0.0</in_amount>
+      <out_amount>0.0</out_amount>
+    </animations>
+  </objects>
+  <objects>
+    <name>Circle BG 2</name>
+    <type>CIRCLE</type>
+    <material>QuickTitler CIRCLE Material</material>
+    <diffuse_color>17, 14, 61</diffuse_color>
+    <specular_intensity>0.0</specular_intensity>
+    <specular_color>255, 255, 255</specular_color>
+    <wrap_width>0.8999999761581421</wrap_width>
+    <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
+    <animations>
+      <variable>Height</variable>
+      <animate_in>False</animate_in>
+      <animate_out>False</animate_out>
+      <in_length>0</in_length>
+      <out_length>0</out_length>
+      <in_amount>0.0</in_amount>
+      <out_amount>0.0</out_amount>
+      <cycle_type>RANDOM</cycle_type>
+      <cycle_x_scale>2.0</cycle_x_scale>
+      <cycle_offset>1.0</cycle_offset>
+    </animations>
+    <animations>
+      <variable>Width</variable>
+      <animate_in>False</animate_in>
+      <animate_out>False</animate_out>
+      <in_length>0</in_length>
+      <out_length>0</out_length>
+      <in_amount>0.0</in_amount>
+      <out_amount>0.0</out_amount>
+      <cycle_type>RANDOM</cycle_type>
+      <cycle_x_scale>2.0</cycle_x_scale>
+      <cycle_offset>1.0</cycle_offset>
+    </animations>
+    <animations>
+      <variable>Z Slide</variable>
+      <in_amount>-10.0</in_amount>
+      <out_amount>-10.0</out_amount>
+    </animations>
+    <animations>
+      <variable>Alpha</variable>
+      <in_amount>0.0</in_amount>
+      <out_amount>0.0</out_amount>
+    </animations>
+  </objects>
+  <objects>
+    <name>Circle BG 3</name>
+    <type>CIRCLE</type>
+    <scale>1.1499998569488525</scale>
+    <material>QuickTitler CIRCLE Material.002</material>
+    <diffuse_color>3, 2, 7</diffuse_color>
+    <specular_intensity>0.0</specular_intensity>
+    <specular_color>255, 255, 255</specular_color>
+    <wrap_width>0.8999999761581421</wrap_width>
+    <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
+    <animations>
+      <variable>Height</variable>
+      <animate_in>False</animate_in>
+      <animate_out>False</animate_out>
+      <in_length>0</in_length>
+      <out_length>0</out_length>
+      <in_amount>0.0</in_amount>
+      <out_amount>0.0</out_amount>
+      <cycle_type>RANDOM</cycle_type>
+      <cycle_x_scale>2.0</cycle_x_scale>
+      <cycle_offset>2.0</cycle_offset>
+    </animations>
+    <animations>
+      <variable>Width</variable>
+      <animate_in>False</animate_in>
+      <animate_out>False</animate_out>
+      <in_length>0</in_length>
+      <out_length>0</out_length>
+      <in_amount>0.0</in_amount>
+      <out_amount>0.0</out_amount>
+      <cycle_type>RANDOM</cycle_type>
+      <cycle_x_scale>2.0</cycle_x_scale>
+      <cycle_offset>2.0</cycle_offset>
+    </animations>
+    <animations>
+      <variable>Z Slide</variable>
+      <in_amount>-10.0</in_amount>
+      <out_amount>-10.0</out_amount>
+    </animations>
+    <animations>
+      <variable>Alpha</variable>
+      <in_amount>0.0</in_amount>
+      <out_amount>0.0</out_amount>
+    </animations>
+  </objects>
+  <objects>
+    <name>Circle BG 4</name>
+    <type>CIRCLE</type>
+    <scale>2.0</scale>
+    <material>QuickTitler CIRCLE Material.003</material>
+    <diffuse_color>0, 0, 0</diffuse_color>
+    <specular_intensity>0.0</specular_intensity>
+    <specular_color>255, 255, 255</specular_color>
+    <wrap_width>0.8999999761581421</wrap_width>
+    <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
+    <animations>
+      <variable>Height</variable>
+      <animate_in>False</animate_in>
+      <animate_out>False</animate_out>
+      <in_length>0</in_length>
+      <out_length>0</out_length>
+      <in_amount>0.0</in_amount>
+      <out_amount>0.0</out_amount>
+      <cycle_type>RANDOM</cycle_type>
+      <cycle_x_scale>2.0</cycle_x_scale>
+      <cycle_offset>2.0</cycle_offset>
+    </animations>
+    <animations>
+      <variable>Width</variable>
+      <animate_in>False</animate_in>
+      <animate_out>False</animate_out>
+      <in_length>0</in_length>
+      <out_length>0</out_length>
+      <in_amount>0.0</in_amount>
+      <out_amount>0.0</out_amount>
+      <cycle_type>RANDOM</cycle_type>
+      <cycle_x_scale>2.0</cycle_x_scale>
+      <cycle_offset>2.0</cycle_offset>
+    </animations>
+    <animations>
+      <variable>Z Slide</variable>
+      <in_amount>-10.0</in_amount>
+      <out_amount>-10.0</out_amount>
+    </animations>
+    <animations>
+      <variable>Alpha</variable>
+      <in_amount>0.0</in_amount>
+      <out_amount>0.0</out_amount>
+    </animations>
+  </objects>
+</preset>

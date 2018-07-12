@@ -1,0 +1,107 @@
+<preset>
+  <name>Lower Third - Basic 2</name>
+  <z_scale>0.20000000298023224</z_scale>
+  <objects>
+    <name>Top Text</name>
+    <type>TEXT</type>
+    <x>-1.1175870895385742e-08</x>
+    <y>-0.2789999842643738</y>
+    <material>QuickTitler TEXT Material.003</material>
+    <diffuse_color>255, 137, 142</diffuse_color>
+    <specular_color>255, 255, 255</specular_color>
+    <text>Top Text</text>
+    <wrap_width>0.8999999761581421</wrap_width>
+    <align>LEFT</align>
+    <outline>True</outline>
+    <outline_size>0.4959999918937683</outline_size>
+    <outline_alpha>0.5</outline_alpha>
+    <outline_diffuse_color>47, 9, 11</outline_diffuse_color>
+    <animations>
+      <variable>X Slide</variable>
+      <in_amount>-2.0</in_amount>
+      <out_amount>-2.0</out_amount>
+    </animations>
+  </objects>
+  <objects>
+    <name>Lower Text</name>
+    <type>TEXT</type>
+    <y>-0.36800000071525574</y>
+    <scale>0.7000002861022949</scale>
+    <material>QuickTitler TEXT Material.004</material>
+    <diffuse_color>255, 255, 255</diffuse_color>
+    <specular_color>255, 255, 255</specular_color>
+    <text>Lower Text</text>
+    <wrap_width>0.7300002574920654</wrap_width>
+    <align>LEFT</align>
+    <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
+    <animations>
+      <variable>X Slide</variable>
+      <in_amount>-2.0</in_amount>
+      <out_amount>-2.0</out_amount>
+    </animations>
+  </objects>
+  <objects>
+    <name>Line</name>
+    <type>BOX</type>
+    <y>-0.2939999997615814</y>
+    <height>0.003000000026077032</height>
+    <material>QuickTitler BOX Material.010</material>
+    <diffuse_color>255, 79, 62</diffuse_color>
+    <specular_color>255, 255, 255</specular_color>
+    <wrap_width>0.8999999761581421</wrap_width>
+    <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
+    <animations>
+      <variable>X Slide</variable>
+      <in_amount>-2.0</in_amount>
+      <out_amount>-2.0</out_amount>
+    </animations>
+  </objects>
+  <objects>
+    <name>Background Scroll</name>
+    <type>BOX</type>
+    <y>-1.1699999570846558</y>
+    <shear>0.8100000023841858</shear>
+    <material>QuickTitler BOX Material.012</material>
+    <use_transparency>True</use_transparency>
+    <alpha>0.5</alpha>
+    <diffuse_color>188, 17, 15</diffuse_color>
+    <specular_intensity>0.5299999713897705</specular_intensity>
+    <specular_color>255, 255, 255</specular_color>
+    <wrap_width>0.8999999761581421</wrap_width>
+    <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
+    <animations>
+      <variable>Y Slide</variable>
+      <in_amount>-1.0</in_amount>
+      <out_amount>-1.0</out_amount>
+    </animations>
+    <animations>
+      <variable>X Slide</variable>
+      <animate_in>False</animate_in>
+      <animate_out>False</animate_out>
+      <in_length>0</in_length>
+      <out_length>0</out_length>
+      <in_amount>0.0</in_amount>
+      <out_amount>0.0</out_amount>
+      <cycle_type>TANGENT</cycle_type>
+      <cycle_x_scale>2.0</cycle_x_scale>
+      <cycle_y_scale>2.0</cycle_y_scale>
+    </animations>
+  </objects>
+  <objects>
+    <name>Background</name>
+    <type>BOX</type>
+    <y>-1.1699999570846558</y>
+    <material>QuickTitler BOX Material.011</material>
+    <use_transparency>True</use_transparency>
+    <diffuse_color>178, 17, 14</diffuse_color>
+    <specular_intensity>0.34999996423721313</specular_intensity>
+    <specular_color>255, 255, 255</specular_color>
+    <wrap_width>0.8999999761581421</wrap_width>
+    <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
+    <animations>
+      <variable>Y Slide</variable>
+      <in_amount>-1.0</in_amount>
+      <out_amount>-1.0</out_amount>
+    </animations>
+  </objects>
+</preset>

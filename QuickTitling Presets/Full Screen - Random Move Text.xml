@@ -1,0 +1,143 @@
+<preset>
+  <name>Full Screen - Random Move Text</name>
+  <z_scale>1.9600000381469727</z_scale>
+  <shadowsize>1.75</shadowsize>
+  <shadowamount>1.0</shadowamount>
+  <shadowsoft>2.0</shadowsoft>
+  <shadowy>0.012000000104308128</shadowy>
+  <objects>
+    <name>Text</name>
+    <type>TEXT</type>
+    <y>-0.08999999612569809</y>
+    <scale>2.0</scale>
+    <material>QuickTitler TEXT Material.007</material>
+    <diffuse_color>255, 255, 255</diffuse_color>
+    <specular_color>255, 255, 255</specular_color>
+    <text>Text</text>
+    <wrap_width>0.5</wrap_width>
+    <outline>True</outline>
+    <outline_size>0.5</outline_size>
+    <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
+    <animations>
+      <variable>X Slide</variable>
+      <animate_in>False</animate_in>
+      <animate_out>False</animate_out>
+      <in_length>0</in_length>
+      <out_length>0</out_length>
+      <in_amount>0.0</in_amount>
+      <out_amount>0.0</out_amount>
+      <cycle_type>RANDOM</cycle_type>
+      <cycle_x_scale>0.25</cycle_x_scale>
+      <cycle_y_scale>0.05000000074505806</cycle_y_scale>
+    </animations>
+    <animations>
+      <variable>Y Slide</variable>
+      <animate_in>False</animate_in>
+      <animate_out>False</animate_out>
+      <in_length>0</in_length>
+      <out_length>0</out_length>
+      <in_amount>0.0</in_amount>
+      <out_amount>0.0</out_amount>
+      <cycle_type>RANDOM</cycle_type>
+      <cycle_x_scale>0.25</cycle_x_scale>
+      <cycle_y_scale>0.05000000074505806</cycle_y_scale>
+      <cycle_offset>5.0</cycle_offset>
+    </animations>
+    <animations>
+      <variable>Z Slide</variable>
+      <in_amount>-10.0</in_amount>
+      <out_amount>-10.0</out_amount>
+    </animations>
+    <animations>
+      <variable>Alpha</variable>
+      <in_amount>0.0</in_amount>
+      <out_amount>0.0</out_amount>
+    </animations>
+  </objects>
+  <objects>
+    <name>Right</name>
+    <type>BOX</type>
+    <x>1.119999885559082</x>
+    <rot_y>-22.319997787475586</rot_y>
+    <width>0.3400004506111145</width>
+    <shear>-1.0</shear>
+    <material>QuickTitler BOX Material.018</material>
+    <diffuse_color>55, 2, 1</diffuse_color>
+    <specular_intensity>1.0</specular_intensity>
+    <specular_hardness>250</specular_hardness>
+    <specular_color>255, 255, 255</specular_color>
+    <extrude>2.0</extrude>
+    <bevel>0.32999998331069946</bevel>
+    <bevel_resolution>2</bevel_resolution>
+    <wrap_width>0.8999999761581421</wrap_width>
+    <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
+    <animations>
+      <variable>Y Slide</variable>
+      <animate_in>False</animate_in>
+      <animate_out>False</animate_out>
+      <in_length>0</in_length>
+      <out_length>0</out_length>
+      <in_amount>0.0</in_amount>
+      <out_amount>0.0</out_amount>
+      <cycle_type>RANDOM</cycle_type>
+      <cycle_y_scale>0.20000000298023224</cycle_y_scale>
+    </animations>
+    <animations>
+      <variable>X Slide</variable>
+      <in_amount>2.0</in_amount>
+      <out_amount>2.0</out_amount>
+    </animations>
+  </objects>
+  <objects>
+    <name>Left</name>
+    <type>BOX</type>
+    <x>-1.119999885559082</x>
+    <rot_y>22.139999389648438</rot_y>
+    <width>0.3400004506111145</width>
+    <shear>-1.0</shear>
+    <material>QuickTitler BOX Material.017</material>
+    <diffuse_color>55, 2, 1</diffuse_color>
+    <specular_intensity>1.0</specular_intensity>
+    <specular_hardness>250</specular_hardness>
+    <specular_color>255, 255, 255</specular_color>
+    <extrude>2.0</extrude>
+    <bevel>0.32999998331069946</bevel>
+    <bevel_resolution>2</bevel_resolution>
+    <wrap_width>0.8999999761581421</wrap_width>
+    <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
+    <animations>
+      <variable>Y Slide</variable>
+      <animate_in>False</animate_in>
+      <animate_out>False</animate_out>
+      <in_length>0</in_length>
+      <out_length>0</out_length>
+      <in_amount>0.0</in_amount>
+      <out_amount>0.0</out_amount>
+      <cycle_type>RANDOM</cycle_type>
+      <cycle_y_scale>0.20000000298023224</cycle_y_scale>
+    </animations>
+    <animations>
+      <variable>X Slide</variable>
+      <in_amount>-2.0</in_amount>
+      <out_amount>-2.0</out_amount>
+    </animations>
+  </objects>
+  <objects>
+    <name>BG</name>
+    <type>BOX</type>
+    <z>-4.965000152587891</z>
+    <scale>2.0799999237060547</scale>
+    <width>1.3599998950958252</width>
+    <material>QuickTitler BOX Material.016</material>
+    <diffuse_color>1, 1, 1</diffuse_color>
+    <specular_hardness>8</specular_hardness>
+    <specular_color>18, 18, 18</specular_color>
+    <wrap_width>0.8999999761581421</wrap_width>
+    <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
+    <animations>
+      <variable>Y Slide</variable>
+      <in_amount>-10.0</in_amount>
+      <out_amount>-10.0</out_amount>
+    </animations>
+  </objects>
+</preset>

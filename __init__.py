@@ -1098,6 +1098,9 @@ def set_animations(title_object, object_preset, material, scene, z_offset, pos_m
             if 'Slide' in variable:
                 scalevalue = 1 + (z_offset * .457)
                 offsetvalue = offsetvalue / pos_multiplier
+                if parent:
+                    offsetvalue = offsetvalue - .001
+                    value = value - .001
             if variable == 'Alpha' or variable == 'Width' or variable == 'Height' or variable == 'Depth':
                 offsetvalue = 0
                 material.use_transparency = True
