@@ -490,20 +490,20 @@ def to_bool(value):
 
 
 def set_default(preset):
-    preset.name = 'Default'
-    preset.description = ""
-    preset.z_scale = 1
+    preset.name = QuickTitle.name[1]['default']
+    preset.description = QuickTitle.description[1]['default']
+    preset.z_scale = QuickTitle.z_scale[1]['default']
     preset.objects.clear()
     preset.selected_object = 0
-    preset.enable_shadows = True
+    preset.enable_shadows = QuickTitle.enable_shadows[1]['default']
     preset.shadowlamp_internal_name = ""
-    preset.shadowsize = 1
-    preset.shadowamount = .5
-    preset.shadowsoft = 1
-    preset.shadowx = 0
-    preset.shadowy = 0
-    preset.length = 300
-    preset.qualityshadows = False
+    preset.shadowsize = QuickTitle.shadowsize[1]['default']
+    preset.shadowamount = QuickTitle.shadowamount[1]['default']
+    preset.shadowsoft = QuickTitle.shadowsoft[1]['default']
+    preset.shadowx = QuickTitle.shadowx[1]['default']
+    preset.shadowy = QuickTitle.shadowy[1]['default']
+    preset.length = QuickTitle.length[1]['default']
+    preset.qualityshadows = QuickTitle.qualityshadows[1]['default']
 
 
 def get_presets_directory():
@@ -729,6 +729,68 @@ def current_quicktitle(sequence=None):
     return scene.quicktitler.current_quicktitle
 
 
+def copy_object(oldobject, newobject):
+    newobject.name = oldobject.name
+    newobject.type = oldobject.type
+    newobject.x = oldobject.x
+    newobject.y = oldobject.y
+    newobject.z = oldobject.z
+    newobject.rot_x = oldobject.rot_x
+    newobject.rot_y = oldobject.rot_y
+    newobject.rot_z = oldobject.rot_z
+    newobject.scale = oldobject.scale
+    newobject.width = oldobject.width
+    newobject.height = oldobject.height
+    newobject.shear = oldobject.shear
+    newobject.set_material = oldobject.set_material
+    newobject.material = oldobject.material
+    newobject.cast_shadows = oldobject.cast_shadows
+    newobject.use_shadeless = oldobject.use_shadeless
+    newobject.use_transparency = oldobject.use_transparency
+    newobject.alpha = oldobject.alpha
+    newobject.diffuse_color = oldobject.diffuse_color
+    newobject.specular_intensity = oldobject.specular_intensity
+    newobject.specular_hardness = oldobject.specular_hardness
+    newobject.specular_color = oldobject.specular_color
+    newobject.extrude = oldobject.extrude
+    newobject.bevel = oldobject.bevel
+    newobject.bevel_resolution = oldobject.bevel_resolution
+    newobject.text = oldobject.text
+    newobject.font = oldobject.font
+    newobject.word_wrap = oldobject.word_wrap
+    newobject.wrap_width = oldobject.wrap_width
+    newobject.align = oldobject.align
+    newobject.outline = oldobject.outline
+    newobject.outline_size = oldobject.outline_size
+    newobject.outline_alpha = oldobject.outline_alpha
+    newobject.outline_diffuse_color = oldobject.outline_diffuse_color
+    newobject.texture = oldobject.texture
+    newobject.alpha_texture = oldobject.alpha_texture
+    newobject.loop = oldobject.loop
+    newobject.frame_offset = oldobject.frame_offset
+    newobject.frame_length = oldobject.frame_length
+    newobject.animations.clear()
+    for oldanimation in oldobject.animations:
+        newanimation = newobject.animations.add()
+        copy_animation(oldanimation, newanimation)
+
+
+def copy_animation(oldanimation, newanimation):
+    newanimation.variable = oldanimation.variable
+    newanimation.animate_in = oldanimation.animate_in
+    newanimation.animate_out = oldanimation.animate_out
+    newanimation.in_length = oldanimation.in_length
+    newanimation.out_length = oldanimation.out_length
+    newanimation.in_offset = oldanimation.in_offset
+    newanimation.out_offset = oldanimation.out_offset
+    newanimation.in_amount = oldanimation.in_amount
+    newanimation.out_amount = oldanimation.out_amount
+    newanimation.cycle_x_scale = oldanimation.cycle_x_scale
+    newanimation.cycle_y_scale = oldanimation.cycle_y_scale
+    newanimation.cycle_offset = oldanimation.cycle_offset
+    newanimation.cycle_type = oldanimation.cycle_type
+
+
 def copy_title_preset(old_title, title):
     #Function to copy one QuickTitle preset to another
     title.name = old_title.name
@@ -744,61 +806,7 @@ def copy_title_preset(old_title, title):
     title.objects.clear()
     for oldobject in old_title.objects:
         newobject = title.objects.add()
-        newobject.name = oldobject.name
-        newobject.type = oldobject.type
-        newobject.x = oldobject.x
-        newobject.y = oldobject.y
-        newobject.z = oldobject.z
-        newobject.rot_x = oldobject.rot_x
-        newobject.rot_y = oldobject.rot_y
-        newobject.rot_z = oldobject.rot_z
-        newobject.scale = oldobject.scale
-        newobject.width = oldobject.width
-        newobject.height = oldobject.height
-        newobject.shear = oldobject.shear
-        newobject.set_material = oldobject.set_material
-        newobject.material = oldobject.material
-        newobject.cast_shadows = oldobject.cast_shadows
-        newobject.use_shadeless = oldobject.use_shadeless
-        newobject.use_transparency = oldobject.use_transparency
-        newobject.alpha = oldobject.alpha
-        newobject.diffuse_color = oldobject.diffuse_color
-        newobject.specular_intensity = oldobject.specular_intensity
-        newobject.specular_hardness = oldobject.specular_hardness
-        newobject.specular_color = oldobject.specular_color
-        newobject.extrude = oldobject.extrude
-        newobject.bevel = oldobject.bevel
-        newobject.bevel_resolution = oldobject.bevel_resolution
-        newobject.text = oldobject.text
-        newobject.font = oldobject.font
-        newobject.word_wrap = oldobject.word_wrap
-        newobject.wrap_width = oldobject.wrap_width
-        newobject.align = oldobject.align
-        newobject.outline = oldobject.outline
-        newobject.outline_size = oldobject.outline_size
-        newobject.outline_alpha = oldobject.outline_alpha
-        newobject.outline_diffuse_color = oldobject.outline_diffuse_color
-        newobject.texture = oldobject.texture
-        newobject.alpha_texture = oldobject.alpha_texture
-        newobject.loop = oldobject.loop
-        newobject.frame_offset = oldobject.frame_offset
-        newobject.frame_length = oldobject.frame_length
-        newobject.animations.clear()
-        for oldanimation in oldobject.animations:
-            newanimation = newobject.animations.add()
-            newanimation.variable = oldanimation.variable
-            newanimation.animate_in = oldanimation.animate_in
-            newanimation.animate_out = oldanimation.animate_out
-            newanimation.in_length = oldanimation.in_length
-            newanimation.out_length = oldanimation.out_length
-            newanimation.in_offset = oldanimation.in_offset
-            newanimation.out_offset = oldanimation.out_offset
-            newanimation.in_amount = oldanimation.in_amount
-            newanimation.out_amount = oldanimation.out_amount
-            newanimation.cycle_x_scale = oldanimation.cycle_x_scale
-            newanimation.cycle_y_scale = oldanimation.cycle_y_scale
-            newanimation.cycle_offset = oldanimation.cycle_offset
-            newanimation.cycle_type = oldanimation.cycle_type
+        copy_object(oldobject, newobject)
 
 
 def quicktitle_autoupdate(self=None, context=None):
@@ -1019,7 +1027,7 @@ def create_object(scene, object_type, name):
     return title_object
 
 
-def set_animations(title_object, object_preset, material, scene, z_offset, pos_multiplier):
+def set_animations(title_object, object_preset, material, scene, z_offset, pos_multiplier, parent=None):
     #look for and clear animations that are no longer set
     if title_object.animation_data:
         if title_object.animation_data.action:
@@ -1081,7 +1089,7 @@ def set_animations(title_object, object_preset, material, scene, z_offset, pos_m
             in_amount = animation_preset.in_amount
             out_amount = animation_preset.out_amount
             variable = animation_preset.variable
-            fcurve, value = get_fcurve(fcurves, variable, material=material, on_object=title_object)
+            fcurve, value = get_fcurve(fcurves, variable, material=material, on_object=title_object if not parent else parent)
             offsetvalue = value
             scalevalue = 1
             if 'Rotate' in variable:
@@ -1491,8 +1499,9 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
                 outline_object = scene.objects[outline_object_name]
                 if not object_preset.outline:
                     #delete outline object
-                    #scene.objects.unlink(outline_object)
+                    scene.objects.unlink(outline_object)
                     bpy.data.objects.remove(outline_object, True)
+                    outline_object = None
             else:
                 if object_preset.outline:
                     #create outline object
@@ -1526,7 +1535,7 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
                 outline_object.location = (pos_multiplier * object_preset.x, pos_multiplier * object_preset.y, object_preset.z - z_offset - .001)
                 outline_object.scale = (scale_multiplier * object_preset.scale * object_preset.width, scale_multiplier * object_preset.scale * object_preset.height, object_preset.scale)
                 setup_object(outline_object, object_preset, material, scale_multiplier)
-                set_animations(outline_object, object_preset, material, scene, z_offset, pos_multiplier)
+                set_animations(outline_object, object_preset, material, scene, z_offset, pos_multiplier, parent=title_object)
                 #outline_object.data.offset = object_preset.outline_size / 100
                 outline_object.data.extrude = 0
                 outline_object.data.bevel_depth = object_preset.outline_size / 100
@@ -2210,6 +2219,9 @@ class QuickTitlingPanel(bpy.types.Panel):
         row.operator('quicktitler.add_object', text='Circle', icon=quicktitle_object_icon('CIRCLE')).type = 'CIRCLE'
 
         if current_object:
+            row = bottom.row()
+            row.operator('quicktitler.add_object', text='Duplicate Selected').type = 'DUPLICATE'
+
             # Object settings
             outline = bottom.box()
 
@@ -2507,24 +2519,44 @@ class QuickTitlingObjectAdd(bpy.types.Operator):
     bl_label = 'Add Object'
     bl_description = 'Add an object in the current QuickTitling preset'
 
-    #can be: TEXT, IMAGE, BOX, CIRCLE
+    #can be: TEXT, IMAGE, BOX, CIRCLE, DUPLICATE
     type = bpy.props.StringProperty()
 
     def execute(self, context):
         scene = find_titling_scene()
         quicktitle = scene.quicktitler.current_quicktitle
-        title_object = quicktitle.objects.add()
-        title_object.type = self.type
-        title_object.name = self.type.capitalize()
-        if title_object.type == 'IMAGE':
-            title_object.specular_intensity = 0
-            title_object.cast_shadows = False
-            title_object.use_shadeless = True
-        index = len(quicktitle.objects) - 1
-        quicktitle.objects.move(index, 0)
-        quicktitle.selected_object = 0
-        quicktitle_autoupdate_all()
-        return {'FINISHED'}
+        if self.type == 'DUPLICATE':
+            preset_objects = quicktitle.objects
+            current_object_index = quicktitle.selected_object
+            if len(preset_objects) >= current_object_index + 1:
+                current_object = preset_objects[current_object_index]
+            else:
+                current_object = None
+            if current_object:
+                title_object = quicktitle.objects.add()
+                copy_object(current_object, title_object)
+                title_object.name = title_object.name + ' COPY'
+                index = len(quicktitle.objects) - 1
+                newindex = current_object_index
+                quicktitle.objects.move(index, newindex)
+                quicktitle.selected_object = newindex
+                quicktitle_autoupdate_all()
+                return {'FINISHED'}
+            else:
+                return {'CANCELLED'}
+        else:
+            title_object = quicktitle.objects.add()
+            title_object.type = self.type
+            title_object.name = self.type.capitalize()
+            if title_object.type == 'IMAGE':
+                title_object.specular_intensity = 0
+                title_object.cast_shadows = False
+                title_object.use_shadeless = True
+            index = len(quicktitle.objects) - 1
+            quicktitle.objects.move(index, 0)
+            quicktitle.selected_object = 0
+            quicktitle_autoupdate_all()
+            return {'FINISHED'}
 
 
 class QuickTitlingObjectSelect(bpy.types.Operator):
@@ -2559,8 +2591,10 @@ class QuickTitlingObjectDelete(bpy.types.Operator):
                 outline_object_name = title_object.name+'outline'
                 if outline_object_name in scene.objects:
                     outline_object = scene.objects[outline_object_name]
+                    scene.objects.unlink(outline_object)
                     bpy.data.objects.remove(outline_object, True)
-                #scene.objects.unlink(title_object)
+                    outline_object.name = ''
+                scene.objects.unlink(title_object)
                 bpy.data.objects.remove(title_object, True)
 
         scene.quicktitler.current_quicktitle.objects.remove(self.index)
@@ -2718,9 +2752,15 @@ class QuickTitlingPresetExport(bpy.types.Operator, ExportHelper):
             old_quality = scene.render.image_settings.quality
             old_resolution_percentage = scene.render.resolution_percentage
             old_color_mode = scene.render.image_settings.color_mode
+            old_res_x = scene.render.resolution_x
+            old_res_y = scene.render.resolution_y
+            aspect = scene.render.resolution_x / scene.render.resolution_y
+            res = 300
+            scene.render.resolution_x = res
+            scene.render.resolution_y = int(res / aspect)
             scene.render.image_settings.file_format = 'JPEG'
             scene.render.image_settings.quality = 80
-            scene.render.resolution_percentage = 50
+            scene.render.resolution_percentage = 100
             scene.render.image_settings.color_mode = 'RGB'
 
             oldscene = bpy.context.scene
@@ -2730,6 +2770,8 @@ class QuickTitlingPresetExport(bpy.types.Operator, ExportHelper):
             bpy.context.screen.scene = oldscene
             self.report({'INFO'}, "Rendered QuickTitle Preview As: "+imagepath)
 
+            scene.render.resolution_x = old_res_x
+            scene.render.resolution_y = old_res_y
             scene.render.image_settings.file_format = old_file_format
             scene.render.image_settings.quality = old_quality
             scene.render.resolution_percentage = old_resolution_percentage
@@ -2740,81 +2782,157 @@ class QuickTitlingPresetExport(bpy.types.Operator, ExportHelper):
             return {'CANCELED'}
         import xml.etree.cElementTree as Tree
         root = Tree.Element("preset")
-        Tree.SubElement(root, 'name', name='Preset Name').text = preset.name
-        Tree.SubElement(root, 'description', name='Description').text = preset.description
-        Tree.SubElement(root, 'z_scale', name='Z Depth Scale').text = str(preset.z_scale)
-        Tree.SubElement(root, 'length', name='Scene Length').text = str(preset.length)
-        Tree.SubElement(root, 'shadowsize', name='Shadow Distance').text = str(preset.shadowsize)
-        Tree.SubElement(root, 'shadowamount', name='Shadow Amount').text = str(preset.shadowamount)
-        Tree.SubElement(root, 'shadowsoft', name='Shadow Softness').text = str(preset.shadowsoft)
-        Tree.SubElement(root, 'shadowx', name='Shadow Lamp X Position').text = str(preset.shadowx)
-        Tree.SubElement(root, 'shadowy', name='Shadow Lamp Y Position').text = str(preset.shadowy)
-        Tree.SubElement(root, 'qualityshadows', name='High Quality Shadows').text = str(preset.qualityshadows)
+        Tree.SubElement(root, 'name').text = preset.name
+        if preset.description:
+            Tree.SubElement(root, 'description').text = preset.description
+        if preset.z_scale != QuickTitle.z_scale[1]['default']:
+            Tree.SubElement(root, 'z_scale').text = str(preset.z_scale)
+        if preset.length != QuickTitle.length[1]['default']:
+            Tree.SubElement(root, 'length').text = str(preset.length)
+        if preset.shadowsize != QuickTitle.shadowsize[1]['default']:
+            Tree.SubElement(root, 'shadowsize').text = str(preset.shadowsize)
+        if preset.shadowamount != QuickTitle.shadowamount[1]['default']:
+            Tree.SubElement(root, 'shadowamount').text = str(preset.shadowamount)
+        if preset.shadowsoft != QuickTitle.shadowsoft[1]['default']:
+            Tree.SubElement(root, 'shadowsoft').text = str(preset.shadowsoft)
+        if preset.shadowx != QuickTitle.shadowx[1]['default']:
+            Tree.SubElement(root, 'shadowx').text = str(preset.shadowx)
+        if preset.shadowy != QuickTitle.shadowy[1]['default']:
+            Tree.SubElement(root, 'shadowy').text = str(preset.shadowy)
+        if preset.qualityshadows != QuickTitle.qualityshadows[1]['default']:
+            Tree.SubElement(root, 'qualityshadows').text = str(preset.qualityshadows)
         for title_object in preset.objects:
             objects = Tree.SubElement(root, 'objects')
-            Tree.SubElement(objects, 'name', name='Object Name').text = title_object.name
-            Tree.SubElement(objects, 'type', name='Object Type').text = title_object.type
-            Tree.SubElement(objects, 'x', name='Object X Location').text = str(title_object.x)
-            Tree.SubElement(objects, 'y', name='Object Y Location').text = str(title_object.y)
-            Tree.SubElement(objects, 'z', name='Object Z Location').text = str(title_object.z)
-            Tree.SubElement(objects, 'rot_x', name='Object X Rotation').text = str(title_object.rot_x)
-            Tree.SubElement(objects, 'rot_y', name='Object Y Rotation').text = str(title_object.rot_y)
-            Tree.SubElement(objects, 'rot_z', name='Object Z Rotation').text = str(title_object.rot_z)
-            Tree.SubElement(objects, 'scale', name='Overall Object Scale').text = str(title_object.scale)
-            Tree.SubElement(objects, 'width', name='Object Width Multiplier').text = str(title_object.width)
-            Tree.SubElement(objects, 'height', name='Object Height Multiplier').text = str(title_object.height)
-            Tree.SubElement(objects, 'shear', name='Shearing').text = str(title_object.shear)
-            Tree.SubElement(objects, 'cast_shadows', name='Cast Shadows On Other Objects').text = str(title_object.cast_shadows)
-            Tree.SubElement(objects, 'set_material', name='Set Material Manually').text = str(title_object.set_material)
-            Tree.SubElement(objects, 'material', name='Object Material Name').text = title_object.material
-            Tree.SubElement(objects, 'use_shadeless', name='Shadeless Material').text = str(title_object.use_shadeless)
-            Tree.SubElement(objects, 'use_transparency', name='Enable Transparency').text = str(title_object.use_transparency)
-            Tree.SubElement(objects, 'alpha', name='Object Opacity').text = str(title_object.alpha)
-            diffuse_color = str(round(title_object.diffuse_color[0] * 255))+', '+str(round(title_object.diffuse_color[1] * 255))+', '+str(round(title_object.diffuse_color[2] * 255))
-            Tree.SubElement(objects, 'diffuse_color', name='Color Of The Material').text = diffuse_color
-            Tree.SubElement(objects, 'specular_intensity', name='Material Specularity').text = str(title_object.specular_intensity)
-            Tree.SubElement(objects, 'specular_hardness', name='Specular Hardness').text = str(title_object.specular_hardness)
-            specular_color = str(round(title_object.specular_color[0] * 255))+', '+str(round(title_object.specular_color[1] * 255))+', '+str(round(title_object.specular_color[2] * 255))
-            Tree.SubElement(objects, 'specular_color', name='Color Of The Specularity').text = specular_color
-            Tree.SubElement(objects, 'extrude', name='Extrusion Amount').text = str(title_object.extrude)
-            Tree.SubElement(objects, 'bevel', name='Bevel Size').text = str(title_object.bevel)
-            Tree.SubElement(objects, 'bevel_resolution', name='Bevel Resolution').text = str(title_object.bevel_resolution)
-            Tree.SubElement(objects, 'text', name='Text').text = title_object.text
-            Tree.SubElement(objects, 'font', name='Font Name').text = title_object.font
-            Tree.SubElement(objects, 'word_wrap', name='Word Wrapping').text = str(title_object.word_wrap)
-            Tree.SubElement(objects, 'wrap_width', name='Word Wrap Width').text = str(title_object.wrap_width)
-            Tree.SubElement(objects, 'align', name='Text Alignment').text = title_object.align
-            Tree.SubElement(objects, 'outline', name='Enable Object Outline').text = str(title_object.outline)
-            Tree.SubElement(objects, 'outline_size', name='Size Of The Outline').text = str(title_object.outline_size)
-            Tree.SubElement(objects, 'outline_alpha', name='Alpha Transparency Of Outline').text = str(title_object.outline_alpha)
-            outline_color = str(round(title_object.outline_diffuse_color[0] * 255))+', '+str(round(title_object.outline_diffuse_color[1] * 255))+', '+str(round(title_object.outline_diffuse_color[2] * 255))
-            Tree.SubElement(objects, 'outline_diffuse_color', name='Color Of The Outline').text = outline_color
-            Tree.SubElement(objects, 'texture', name='Path To The Image Texture').text = title_object.texture
-            Tree.SubElement(objects, 'alpha_texture', name='Path To The Transparent Texture').text = title_object.alpha_texture
-            Tree.SubElement(objects, 'loop', name='Loop Video Textures').text = str(title_object.loop)
-            Tree.SubElement(objects, 'frame_offset', name='Starting Frame Offset For Video Textures').text = str(title_object.frame_offset)
-            Tree.SubElement(objects, 'frame_length', name='Length Of The Video Texture In Frames').text = str(title_object.frame_length)
+            Tree.SubElement(objects, 'name').text = title_object.name
+            Tree.SubElement(objects, 'type').text = title_object.type
+            if title_object.x != QuickTitleObject.x[1]['default']:
+                Tree.SubElement(objects, 'x').text = str(title_object.x)
+            if title_object.y != QuickTitleObject.y[1]['default']:
+                Tree.SubElement(objects, 'y').text = str(title_object.y)
+            if title_object.z != QuickTitleObject.z[1]['default']:
+                Tree.SubElement(objects, 'z').text = str(title_object.z)
+            if title_object.rot_x != QuickTitleObject.rot_x[1]['default']:
+                Tree.SubElement(objects, 'rot_x').text = str(title_object.rot_x)
+            if title_object.rot_y != QuickTitleObject.rot_y[1]['default']:
+                Tree.SubElement(objects, 'rot_y').text = str(title_object.rot_y)
+            if title_object.rot_z != QuickTitleObject.rot_z[1]['default']:
+                Tree.SubElement(objects, 'rot_z').text = str(title_object.rot_z)
+            if title_object.scale != QuickTitleObject.scale[1]['default']:
+                Tree.SubElement(objects, 'scale').text = str(title_object.scale)
+            if title_object.width != QuickTitleObject.width[1]['default']:
+                Tree.SubElement(objects, 'width').text = str(title_object.width)
+            if title_object.height != QuickTitleObject.height[1]['default']:
+                Tree.SubElement(objects, 'height').text = str(title_object.height)
+            if title_object.shear != QuickTitleObject.shear[1]['default']:
+                Tree.SubElement(objects, 'shear').text = str(title_object.shear)
+            if title_object.cast_shadows != QuickTitleObject.cast_shadows[1]['default']:
+                Tree.SubElement(objects, 'cast_shadows').text = str(title_object.cast_shadows)
+            if title_object.set_material != QuickTitleObject.set_material[1]['default']:
+                Tree.SubElement(objects, 'set_material').text = str(title_object.set_material)
+            if title_object.material != QuickTitleObject.material[1]['default']:
+                Tree.SubElement(objects, 'material').text = title_object.material
+            if title_object.use_shadeless != QuickTitleObject.use_shadeless[1]['default']:
+                Tree.SubElement(objects, 'use_shadeless').text = str(title_object.use_shadeless)
+            if title_object.use_transparency != QuickTitleObject.use_transparency[1]['default']:
+                Tree.SubElement(objects, 'use_transparency').text = str(title_object.use_transparency)
+            if title_object.alpha != QuickTitleObject.alpha[1]['default']:
+                Tree.SubElement(objects, 'alpha').text = str(title_object.alpha)
+            if title_object.diffuse_color != QuickTitleObject.diffuse_color[1]['default']:
+                diffuse_color = str(round(title_object.diffuse_color[0] * 255))+', '+str(round(title_object.diffuse_color[1] * 255))+', '+str(round(title_object.diffuse_color[2] * 255))
+                Tree.SubElement(objects, 'diffuse_color').text = diffuse_color
+            if title_object.specular_intensity != QuickTitleObject.specular_intensity[1]['default']:
+                Tree.SubElement(objects, 'specular_intensity').text = str(title_object.specular_intensity)
+            if title_object.specular_hardness != QuickTitleObject.specular_hardness[1]['default']:
+                Tree.SubElement(objects, 'specular_hardness').text = str(title_object.specular_hardness)
+            if title_object.specular_color != QuickTitleObject.specular_color[1]['default']:
+                specular_color = str(round(title_object.specular_color[0] * 255))+', '+str(round(title_object.specular_color[1] * 255))+', '+str(round(title_object.specular_color[2] * 255))
+                Tree.SubElement(objects, 'specular_color').text = specular_color
+            if title_object.extrude != QuickTitleObject.extrude[1]['default']:
+                Tree.SubElement(objects, 'extrude').text = str(title_object.extrude)
+            if title_object.bevel != QuickTitleObject.bevel[1]['default']:
+                Tree.SubElement(objects, 'bevel').text = str(title_object.bevel)
+            if title_object.bevel_resolution != QuickTitleObject.bevel_resolution[1]['default']:
+                Tree.SubElement(objects, 'bevel_resolution').text = str(title_object.bevel_resolution)
+            if title_object.text != QuickTitleObject.text[1]['default']:
+                Tree.SubElement(objects, 'text').text = title_object.text
+            if title_object.font != QuickTitleObject.font[1]['default']:
+                Tree.SubElement(objects, 'font').text = title_object.font
+            if title_object.word_wrap != QuickTitleObject.word_wrap[1]['default']:
+                Tree.SubElement(objects, 'word_wrap').text = str(title_object.word_wrap)
+            if title_object.wrap_width != QuickTitleObject.wrap_width[1]['default']:
+                Tree.SubElement(objects, 'wrap_width').text = str(title_object.wrap_width)
+            if title_object.align != QuickTitleObject.align[1]['default']:
+                Tree.SubElement(objects, 'align').text = title_object.align
+            if title_object.outline != QuickTitleObject.outline[1]['default']:
+                Tree.SubElement(objects, 'outline').text = str(title_object.outline)
+            if title_object.outline_size != QuickTitleObject.outline_size[1]['default']:
+                Tree.SubElement(objects, 'outline_size').text = str(title_object.outline_size)
+            if title_object.outline_alpha != QuickTitleObject.outline_alpha[1]['default']:
+                Tree.SubElement(objects, 'outline_alpha').text = str(title_object.outline_alpha)
+            if title_object.outline_diffuse_color != QuickTitleObject.outline_diffuse_color[1]['default']:
+                outline_color = str(round(title_object.outline_diffuse_color[0] * 255))+', '+str(round(title_object.outline_diffuse_color[1] * 255))+', '+str(round(title_object.outline_diffuse_color[2] * 255))
+                Tree.SubElement(objects, 'outline_diffuse_color').text = outline_color
+            if title_object.texture != QuickTitleObject.texture[1]['default']:
+                Tree.SubElement(objects, 'texture').text = title_object.texture
+            if title_object.alpha_texture != QuickTitleObject.alpha_texture[1]['default']:
+                Tree.SubElement(objects, 'alpha_texture').text = title_object.alpha_texture
+            if title_object.loop != QuickTitleObject.loop[1]['default']:
+                Tree.SubElement(objects, 'loop').text = str(title_object.loop)
+            if title_object.frame_offset != QuickTitleObject.frame_offset[1]['default']:
+                Tree.SubElement(objects, 'frame_offset').text = str(title_object.frame_offset)
+            if title_object.frame_length != QuickTitleObject.frame_length[1]['default']:
+                Tree.SubElement(objects, 'frame_length').text = str(title_object.frame_length)
+
             for animation in title_object.animations:
                 object_animations = Tree.SubElement(objects, 'animations')
-                Tree.SubElement(object_animations, 'variable', name='Animation Variable Name').text = animation.variable
-                Tree.SubElement(object_animations, 'animate_in', name='Animate Variable In').text = str(animation.animate_in)
-                Tree.SubElement(object_animations, 'animate_out', name='Animate Variable Out').text = str(animation.animate_out)
-                Tree.SubElement(object_animations, 'in_length', name='Length Of In Animation').text = str(animation.in_length)
-                Tree.SubElement(object_animations, 'out_length', name='Length Of Out Animation').text = str(animation.out_length)
-                Tree.SubElement(object_animations, 'in_offset', name='Frame Offset Of In Animation').text = str(animation.in_offset)
-                Tree.SubElement(object_animations, 'out_offset', name='Frame Offset Of Out Animation').text = str(animation.out_offset)
-                Tree.SubElement(object_animations, 'in_amount', name='Amount Of In Animation').text = str(animation.in_amount)
-                Tree.SubElement(object_animations, 'out_amount', name='Amount Of Out Animation').text = str(animation.out_amount)
-                Tree.SubElement(object_animations, 'cycle_type', name='Animation Cycle Type').text = animation.cycle_type
-                Tree.SubElement(object_animations, 'cycle_x_scale', name='Animation Cycle Horizontal Scale').text = str(animation.cycle_x_scale)
-                Tree.SubElement(object_animations, 'cycle_y_scale', name='Animation Cycle Vertical Scale').text = str(animation.cycle_y_scale)
-                Tree.SubElement(object_animations, 'cycle_offset', name='Animation Cycle Horizontal Offset').text = str(animation.cycle_offset)
+                Tree.SubElement(object_animations, 'variable').text = animation.variable
+                if animation.animate_in != QuickTitleAnimation.animate_in[1]['default']:
+                    Tree.SubElement(object_animations, 'animate_in').text = str(animation.animate_in)
+                if animation.animate_out != QuickTitleAnimation.animate_out[1]['default']:
+                    Tree.SubElement(object_animations, 'animate_out').text = str(animation.animate_out)
+                if animation.in_length != QuickTitleAnimation.in_length[1]['default']:
+                    Tree.SubElement(object_animations, 'in_length').text = str(animation.in_length)
+                if animation.out_length != QuickTitleAnimation.out_length[1]['default']:
+                    Tree.SubElement(object_animations, 'out_length').text = str(animation.out_length)
+                if animation.in_offset != QuickTitleAnimation.in_offset[1]['default']:
+                    Tree.SubElement(object_animations, 'in_offset').text = str(animation.in_offset)
+                if animation.out_offset != QuickTitleAnimation.out_offset[1]['default']:
+                    Tree.SubElement(object_animations, 'out_offset').text = str(animation.out_offset)
+                if animation.in_amount != QuickTitleAnimation.in_amount[1]['default']:
+                    Tree.SubElement(object_animations, 'in_amount').text = str(animation.in_amount)
+                if animation.out_amount != QuickTitleAnimation.out_amount[1]['default']:
+                    Tree.SubElement(object_animations, 'out_amount').text = str(animation.out_amount)
+                if animation.cycle_type != QuickTitleAnimation.cycle_type[1]['default']:
+                    Tree.SubElement(object_animations, 'cycle_type').text = animation.cycle_type
+                if animation.cycle_x_scale != QuickTitleAnimation.cycle_x_scale[1]['default']:
+                    Tree.SubElement(object_animations, 'cycle_x_scale').text = str(animation.cycle_x_scale)
+                if animation.cycle_y_scale != QuickTitleAnimation.cycle_y_scale[1]['default']:
+                    Tree.SubElement(object_animations, 'cycle_y_scale').text = str(animation.cycle_y_scale)
+                if animation.cycle_offset != QuickTitleAnimation.cycle_offset[1]['default']:
+                    Tree.SubElement(object_animations, 'cycle_offset').text = str(animation.cycle_offset)
         tree = Tree.ElementTree(root)
+        indent(root)
         if not self.filepath.endswith('.xml'):
             self.filepath = self.filepath + '.xml'
         tree.write(self.filepath)
         self.report({'INFO'}, "Saved file to: "+self.filepath)
         return {'FINISHED'}
+
+
+def indent(elem, level=0):
+    i = "\n" + level*"  "
+    if len(elem):
+        if not elem.text or not elem.text.strip():
+            elem.text = i + "  "
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+        for elem in elem:
+            indent(elem, level+1)
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+    else:
+        if level and (not elem.tail or not elem.tail.strip()):
+            elem.tail = i
 
 
 class QuickTitlingPresetImport(bpy.types.Operator, ImportHelper):
