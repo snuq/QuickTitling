@@ -404,6 +404,7 @@ If you wish to edit an object, it is recommended to rename it, this will prevent
    * Added video settings (loop, frame offset, length), only shown if the loaded texture is a video
    * Added outline options for all but image type, uses a beveled copy of the object to create an outline
    * Added animation oscillations and animation presets for these
+   * Added duplicate object button
    * Word wrapping behaves better now, changing the text scale does not change the wrapping size
    * Exported presets are cleaner now - default variables are not saved and xml files have line returns and indenting
-   * Updated and added new presets
+   * Updated old presets and added new ones
