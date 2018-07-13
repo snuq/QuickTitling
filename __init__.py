@@ -19,7 +19,6 @@
 """
 Future Todo:
     Selecting objects in the sequencer viewer
-    Moving objects in the sequencer viewer (drag/drop)
 """
 
 
@@ -480,7 +479,20 @@ current_icon_id = 0
 overlays = None
 
 
-def draw_rect(x, y, w, h):
+overlay_info = ''
+
+
+def draw_rect(x, y, w, h, color=(1.0, 1.0, 1.0, 1.0)):
+    bgl.glBegin(bgl.GL_QUADS)
+    bgl.glColor4f(*color)
+    bgl.glVertex2f(x, y)
+    bgl.glVertex2f(x+w, y)
+    bgl.glVertex2f(x+w, y+h)
+    bgl.glVertex2f(x, y+h)
+    bgl.glEnd()
+
+
+def draw_box(x, y, w, h):
     bgl.glEnable(bgl.GL_BLEND)
     bgl.glBegin(bgl.GL_LINE_STRIP)
     bgl.glColor4f(0, 0, 0, 0.5)
@@ -508,6 +520,8 @@ def draw_rect(x, y, w, h):
 def draw_text(x, y, size, text, color=(1.0, 1.0, 1.0, 1.0)):
     font_id = 0
     bgl.glColor4f(*color)
+    blf.shadow(font_id, 5, 0, 0, 0, 1)
+    blf.enable(font_id, blf.SHADOW)
     blf.position(font_id, x, y, 0)
     blf.size(font_id, size, 72)
     blf.draw(font_id, text)
@@ -524,6 +538,7 @@ def quicktitling_overlay():
     quicktitle_sequence = titling_scene_selected()
     if not quicktitle_sequence:
         global overlays
+        global overlay_info
         if overlays:
             bpy.types.SpaceSequenceEditor.draw_handler_remove(overlays, 'PREVIEW')
             overlays = None
@@ -554,8 +569,12 @@ def quicktitling_overlay():
                     right, top = view.view_to_region(max_x, max_y, clip=False)
                     width = right - left
                     height = top - bottom
-                    draw_rect(left, bottom, width, height)
-                    draw_text(10, 10, 15, 'Selected: '+title_object_preset.name)
+                    draw_box(left, bottom, width, height)
+                    if overlay_info:
+                        extra = ': ' + overlay_info
+                    else:
+                        extra = ''
+                    draw_text(10, 10, 15, 'Selected: '+title_object_preset.name+extra)
 
 
 def clamp(x, minimum, maximum):
@@ -3348,14 +3367,376 @@ class QuickTitleSettings(bpy.types.PropertyGroup):
     quicktitles = bpy.props.CollectionProperty(type=QuickTitle)
 
 
-classes = [QuickTitleAnimation, QuickTitleObject, QuickTitle, QuickTitleObjectListItem,
+class QuickTitlingGrab(bpy.types.Operator):
+    #Operator for moving title elements in the preview area
+    bl_idname = 'quicktitle.grab'
+    bl_label = "Grab/Move Title Object"
+
+    feedback = ''
+    value = ''
+    constrain = False
+    mouse_x = 0
+    mouse_y = 0
+    title_object = None
+    object_preset = None
+    scene = None
+    preset = None
+    start_x = 0
+    start_y = 0
+    mouse_scale = 500
+
+    def modal(self, context, event):
+        global overlay_info
+        if event.value == 'PRESS':
+            self.value = add_to_value(self.value, event.type)
+        if event.type == 'X' and event.value == 'PRESS':
+            if self.constrain == 'X':
+                self.constrain = False
+            else:
+                self.constrain = 'X'
+        if event.type == 'Y' and event.value == 'PRESS':
+            if self.constrain == 'Y':
+                self.constrain = False
+            else:
+                self.constrain = 'Y'
+        mouse_x_delta = (self.mouse_x - event.mouse_x) / self.mouse_scale
+        mouse_y_delta = (self.mouse_y - event.mouse_y) / self.mouse_scale
+        if event.shift:
+            mouse_x_delta = mouse_x_delta / 4
+            mouse_y_delta = mouse_y_delta / 4
+        if self.constrain == 'X':
+            if self.value:
+                try:
+                    float_value = float(self.value)
+                    mouse_x_delta = -float_value
+                except:
+                    pass
+            self.object_preset.x = self.start_x - mouse_x_delta
+            self.object_preset.y = self.start_y
+            self.feedback = 'Move (X): '+str(round(-mouse_x_delta, 4))
+        elif self.constrain == 'Y':
+            if self.value:
+                try:
+                    float_value = abs(float(self.value))
+                    mouse_y_delta = float_value
+                except:
+                    pass
+            self.object_preset.x = self.start_x
+            self.object_preset.y = self.start_y - mouse_y_delta
+            self.feedback = 'Move (Y): '+str(round(-mouse_y_delta, 4))
+        else:
+            self.object_preset.x = self.start_x - mouse_x_delta
+            self.object_preset.y = self.start_y - mouse_y_delta
+            self.feedback = 'Move: X: '+str(round(-mouse_x_delta, 4))+', Y: '+str(round(-mouse_y_delta, 4))
+
+        if event.type in {'LEFTMOUSE', 'RET'}:
+            overlay_info = ''
+            return {'FINISHED'}
+
+        elif event.type in {'RIGHTMOUSE', 'ESC'}:
+            self.object_preset.x = self.start_x
+            self.object_preset.y = self.start_y
+            overlay_info = ''
+            return {'CANCELLED'}
+
+        overlay_info = self.feedback
+        return {'RUNNING_MODAL'}
+
+    def invoke(self, context, event):
+        self.feedback = ''
+        self.value = ''
+        self.constrain = False
+        titling_sequence = titling_scene_selected()
+        self.mouse_x = event.mouse_x
+        self.mouse_y = event.mouse_y
+        if titling_sequence:
+            self.scene = titling_sequence.scene
+            self.preset = self.scene.quicktitler.current_quicktitle
+            if len(self.preset.objects) > self.preset.selected_object:
+                self.object_preset = self.preset.objects[self.preset.selected_object]
+                self.start_x = self.object_preset.x
+                self.start_y = self.object_preset.y
+                object_name = self.object_preset.internal_name
+                if object_name in self.scene.objects:
+                    self.title_object = self.scene.objects[object_name]
+                    region = context.region
+                    left, bottom = region.view2d.region_to_view(0, 0)
+                    right, top = region.view2d.region_to_view(region.width, region.height)
+                    width = right - left
+                    scale = width / region.width
+                    self.mouse_scale = 1000 / scale
+                    context.window_manager.modal_handler_add(self)
+                    return {'RUNNING_MODAL'}
+
+        return {'CANCELLED'}
+
+
+class QuickTitlingRotate(bpy.types.Operator):
+    #Operator for rotating title elements in the preview area
+    bl_idname = 'quicktitle.rotate'
+    bl_label = "Rotate Title Object"
+
+    feedback = ''
+    value = ''
+    constrain = False
+    mouse_x = 0
+    mouse_y = 0
+    title_object = None
+    object_preset = None
+    scene = None
+    preset = None
+    start_x = 0
+    start_y = 0
+    start_z = 0
+    mouse_scale = 500
+
+    def modal(self, context, event):
+        global overlay_info
+        if event.value == 'PRESS':
+            self.value = add_to_value(self.value, event.type)
+        if event.type == 'X' and event.value == 'PRESS':
+            if self.constrain == 'X':
+                self.constrain = False
+            else:
+                self.constrain = 'X'
+        if event.type == 'Y' and event.value == 'PRESS':
+            if self.constrain == 'Y':
+                self.constrain = False
+            else:
+                self.constrain = 'Y'
+        if event.type == 'Z' and event.value == 'PRESS':
+            if self.constrain == 'Z':
+                self.constrain = False
+            else:
+                self.constrain = 'Z'
+        mouse_x_delta = (self.mouse_x - event.mouse_x) / self.mouse_scale
+        mouse_y_delta = (self.mouse_y - event.mouse_y) / self.mouse_scale
+        mouse_delta = (mouse_x_delta + mouse_y_delta) / 2
+        if event.shift:
+            mouse_x_delta = mouse_x_delta / 4
+            mouse_y_delta = mouse_y_delta / 4
+            mouse_delta = mouse_delta / 4
+
+        if self.constrain == 'X':
+            if self.value:
+                try:
+                    float_value = float(self.value)
+                    mouse_y_delta = float_value
+                except:
+                    pass
+            self.object_preset.rot_x = self.start_x + mouse_y_delta
+            self.object_preset.rot_y = self.start_y
+            self.object_preset.rot_z = self.start_z
+            self.feedback = 'Rotate (X Axis): '+str(mouse_y_delta)
+        elif self.constrain == 'Y':
+            if self.value:
+                try:
+                    float_value = float(self.value)
+                    mouse_x_delta = -float_value
+                except:
+                    pass
+            self.object_preset.rot_x = self.start_x
+            self.object_preset.rot_y = self.start_y - mouse_x_delta
+            self.object_preset.rot_z = self.start_z
+            self.feedback = 'Rotate (Y Axis): '+str(-mouse_x_delta)
+        elif self.constrain == 'Z':
+            if self.value:
+                try:
+                    float_value = float(self.value)
+                    mouse_delta = float_value
+                except:
+                    pass
+            self.object_preset.rot_x = self.start_x
+            self.object_preset.rot_y = self.start_y
+            self.object_preset.rot_z = self.start_z + mouse_delta
+            self.feedback = 'Rotate (Z Axis): '+str(mouse_delta)
+        else:
+            self.object_preset.rot_x = self.start_x + mouse_y_delta
+            self.object_preset.rot_y = self.start_y - mouse_x_delta
+            self.object_preset.rot_z = self.start_z
+            self.feedback = 'Rotate: X Axis: '+str(mouse_y_delta)+', Y Axis: '+str(-mouse_x_delta)
+
+        if event.type in {'LEFTMOUSE', 'RET'}:
+            overlay_info = ''
+            return {'FINISHED'}
+
+        elif event.type in {'RIGHTMOUSE', 'ESC'}:
+            self.object_preset.rot_x = self.start_x
+            self.object_preset.rot_y = self.start_y
+            self.object_preset.rot_z = self.start_z
+            overlay_info = ''
+            return {'CANCELLED'}
+
+        overlay_info = self.feedback
+        return {'RUNNING_MODAL'}
+
+    def invoke(self, context, event):
+        self.feedback = ''
+        self.value = ''
+        self.constrain = False
+        titling_sequence = titling_scene_selected()
+        self.mouse_x = event.mouse_x
+        self.mouse_y = event.mouse_y
+        if titling_sequence:
+            self.scene = titling_sequence.scene
+            self.preset = self.scene.quicktitler.current_quicktitle
+            if len(self.preset.objects) > self.preset.selected_object:
+                self.object_preset = self.preset.objects[self.preset.selected_object]
+                self.start_x = self.object_preset.rot_x
+                self.start_y = self.object_preset.rot_y
+                self.start_z = self.object_preset.rot_z
+                object_name = self.object_preset.internal_name
+                if object_name in self.scene.objects:
+                    self.title_object = self.scene.objects[object_name]
+                    self.mouse_scale = 2
+                    context.window_manager.modal_handler_add(self)
+                    return {'RUNNING_MODAL'}
+
+        return {'CANCELLED'}
+
+
+class QuickTitlingScale(bpy.types.Operator):
+    #Operator for scaling title elements in the preview area
+    bl_idname = 'quicktitle.scale'
+    bl_label = "Scale Title Object"
+
+    feedback = ''
+    value = ''
+    constrain = False
+    mouse_x = 0
+    mouse_y = 0
+    title_object = None
+    object_preset = None
+    scene = None
+    preset = None
+    start_scale = 1
+    start_x = 1
+    start_y = 1
+    mouse_scale = 500
+
+    def modal(self, context, event):
+        global overlay_info
+        if event.value == 'PRESS':
+            self.value = add_to_value(self.value, event.type)
+        if event.type == 'X' and event.value == 'PRESS':
+            if self.constrain == 'X':
+                self.constrain = False
+            else:
+                self.constrain = 'X'
+        if event.type == 'Y' and event.value == 'PRESS':
+            if self.constrain == 'Y':
+                self.constrain = False
+            else:
+                self.constrain = 'Y'
+        mouse_x_delta = (self.mouse_x - event.mouse_x) / self.mouse_scale
+        mouse_y_delta = (self.mouse_y - event.mouse_y) / self.mouse_scale
+        mouse_delta = (mouse_x_delta + mouse_y_delta) / 2
+        if event.shift:
+            mouse_delta = mouse_delta / 4
+        scaler = abs(1 + mouse_delta)
+        if self.value:
+            try:
+                float_value = abs(float(self.value))
+                scaler = float_value
+            except:
+                pass
+        if self.constrain == 'X':
+            self.feedback = 'Scale X (Width): '+str(scaler)
+            self.object_preset.scale = self.start_scale
+            self.object_preset.width = self.start_x * scaler
+            self.object_preset.height = self.start_y
+        elif self.constrain == 'Y':
+            self.feedback = 'Scale Y (Height): '+str(scaler)
+            self.object_preset.scale = self.start_scale
+            self.object_preset.width = self.start_x
+            self.object_preset.height = self.start_y * scaler
+        else:
+            self.feedback = 'Scale: '+str(scaler)
+            self.object_preset.scale = self.start_scale * scaler
+            self.object_preset.width = self.start_x
+            self.object_preset.height = self.start_y
+
+        if event.type in {'LEFTMOUSE', 'RET'}:
+            overlay_info = ''
+            return {'FINISHED'}
+
+        elif event.type in {'RIGHTMOUSE', 'ESC'}:
+            self.object_preset.scale = self.start_scale
+            self.object_preset.width = self.start_x
+            self.object_preset.height = self.start_y
+            overlay_info = ''
+            return {'CANCELLED'}
+
+        overlay_info = self.feedback
+        return {'RUNNING_MODAL'}
+
+    def invoke(self, context, event):
+        self.feedback = ''
+        self.value = ''
+        self.constrain = False
+        titling_sequence = titling_scene_selected()
+        self.mouse_x = event.mouse_x
+        self.mouse_y = event.mouse_y
+        if titling_sequence:
+            self.scene = titling_sequence.scene
+            self.preset = self.scene.quicktitler.current_quicktitle
+            if len(self.preset.objects) > self.preset.selected_object:
+                self.object_preset = self.preset.objects[self.preset.selected_object]
+                self.start_scale = self.object_preset.scale
+                self.start_x = self.object_preset.width
+                self.start_y = self.object_preset.height
+                object_name = self.object_preset.internal_name
+                if object_name in self.scene.objects:
+                    self.title_object = self.scene.objects[object_name]
+                    self.mouse_scale = 40
+                    context.window_manager.modal_handler_add(self)
+                    return {'RUNNING_MODAL'}
+
+        return {'CANCELLED'}
+
+
+def add_to_value(value, character):
+    if character in ['ZERO', 'NUMPAD_0']:
+        value = value + '0'
+    if character in ['ONE', 'NUMPAD_1']:
+        value = value + '1'
+    if character in ['TWO', 'NUMPAD_2']:
+        value = value + '2'
+    if character in ['THREE', 'NUMPAD_3']:
+        value = value + '3'
+    if character in ['FOUR', 'NUMPAD_4']:
+        value = value + '4'
+    if character in ['FIVE', 'NUMPAD_5']:
+        value = value + '5'
+    if character in ['SIX', 'NUMPAD_6']:
+        value = value + '6'
+    if character in ['SEVEN', 'NUMPAD_7']:
+        value = value + '7'
+    if character in ['EIGHT', 'NUMPAD_8']:
+        value = value + '8'
+    if character in ['NINE', 'NUMPAD_9']:
+        value = value + '9'
+    if character in ['PERIOD', 'NUMPAD_PERIOD']:
+        if '.' not in value:
+            value = value + '.'
+    if character in ['MINUS', 'NUMPAD_MINUS']:
+        if '-' in value:
+            value = value[1:]
+        else:
+            value = '-' + value
+    if character == 'BACK_SPACE':
+        value = value[:-1]
+    return value
+
+
+classes = [QuickTitlingGrab, QuickTitleAnimation, QuickTitleObject, QuickTitle, QuickTitleObjectListItem,
            QuickTitleAnimationListItem, QuickTitlingPanel, QuickTitlingSavePreset, QuickTitlingReplaceWithImage,
            QuickTitlingObjectMoveUp, QuickTitlingObjectMoveDown, QuickTitlingObjectAdd, QuickTitlingObjectSelect,
            QuickTitlingObjectDelete, QuickTitlingAnimationApply, QuickTitlingAnimationAdd, QuickTitlingAnimationDelete,
            QuickTitlingAnimationMenu, QuickTitlingPresetDelete, QuickTitlingPresetExport, QuickTitlingPresetImport,
            QuickTitlingPresetMenu, QuickTitlingPresetSelect, QuickTitlingPresetLoad, QuickTitlingLoadFont,
            QuickTitlingFontMenu, QuickTitlingChangeFont, QuickTitlingMaterialMenu, QuickTitlingChangeMaterial,
-           QuickTitlingCreate, QuickTitleSettings]
+           QuickTitlingCreate, QuickTitleSettings, QuickTitlingRotate, QuickTitlingScale]
 
 
 def register():
@@ -3366,11 +3747,29 @@ def register():
     #Group properties
     bpy.types.Scene.quicktitler = bpy.props.PointerProperty(type=QuickTitleSettings)
 
+    #Register shortcuts
+    keymaps = bpy.context.window_manager.keyconfigs.addon.keymaps
+    keymap = keymaps.new(name='SequencerPreview', space_type='SEQUENCE_EDITOR', region_type='WINDOW')
+    keymapitems = keymap.keymap_items
+    for keymapitem in keymapitems:
+        #Iterate through keymaps and delete old shortcuts
+        if keymapitem.type in ['G', 'R', 'S']:
+            keymapitems.remove(keymapitem)
+    keymapitems.new('quicktitle.grab', 'G', 'PRESS')
+    keymapitems.new('quicktitle.rotate', 'R', 'PRESS')
+    keymapitems.new('quicktitle.scale', 'S', 'PRESS')
+
 
 def unregister():
     #Unregister classes
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
+    keymap = bpy.context.window_manager.keyconfigs.addon.keymaps['SequencerPreview']
+    keymapitems = keymap.keymap_items
+    for keymapitem in keymapitems:
+        #Iterate through keymaps and delete old shortcuts
+        if keymapitem.type in ['G', 'R', 'S']:
+            keymapitems.remove(keymapitem)
 
 
 if __name__ == "__main__":
