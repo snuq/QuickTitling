@@ -26,7 +26,6 @@ Future Todo:
 import bpy
 import bgl
 import blf
-from mathutils import Vector
 import os
 import glob
 from math import pi
@@ -1567,11 +1566,11 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
         scale_multiplier = (z_scale * (z_index * offset_multiplier)) + 1
         pos_multiplier = 1 + (z_scale * (z_index * offset_multiplier))
         z_offset = z_index * z_scale
-        title_object.location = (pos_multiplier * object_preset.x, pos_multiplier * object_preset.y, object_preset.z - z_offset)
-        title_object.scale = (scale_multiplier * object_preset.scale * object_preset.width, scale_multiplier * object_preset.scale * object_preset.height, object_preset.scale)
 
         #detailed settings need to be updated for this object
         if selected_object or created_object or update_all:
+            title_object.location = (pos_multiplier * object_preset.x, pos_multiplier * object_preset.y, object_preset.z - z_offset)
+            title_object.scale = (scale_multiplier * object_preset.scale * object_preset.width, scale_multiplier * object_preset.scale * object_preset.height, object_preset.scale)
             title_object.rotation_euler = (object_preset.rot_x/180.0*pi, object_preset.rot_y/180.0*pi, -object_preset.rot_z/180.0*pi)
 
             #Material settings
@@ -1675,6 +1674,7 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
                 #adjust object
                 outline_object.location = (pos_multiplier * object_preset.x, pos_multiplier * object_preset.y, object_preset.z - z_offset - .001)
                 outline_object.scale = (scale_multiplier * object_preset.scale * object_preset.width, scale_multiplier * object_preset.scale * object_preset.height, object_preset.scale)
+                outline_object.rotation_euler = (object_preset.rot_x / 180.0 * pi, object_preset.rot_y / 180.0 * pi, -object_preset.rot_z / 180.0 * pi)
                 setup_object(outline_object, object_preset, material, scale_multiplier)
                 set_animations(outline_object, object_preset, material, scene, z_offset, pos_multiplier, parent=title_object)
                 #outline_object.data.offset = object_preset.outline_size / 100
