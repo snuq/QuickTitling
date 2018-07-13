@@ -493,11 +493,11 @@ def draw_rect(x, y, w, h):
     bgl.glEnd()
 
     bgl.glBegin(bgl.GL_LINE_STRIP)
-    bgl.glColor4f(0, 1, 1, 0.5)
+    bgl.glColor4f(1, 1, 0, 1)
     x = x - 1
     y = y - 1
-    w = w + 1
-    h = h + 1
+    w = w + 2
+    h = h + 2
     bgl.glVertex2i(x, y)
     bgl.glVertex2i(x+w, y)
     bgl.glVertex2i(x+w, y+h)
@@ -3098,6 +3098,11 @@ class QuickTitlingPresetImport(bpy.types.Operator, ImportHelper):
             return {'CANCELLED'}
 
 
+def split_list(alist, parts=1):
+    length = len(alist)
+    return [alist[i*length // parts: (i+1)*length // parts] for i in range(parts)]
+
+
 class QuickTitlingPresetMenu(bpy.types.Menu):
     #Menu to list the QuickTitler Presets in the scene
     bl_idname = 'quicktitler.preset_menu'
@@ -3131,27 +3136,33 @@ class QuickTitlingPresetMenu(bpy.types.Menu):
         column = split.column()
         column.label(" ")
 
-        column = split.column()
-        column.scale_y = 3
-        column.label("Built-in Titles:")
-        column.operator('quicktitler.preset_load', text='Default').preset = 'Default'
-        for index, preset in enumerate(presets):
-            if preset[1] == 'BUILTIN':
-                column.operator('quicktitler.preset_load', text=preset[0]).preset = preset[0]
+        split_presets = split_list(presets, 2)
+        for index, presets in enumerate(split_presets):
+            column = split.column()
+            column.scale_y = 3
+            if index == 0:
+                column.label("Built-in Titles:")
+                column.operator('quicktitler.preset_load', text='Default').preset = 'Default'
+            else:
+                column.label("")
+            for preset in presets:
+                if preset[1] == 'BUILTIN':
+                    column.operator('quicktitler.preset_load', text=preset[0]).preset = preset[0]
 
-        column = split.column()
-        column.scale_y = .5
-        column.scale_x = .5
-        current_icon_id = 0
-        column.template_icon_view(context.scene.quicktitler, 'current_icon')
-        column.template_icon_view(context.scene.quicktitler, 'current_icon')
-        for index, preset in enumerate(presets):
-            if preset[1] == 'BUILTIN':
-                image = get_presets_directory()+os.path.sep+preset[0]+'.jpg'
-                if preset[0]+'BUILTIN' not in quicktitle_previews:
-                    quicktitle_previews.load(preset[0]+'BUILTIN', image, 'IMAGE')
-                current_icon_id = quicktitle_previews[preset[0]+'BUILTIN'].icon_id
+            column = split.column()
+            column.scale_y = .5
+            column.scale_x = .5
+            current_icon_id = 0
+            column.template_icon_view(context.scene.quicktitler, 'current_icon')
+            if index == 0:
                 column.template_icon_view(context.scene.quicktitler, 'current_icon')
+            for preset in presets:
+                if preset[1] == 'BUILTIN':
+                    image = get_presets_directory()+os.path.sep+preset[0]+'.jpg'
+                    if preset[0]+'BUILTIN' not in quicktitle_previews:
+                        quicktitle_previews.load(preset[0]+'BUILTIN', image, 'IMAGE')
+                    current_icon_id = quicktitle_previews[preset[0]+'BUILTIN'].icon_id
+                    column.template_icon_view(context.scene.quicktitler, 'current_icon')
 
 
 class QuickTitlingPresetSelect(bpy.types.Operator):
