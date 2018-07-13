@@ -408,3 +408,4 @@ If you wish to edit an object, it is recommended to rename it, this will prevent
    * Word wrapping behaves better now, changing the text scale does not change the wrapping size
    * Exported presets are cleaner now - default variables are not saved and xml files have line returns and indenting
    * Updated old presets and added new ones
+   * Added overlays in preview windows to show selected title objects

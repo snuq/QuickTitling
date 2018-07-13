@@ -18,13 +18,15 @@
 
 """
 Future Todo:
-    Overlays in the sequencer viewer to show information about objects (selected object, animations, layers)
     Selecting objects in the sequencer viewer
     Moving objects in the sequencer viewer (drag/drop)
 """
 
 
 import bpy
+import bgl
+import blf
+from mathutils import Vector
 import os
 import glob
 from math import pi
@@ -475,6 +477,145 @@ animations = [
 quicktitle_previews = bpy.utils.previews.new()
 
 current_icon_id = 0
+
+overlays = None
+
+
+def draw_rect(x, y, w, h):
+    bgl.glEnable(bgl.GL_BLEND)
+    bgl.glBegin(bgl.GL_LINE_STRIP)
+    bgl.glColor4f(0, 0, 0, 0.5)
+    bgl.glVertex2i(x, y)
+    bgl.glVertex2i(x+w, y)
+    bgl.glVertex2i(x+w, y+h)
+    bgl.glVertex2i(x, y+h)
+    bgl.glVertex2i(x, y)
+    bgl.glEnd()
+
+    bgl.glBegin(bgl.GL_LINE_STRIP)
+    bgl.glColor4f(0, 1, 1, 0.5)
+    x = x - 1
+    y = y - 1
+    w = w + 1
+    h = h + 1
+    bgl.glVertex2i(x, y)
+    bgl.glVertex2i(x+w, y)
+    bgl.glVertex2i(x+w, y+h)
+    bgl.glVertex2i(x, y+h)
+    bgl.glVertex2i(x, y)
+    bgl.glEnd()
+
+
+def draw_text(x, y, size, text, color=(1.0, 1.0, 1.0, 1.0)):
+    font_id = 0
+    bgl.glColor4f(*color)
+    blf.position(font_id, x, y, 0)
+    blf.size(font_id, size, 72)
+    blf.draw(font_id, text)
+
+
+def add_overlay(self=None, context=None):
+    global overlays
+    if not overlays:
+        overlays = bpy.types.SpaceSequenceEditor.draw_handler_add(quicktitling_overlay, (), 'PREVIEW', 'POST_PIXEL')
+        quicktitling_overlay()
+
+
+def quicktitling_overlay():
+    quicktitle_sequence = titling_scene_selected()
+    if not quicktitle_sequence:
+        global overlays
+        if overlays:
+            bpy.types.SpaceSequenceEditor.draw_handler_remove(overlays, 'PREVIEW')
+            overlays = None
+    else:
+        frame = bpy.context.scene.frame_current
+        if frame >= quicktitle_sequence.frame_final_start and frame <= quicktitle_sequence.frame_final_end:
+            area = bpy.context.area
+            space = area.spaces[0]
+            if space.display_mode == 'IMAGE':
+                scene = quicktitle_sequence.scene
+                preset = scene.quicktitler.current_quicktitle
+                try:
+                    title_object_preset = preset.objects[preset.selected_object]
+                    title_object_name = title_object_preset.internal_name
+                    title_object = scene.objects[title_object_name]
+                    camera = scene.camera
+                except:
+                    title_object = None
+                    camera = None
+                if title_object:
+                    scene.frame_set(bpy.context.scene.frame_current - quicktitle_sequence.frame_start)
+                    region = area.regions[2]
+                    view = region.view2d
+                    camera_x = scene.render.resolution_x
+                    camera_y = scene.render.resolution_y
+                    min_x, min_y, max_x, max_y = camera_view_bounds_2d(scene, camera, title_object, camera_x, camera_y)
+                    left, bottom = view.view_to_region(min_x, min_y, clip=False)
+                    right, top = view.view_to_region(max_x, max_y, clip=False)
+                    width = right - left
+                    height = top - bottom
+                    draw_rect(left, bottom, width, height)
+                    draw_text(10, 10, 15, 'Selected: '+title_object_preset.name)
+
+
+def clamp(x, minimum, maximum):
+    return max(minimum, min(x, maximum))
+
+
+def camera_view_bounds_2d(scene, cam_ob, me_ob, camera_x, camera_y):
+    """
+    Returns camera space bounding box of mesh object.
+
+    Negative 'z' value means the point is behind the camera.
+
+    Takes shift-x/y, lens angle and sensor size into account
+    as well as perspective/ortho projections.
+    """
+
+    mat = cam_ob.matrix_world.normalized().inverted()
+    me = me_ob.to_mesh(scene, True, 'PREVIEW')
+    me.transform(me_ob.matrix_world)
+    me.transform(mat)
+
+    camera = cam_ob.data
+    frame = [-v for v in camera.view_frame(scene=scene)[:3]]
+    camera_persp = camera.type != 'ORTHO'
+
+    lx = []
+    ly = []
+
+    for v in me.vertices:
+        co_local = v.co
+        z = -co_local.z
+
+        if camera_persp:
+            if z == 0.0:
+                lx.append(0.5)
+                ly.append(0.5)
+            # Does it make any sense to drop these?
+            #if z <= 0.0:
+            #    continue
+            else:
+                frame = [(v / (v.z / z)) for v in frame]
+
+        min_x, max_x = frame[1].x, frame[2].x
+        min_y, max_y = frame[0].y, frame[1].y
+
+        x = (co_local.x - min_x) / (max_x - min_x)
+        y = (co_local.y - min_y) / (max_y - min_y)
+
+        lx.append(x)
+        ly.append(y)
+
+    min_x = clamp(min(lx), 0.0, 1.0)
+    max_x = clamp(max(lx), 0.0, 1.0)
+    min_y = clamp(min(ly), 0.0, 1.0)
+    max_y = clamp(max(ly), 0.0, 1.0)
+
+    bpy.data.meshes.remove(me)
+
+    return [min_x * camera_x - (camera_x / 2), min_y * camera_y - (camera_y / 2), max_x * camera_x - (camera_x / 2), max_y * camera_y - (camera_y / 2)]
 
 
 def to_bool(value):
@@ -2155,6 +2296,7 @@ class QuickTitlingPanel(bpy.types.Panel):
             row = box.row()
             row.operator('quicktitler.create', text='Create New Title').action = 'create'
         else:
+            add_overlay()
             #title is selected, only show copy preset back to main button
             current_edited = quicktitle_sequence.scene.quicktitler.current_edited
             row = box.row()
