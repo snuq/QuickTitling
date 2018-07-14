@@ -17,14 +17,15 @@
 # ##### END GPL LICENSE BLOCK #####
 
 """
-Future Todo:
-    Selecting objects in the sequencer viewer
+todo:
+    Need shortcut/operator for changing object layer
 """
-
 
 import bpy
 import bgl
 import blf
+import bmesh
+import mathutils
 import os
 import glob
 from math import pi
@@ -478,8 +479,51 @@ current_icon_id = 0
 
 overlays = None
 
-
 overlay_info = ''
+
+keymap = None
+
+current_bounds = []
+
+
+def object_at_location(scene, x, y):
+    #Casts a ray from the camera to the given coordinates and returns the first object in that direction, or None
+    camera = scene.camera
+    #since blender doesnt detect curve objects... go through and make low-poly copies of all curves, then delete them. bah.
+    title_copies = []
+    for title_object in scene.objects:
+        if title_object.type in ['CURVE', 'FONT']:
+            old_resolution_u = title_object.data.resolution_u
+            old_bevel_resolution = title_object.data.bevel_resolution
+            title_object.data.resolution_u = 2
+            title_object.data.bevel_resolution = 0
+
+            mesh = title_object.to_mesh(scene, True, 'PREVIEW')
+            ob = bpy.data.objects.new(mesh.name, mesh)
+            scene.objects.link(ob)
+            ob.scale = title_object.scale
+            ob.location = title_object.location
+            ob.rotation_euler = title_object.rotation_euler
+            title_copies.append([mesh, ob, title_object])
+
+            title_object.data.resolution_u = old_resolution_u
+            title_object.data.bevel_resolution = old_bevel_resolution
+    direction = (mathutils.Vector((x, y, 0)) - camera.location).normalized()
+    scene.update()
+    data = scene.ray_cast(camera.location, direction)
+    if data[0]:
+        match_object = data[4]
+    else:
+        match_object = None
+    for copy in title_copies:
+        mesh, ob, title_object = copy
+        if data[0]:
+            if data[4] == ob:
+                match_object = title_object
+        scene.objects.unlink(ob)
+        bpy.data.objects.remove(ob)
+        bpy.data.meshes.remove(mesh)
+    return match_object
 
 
 def draw_rect(x, y, w, h, color=(1.0, 1.0, 1.0, 1.0)):
@@ -532,6 +576,7 @@ def add_overlay(self=None, context=None):
     if not overlays:
         overlays = bpy.types.SpaceSequenceEditor.draw_handler_add(quicktitling_overlay, (), 'PREVIEW', 'POST_PIXEL')
         quicktitling_overlay()
+        add_keymap()
 
 
 def quicktitling_overlay():
@@ -542,6 +587,7 @@ def quicktitling_overlay():
         if overlays:
             bpy.types.SpaceSequenceEditor.draw_handler_remove(overlays, 'PREVIEW')
             overlays = None
+            remove_keymap()
     else:
         frame = bpy.context.scene.frame_current
         if frame >= quicktitle_sequence.frame_final_start and frame <= quicktitle_sequence.frame_final_end:
@@ -554,31 +600,49 @@ def quicktitling_overlay():
                     title_object_preset = preset.objects[preset.selected_object]
                     title_object_name = title_object_preset.internal_name
                     title_object = scene.objects[title_object_name]
-                    camera = scene.camera
                 except:
                     title_object = None
-                    camera = None
                 if title_object:
                     scene.frame_set(bpy.context.scene.frame_current - quicktitle_sequence.frame_start)
                     region = area.regions[2]
                     view = region.view2d
-                    camera_x = scene.render.resolution_x
-                    camera_y = scene.render.resolution_y
-                    min_x, min_y, max_x, max_y = camera_view_bounds_2d(scene, camera, title_object, camera_x, camera_y)
+                    update_bounds(title_object=title_object)
+                    global current_bounds
+                    if not current_bounds:
+                        return
+                    min_x, min_y, max_x, max_y = current_bounds
                     left, bottom = view.view_to_region(min_x, min_y, clip=False)
                     right, top = view.view_to_region(max_x, max_y, clip=False)
                     width = right - left
                     height = top - bottom
                     draw_box(left, bottom, width, height)
-                    if overlay_info:
-                        extra = ': ' + overlay_info
-                    else:
-                        extra = ''
-                    draw_text(10, 10, 15, 'Selected: '+title_object_preset.name+extra)
+                    draw_text(10, 10, 15, overlay_info)
 
 
 def clamp(x, minimum, maximum):
     return max(minimum, min(x, maximum))
+
+
+def update_bounds(self=None, context=None, title_object=None):
+    quicktitle_sequence = titling_scene_selected()
+    global current_bounds
+    if quicktitle_sequence:
+        scene = quicktitle_sequence.scene
+        preset = scene.quicktitler.current_quicktitle
+        if not title_object:
+            try:
+                title_object_preset = preset.objects[preset.selected_object]
+                title_object_name = title_object_preset.internal_name
+                title_object = scene.objects[title_object_name]
+            except:
+                title_object = None
+        if title_object:
+            camera = scene.camera
+            camera_x = scene.render.resolution_x
+            camera_y = scene.render.resolution_y
+            current_bounds = camera_view_bounds_2d(scene, camera, title_object, camera_x, camera_y)
+            return
+    current_bounds = []
 
 
 def camera_view_bounds_2d(scene, cam_ob, me_ob, camera_x, camera_y):
@@ -592,9 +656,15 @@ def camera_view_bounds_2d(scene, cam_ob, me_ob, camera_x, camera_y):
     """
 
     mat = cam_ob.matrix_world.normalized().inverted()
-    me = me_ob.to_mesh(scene, True, 'PREVIEW')
+    me = bpy.data.meshes.new('QuickTitling Temp Mesh')
+    bm = bmesh.new()
+    for vert in me_ob.bound_box:
+        bm.verts.new(vert)
+    bm.to_mesh(me)
+    bm.free()
     me.transform(me_ob.matrix_world)
     me.transform(mat)
+    vertices = me.vertices
 
     camera = cam_ob.data
     frame = [-v for v in camera.view_frame(scene=scene)[:3]]
@@ -603,7 +673,7 @@ def camera_view_bounds_2d(scene, cam_ob, me_ob, camera_x, camera_y):
     lx = []
     ly = []
 
-    for v in me.vertices:
+    for v in vertices:
         co_local = v.co
         z = -co_local.z
 
@@ -1523,7 +1593,7 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
             shadow_lamp.data.shadow_ray_samples = 1
         shadow_lamp.data.energy = quicktitle.shadowamount
         shadow_lamp.data.shadow_soft_size = quicktitle.shadowsoft
-        shadow_lamp.location = (-quicktitle.shadowx, quicktitle.shadowy, quicktitle.shadowsize)
+        shadow_lamp.location = (quicktitle.shadowx, quicktitle.shadowy, quicktitle.shadowsize)
         if quicktitle.shadowamount > 0:
             if quicktitle.qualityshadows:
                 shadow_lamp.data.shadow_method = 'RAY_SHADOW'
@@ -2222,7 +2292,8 @@ class QuickTitle(bpy.types.PropertyGroup):
     selected_object = bpy.props.IntProperty(
         name="Selected Object",
         default=0,
-        min=0)
+        min=0,
+        update=quicktitle_autoupdate)
     enable_shadows = bpy.props.BoolProperty(
         name="Shadows",
         default=True,
@@ -2754,7 +2825,6 @@ class QuickTitlingObjectDelete(bpy.types.Operator):
                     outline_object = scene.objects[outline_object_name]
                     scene.objects.unlink(outline_object)
                     bpy.data.objects.remove(outline_object, True)
-                    outline_object.name = ''
                 scene.objects.unlink(title_object)
                 bpy.data.objects.remove(title_object, True)
 
@@ -3372,17 +3442,18 @@ class QuickTitlingGrab(bpy.types.Operator):
     bl_idname = 'quicktitle.grab'
     bl_label = "Grab/Move Title Object"
 
+    lamp = bpy.props.BoolProperty(default=False)
     feedback = ''
     value = ''
     constrain = False
     mouse_x = 0
     mouse_y = 0
-    title_object = None
     object_preset = None
     scene = None
     preset = None
     start_x = 0
     start_y = 0
+    start_z = 0
     mouse_scale = 500
 
     def modal(self, context, event):
@@ -3399,11 +3470,17 @@ class QuickTitlingGrab(bpy.types.Operator):
                 self.constrain = False
             else:
                 self.constrain = 'Y'
+        if event.type == 'Z' and event.value == 'PRESS':
+            if self.constrain == 'Z':
+                self.constrain = False
+            else:
+                self.constrain = 'Z'
         mouse_x_delta = (self.mouse_x - event.mouse_x) / self.mouse_scale
         mouse_y_delta = (self.mouse_y - event.mouse_y) / self.mouse_scale
         if event.shift:
             mouse_x_delta = mouse_x_delta / 4
             mouse_y_delta = mouse_y_delta / 4
+        mouse_delta = (mouse_x_delta + mouse_y_delta) / 2
         if self.constrain == 'X':
             if self.value:
                 try:
@@ -3411,31 +3488,74 @@ class QuickTitlingGrab(bpy.types.Operator):
                     mouse_x_delta = -float_value
                 except:
                     pass
-            self.object_preset.x = self.start_x - mouse_x_delta
-            self.object_preset.y = self.start_y
-            self.feedback = 'Move (X): '+str(round(-mouse_x_delta, 4))
+            if self.lamp:
+                self.preset.shadowx = self.start_x - mouse_x_delta
+                self.preset.shadowy = self.start_y
+                self.preset.shadowsize = self.start_z
+                self.feedback = 'Move Shadow (X): '+str(round(-mouse_x_delta, 4))
+            else:
+                self.object_preset.x = self.start_x - mouse_x_delta
+                self.object_preset.y = self.start_y
+                self.object_preset.z = self.start_z
+                self.feedback = 'Move (X): '+str(round(-mouse_x_delta, 4))
         elif self.constrain == 'Y':
             if self.value:
                 try:
-                    float_value = abs(float(self.value))
-                    mouse_y_delta = float_value
+                    float_value = float(self.value)
+                    mouse_y_delta = -float_value
                 except:
                     pass
-            self.object_preset.x = self.start_x
-            self.object_preset.y = self.start_y - mouse_y_delta
-            self.feedback = 'Move (Y): '+str(round(-mouse_y_delta, 4))
+            if self.lamp:
+                self.preset.shadowx = self.start_x
+                self.preset.shadowy = self.start_y - mouse_y_delta
+                self.preset.shadowsize = self.start_z
+                self.feedback = 'Move Shadow (Y): '+str(round(-mouse_y_delta, 4))
+            else:
+                self.object_preset.x = self.start_x
+                self.object_preset.y = self.start_y - mouse_y_delta
+                self.object_preset.z = self.start_z
+                self.feedback = 'Move (Y): '+str(round(-mouse_y_delta, 4))
+        elif self.constrain == 'Z':
+            if self.value:
+                try:
+                    float_value = float(self.value)
+                    mouse_delta = -float_value
+                except:
+                    pass
+            if self.lamp:
+                self.preset.shadowx = self.start_x
+                self.preset.shadowy = self.start_y
+                self.preset.shadowsize = self.start_z - mouse_delta
+                self.feedback = 'Move Shadow (Z): '+str(round(-mouse_delta, 4))
+            else:
+                self.object_preset.x = self.start_x
+                self.object_preset.y = self.start_y
+                self.object_preset.z = self.start_z - mouse_delta
+                self.feedback = 'Move (Z): '+str(round(-mouse_delta, 4))
         else:
-            self.object_preset.x = self.start_x - mouse_x_delta
-            self.object_preset.y = self.start_y - mouse_y_delta
-            self.feedback = 'Move: X: '+str(round(-mouse_x_delta, 4))+', Y: '+str(round(-mouse_y_delta, 4))
-
+            if self.lamp:
+                self.preset.shadowx = self.start_x - mouse_x_delta
+                self.preset.shadowy = self.start_y - mouse_y_delta
+                self.preset.shadowsize = self.start_z
+                self.feedback = 'Move Shadow: X: '+str(round(-mouse_x_delta, 4))+', Y: '+str(round(-mouse_y_delta, 4))
+            else:
+                self.object_preset.x = self.start_x - mouse_x_delta
+                self.object_preset.y = self.start_y - mouse_y_delta
+                self.object_preset.z = self.start_z
+                self.feedback = 'Move: X: '+str(round(-mouse_x_delta, 4))+', Y: '+str(round(-mouse_y_delta, 4))
         if event.type in {'LEFTMOUSE', 'RET'}:
             overlay_info = ''
             return {'FINISHED'}
 
         elif event.type in {'RIGHTMOUSE', 'ESC'}:
-            self.object_preset.x = self.start_x
-            self.object_preset.y = self.start_y
+            if self.lamp:
+                self.preset.shadowx = self.start_x
+                self.preset.shadowy = self.start_y
+                self.preset.shadowsize = self.start_z
+            else:
+                self.object_preset.x = self.start_x
+                self.object_preset.y = self.start_y
+                self.object_preset.z = self.start_z
             overlay_info = ''
             return {'CANCELLED'}
 
@@ -3452,21 +3572,34 @@ class QuickTitlingGrab(bpy.types.Operator):
         if titling_sequence:
             self.scene = titling_sequence.scene
             self.preset = self.scene.quicktitler.current_quicktitle
-            if len(self.preset.objects) > self.preset.selected_object:
-                self.object_preset = self.preset.objects[self.preset.selected_object]
-                self.start_x = self.object_preset.x
-                self.start_y = self.object_preset.y
-                object_name = self.object_preset.internal_name
-                if object_name in self.scene.objects:
-                    self.title_object = self.scene.objects[object_name]
-                    region = context.region
-                    left, bottom = region.view2d.region_to_view(0, 0)
-                    right, top = region.view2d.region_to_view(region.width, region.height)
-                    width = right - left
-                    scale = width / region.width
-                    self.mouse_scale = 1000 / scale
-                    context.window_manager.modal_handler_add(self)
-                    return {'RUNNING_MODAL'}
+            if self.lamp:
+                self.start_x = self.preset.shadowx
+                self.start_y = self.preset.shadowy
+                self.start_z = self.preset.shadowsize
+                region = context.region
+                left, bottom = region.view2d.region_to_view(0, 0)
+                right, top = region.view2d.region_to_view(region.width, region.height)
+                width = right - left
+                scale = width / region.width
+                self.mouse_scale = 1000 / scale
+                context.window_manager.modal_handler_add(self)
+                return {'RUNNING_MODAL'}
+            else:
+                if len(self.preset.objects) > self.preset.selected_object:
+                    self.object_preset = self.preset.objects[self.preset.selected_object]
+                    self.start_x = self.object_preset.x
+                    self.start_y = self.object_preset.y
+                    self.start_z = self.object_preset.z
+                    object_name = self.object_preset.internal_name
+                    if object_name in self.scene.objects:
+                        region = context.region
+                        left, bottom = region.view2d.region_to_view(0, 0)
+                        right, top = region.view2d.region_to_view(region.width, region.height)
+                        width = right - left
+                        scale = width / region.width
+                        self.mouse_scale = 1000 / scale
+                        context.window_manager.modal_handler_add(self)
+                        return {'RUNNING_MODAL'}
 
         return {'CANCELLED'}
 
@@ -3612,6 +3745,7 @@ class QuickTitlingScale(bpy.types.Operator):
     start_scale = 1
     start_x = 1
     start_y = 1
+    start_z = 0
     mouse_scale = 500
 
     def modal(self, context, event):
@@ -3628,8 +3762,13 @@ class QuickTitlingScale(bpy.types.Operator):
                 self.constrain = False
             else:
                 self.constrain = 'Y'
-        mouse_x_delta = (self.mouse_x - event.mouse_x) / self.mouse_scale
-        mouse_y_delta = (self.mouse_y - event.mouse_y) / self.mouse_scale
+        if event.type == 'Z' and event.value == 'PRESS':
+            if self.constrain == 'Z':
+                self.constrain = False
+            else:
+                self.constrain = 'Z'
+        mouse_x_delta = -(self.mouse_x - event.mouse_x) / self.mouse_scale
+        mouse_y_delta = -(self.mouse_y - event.mouse_y) / self.mouse_scale
         mouse_delta = (mouse_x_delta + mouse_y_delta) / 2
         if event.shift:
             mouse_delta = mouse_delta / 4
@@ -3645,16 +3784,25 @@ class QuickTitlingScale(bpy.types.Operator):
             self.object_preset.scale = self.start_scale
             self.object_preset.width = self.start_x * scaler
             self.object_preset.height = self.start_y
+            self.object_preset.extrude = self.start_z
         elif self.constrain == 'Y':
             self.feedback = 'Scale Y (Height): '+str(scaler)
             self.object_preset.scale = self.start_scale
             self.object_preset.width = self.start_x
             self.object_preset.height = self.start_y * scaler
+            self.object_preset.extrude = self.start_z
+        elif self.constrain == 'Z':
+            self.feedback = 'Scale Z (Extrude): '+str(scaler)
+            self.object_preset.scale = self.start_scale
+            self.object_preset.width = self.start_x
+            self.object_preset.height = self.start_y
+            self.object_preset.extrude = self.start_z + scaler
         else:
             self.feedback = 'Scale: '+str(scaler)
             self.object_preset.scale = self.start_scale * scaler
             self.object_preset.width = self.start_x
             self.object_preset.height = self.start_y
+            self.object_preset.extrude = self.start_z
 
         if event.type in {'LEFTMOUSE', 'RET'}:
             overlay_info = ''
@@ -3664,6 +3812,7 @@ class QuickTitlingScale(bpy.types.Operator):
             self.object_preset.scale = self.start_scale
             self.object_preset.width = self.start_x
             self.object_preset.height = self.start_y
+            self.object_preset.extrude = self.start_z
             overlay_info = ''
             return {'CANCELLED'}
 
@@ -3685,6 +3834,7 @@ class QuickTitlingScale(bpy.types.Operator):
                 self.start_scale = self.object_preset.scale
                 self.start_x = self.object_preset.width
                 self.start_y = self.object_preset.height
+                self.start_z = self.object_preset.extrude
                 object_name = self.object_preset.internal_name
                 if object_name in self.scene.objects:
                     self.title_object = self.scene.objects[object_name]
@@ -3693,6 +3843,83 @@ class QuickTitlingScale(bpy.types.Operator):
                     return {'RUNNING_MODAL'}
 
         return {'CANCELLED'}
+
+
+class QuickTitlingSelect(bpy.types.Operator):
+    bl_idname = 'quicktitle.select'
+    bl_label = 'Select Title Object'
+
+    def invoke(self, context, event):
+        quicktitle_sequence = titling_scene_selected()
+        if quicktitle_sequence:
+            scene = quicktitle_sequence.scene
+            render_x = scene.render.resolution_x
+            mouse_x = event.mouse_region_x
+            mouse_y = event.mouse_region_y
+            loc_x, loc_y = context.region.view2d.region_to_view(mouse_x, mouse_y)
+            x = (loc_x / render_x) * 2
+            y = (loc_y / render_x) * 2
+            title_object = object_at_location(scene, x, y)
+            if title_object:
+                title_object_presets = scene.quicktitler.current_quicktitle.objects
+                for index, object_preset in enumerate(title_object_presets):
+                    if object_preset.internal_name == title_object.name:
+                        scene.quicktitler.current_quicktitle.selected_object = index
+                        quicktitle_autoupdate()
+                        break
+            return {'FINISHED'}
+
+
+class QuickTitlingAddObject(bpy.types.Menu):
+    bl_idname = 'quicktitler.add_object_menu'
+    bl_label = 'Add Title Object'
+
+    @classmethod
+    def poll(cls, context):
+        quicktitle_sequence = titling_scene_selected()
+        if quicktitle_sequence:
+            return True
+        else:
+            return False
+
+    def draw(self, context):
+        layout = self.layout
+        quicktitle_sequence = titling_scene_selected()
+        quicktitle_preset = current_quicktitle(quicktitle_sequence)
+        preset_objects = quicktitle_preset.objects
+        current_object_index = quicktitle_preset.selected_object
+        if len(preset_objects) >= current_object_index + 1:
+            current_object = preset_objects[current_object_index]
+        else:
+            current_object = None
+
+        layout.operator('quicktitler.add_object', text='Text', icon=quicktitle_object_icon('TEXT')).type = 'TEXT'
+        layout.operator('quicktitler.add_object', text='Image', icon=quicktitle_object_icon('IMAGE')).type = 'IMAGE'
+        layout.operator('quicktitler.add_object', text='Box', icon=quicktitle_object_icon('BOX')).type = 'BOX'
+        layout.operator('quicktitler.add_object', text='Circle', icon=quicktitle_object_icon('CIRCLE')).type = 'CIRCLE'
+        if current_object:
+            layout.operator('quicktitler.add_object', text='Duplicate Selected').type = 'DUPLICATE'
+
+
+class QuickTitlingDeleteMenu(bpy.types.Menu):
+    bl_idname = 'quicktitler.delete_menu'
+    bl_label = 'Delete Selected Title Object'
+
+    @classmethod
+    def poll(cls, context):
+        quicktitle_sequence = titling_scene_selected()
+        if quicktitle_sequence:
+            preset = quicktitle_sequence.scene.quicktitler.current_quicktitle
+            if len(preset.objects) > preset.selected_object:
+                return True
+        return False
+
+    def draw(self, context):
+        layout = self.layout
+        quicktitle_sequence = titling_scene_selected()
+        preset = quicktitle_sequence.scene.quicktitler.current_quicktitle
+        to_delete = preset.selected_object
+        layout.operator('quicktitler.delete_object', text='Delete Selected').index = to_delete
 
 
 def add_to_value(value, character):
@@ -3729,6 +3956,37 @@ def add_to_value(value, character):
     return value
 
 
+def add_keymap():
+    remove_keymap()
+    global keymap
+    keymapitems = keymap.keymap_items
+    for keymapitem in keymapitems:
+        #Iterate through keymaps and delete old shortcuts
+        if keymapitem.type in ['G', 'R', 'S', 'LEFTMOUSE', 'A', 'X', 'DEL', 'L']:
+            keymapitems.remove(keymapitem)
+    keymapitems.new('quicktitle.grab', 'G', 'PRESS')
+    keymapitems.new('quicktitle.rotate', 'R', 'PRESS')
+    keymapitems.new('quicktitle.scale', 'S', 'PRESS')
+    keymapitems.new('quicktitle.select', 'LEFTMOUSE', 'PRESS')
+    add_menu = keymapitems.new('wm.call_menu', 'A', 'PRESS', shift=True)
+    add_menu.properties.name = 'quicktitler.add_object_menu'
+    delete_menu = keymapitems.new('wm.call_menu', 'X', 'PRESS')
+    delete_menu.properties.name = 'quicktitler.delete_menu'
+    delete_menu2 = keymapitems.new('wm.call_menu', 'DEL', 'PRESS')
+    delete_menu2.properties.name = 'quicktitler.delete_menu'
+    grab_lamp = keymapitems.new('quicktitle.grab', 'L', 'PRESS')
+    grab_lamp.properties.lamp = True
+
+
+def remove_keymap():
+    global keymap
+    keymapitems = keymap.keymap_items
+    for keymapitem in keymapitems:
+        #Iterate through keymaps and delete old shortcuts
+        if keymapitem.type in ['G', 'R', 'S', 'LEFTMOUSE', 'A', 'X', 'DEL', 'L']:
+            keymapitems.remove(keymapitem)
+
+
 classes = [QuickTitlingGrab, QuickTitleAnimation, QuickTitleObject, QuickTitle, QuickTitleObjectListItem,
            QuickTitleAnimationListItem, QuickTitlingPanel, QuickTitlingSavePreset, QuickTitlingReplaceWithImage,
            QuickTitlingObjectMoveUp, QuickTitlingObjectMoveDown, QuickTitlingObjectAdd, QuickTitlingObjectSelect,
@@ -3736,7 +3994,8 @@ classes = [QuickTitlingGrab, QuickTitleAnimation, QuickTitleObject, QuickTitle, 
            QuickTitlingAnimationMenu, QuickTitlingPresetDelete, QuickTitlingPresetExport, QuickTitlingPresetImport,
            QuickTitlingPresetMenu, QuickTitlingPresetSelect, QuickTitlingPresetLoad, QuickTitlingLoadFont,
            QuickTitlingFontMenu, QuickTitlingChangeFont, QuickTitlingMaterialMenu, QuickTitlingChangeMaterial,
-           QuickTitlingCreate, QuickTitleSettings, QuickTitlingRotate, QuickTitlingScale]
+           QuickTitlingCreate, QuickTitleSettings, QuickTitlingRotate, QuickTitlingScale, QuickTitlingSelect,
+           QuickTitlingAddObject, QuickTitlingDeleteMenu]
 
 
 def register():
@@ -3747,29 +4006,19 @@ def register():
     #Group properties
     bpy.types.Scene.quicktitler = bpy.props.PointerProperty(type=QuickTitleSettings)
 
+    global keymap
     #Register shortcuts
     keymaps = bpy.context.window_manager.keyconfigs.addon.keymaps
     keymap = keymaps.new(name='SequencerPreview', space_type='SEQUENCE_EDITOR', region_type='WINDOW')
-    keymapitems = keymap.keymap_items
-    for keymapitem in keymapitems:
-        #Iterate through keymaps and delete old shortcuts
-        if keymapitem.type in ['G', 'R', 'S']:
-            keymapitems.remove(keymapitem)
-    keymapitems.new('quicktitle.grab', 'G', 'PRESS')
-    keymapitems.new('quicktitle.rotate', 'R', 'PRESS')
-    keymapitems.new('quicktitle.scale', 'S', 'PRESS')
+    #add_keymap()
 
 
 def unregister():
     #Unregister classes
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
-    keymap = bpy.context.window_manager.keyconfigs.addon.keymaps['SequencerPreview']
-    keymapitems = keymap.keymap_items
-    for keymapitem in keymapitems:
-        #Iterate through keymaps and delete old shortcuts
-        if keymapitem.type in ['G', 'R', 'S']:
-            keymapitems.remove(keymapitem)
+    #keymap = bpy.context.window_manager.keyconfigs.addon.keymaps['SequencerPreview']
+    remove_keymap()
 
 
 if __name__ == "__main__":

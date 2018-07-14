@@ -28,6 +28,9 @@ When a created QuickTitle is selected, the settings can be adjusted and will be 
 
 Select a title in the VSE to edit it, or select no titles to edit new presets, or create new titles.  
 
+Titles can be edited from the sequencer preview window, or from the QuickTitling panel
+
+
 The QuickTitling panel is divided into two sections:
 * The top lets you select or import presets, create titles, and update the selected title.
    * Select Preset Menu
@@ -366,6 +369,26 @@ The QuickTitling panel is divided into two sections:
          Note that these will not be seen in the opengl previews of the title scene, only in final renders.  
 
 
+## Editing Titles In The Sequencer Preview
+
+If a title is selected in the sequencer, and while the mouse is over the preview window, the title can be edited using various shortcuts.  
+
+* Left-Click on title elements to select them  
+
+* Press 'G' to enter grab/move mode for the selected element.  You can constrain movement to the three axis by pressing the x, y and z keys after entering move mode.  When moving on a single axis, you can type in exact movement values.  
+
+* Press 'S' to enter scale mode for the selected element.  Like grab, you can constrain to an axis, or type in values directly.  Constraining to the z axis will modify the object's extrude value (not available for image types).  
+
+* Press 'R' to enter rotate mode for the selected element.  Again, you can constrain on an axis, and type in values.  
+
+* Press 'L' to enter grab mode for the shadow casting lamp.  This will behave just like object grab mode.  
+
+* Press Shift-A to open the add object menu.  
+
+* Press 'X' or 'Delete' to delete the selected object.  
+
+
+
 ## Advanced Scene Editing
 QuickTitling generates standard blender scenes that can be edited after they are generated.  If you wish to edit the scene, it is recommended to remove 'QuickTitle:' from the scene name, this will prevent QuickTitling from updating the scene and overwriting anything you may have changed, but it will also prevent the usage of the interface to adjust title settings.  
 New objects can be added and scene or render settings can be changed without issues.  
@@ -409,3 +432,5 @@ If you wish to edit an object, it is recommended to rename it, this will prevent
    * Exported presets are cleaner now - default variables are not saved and xml files have line returns and indenting
    * Updated old presets and added new ones
    * Added overlays in preview windows to show selected title objects
+   * Added grab, rotate and scale shortcuts (G, R, S in preview area) for selected object. You can also constrain on an axis, and type in values
+   * Added click to selected title elements! Unfortunately, for some reason, I can't make this right click... doesn't work, so had to do left...
