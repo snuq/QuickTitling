@@ -16,11 +16,6 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-"""
-todo:
-    Need shortcut/operator for changing object layer
-"""
-
 import bpy
 import bgl
 import blf
@@ -536,10 +531,10 @@ def draw_rect(x, y, w, h, color=(1.0, 1.0, 1.0, 1.0)):
     bgl.glEnd()
 
 
-def draw_box(x, y, w, h):
+def draw_box(x, y, w, h, color1=(0, 0, 0, .5), color2=(1, 1, 0, 1)):
     bgl.glEnable(bgl.GL_BLEND)
     bgl.glBegin(bgl.GL_LINE_STRIP)
-    bgl.glColor4f(0, 0, 0, 0.5)
+    bgl.glColor4f(*color1)
     bgl.glVertex2i(x, y)
     bgl.glVertex2i(x+w, y)
     bgl.glVertex2i(x+w, y+h)
@@ -548,7 +543,7 @@ def draw_box(x, y, w, h):
     bgl.glEnd()
 
     bgl.glBegin(bgl.GL_LINE_STRIP)
-    bgl.glColor4f(1, 1, 0, 1)
+    bgl.glColor4f(*color2)
     x = x - 1
     y = y - 1
     w = w + 2
@@ -615,6 +610,17 @@ def quicktitling_overlay():
                     right, top = view.view_to_region(max_x, max_y, clip=False)
                     width = right - left
                     height = top - bottom
+                    if title_object_preset.type == 'TEXT' and title_object_preset.word_wrap:
+                        #display text bounding box
+                        camera_width = scene.render.resolution_x
+                        wrap_width_per = title_object_preset.wrap_width
+                        wrap_x_per = title_object_preset.x
+                        wrap_width = wrap_width_per * camera_width
+                        wrap_x = (wrap_x_per * (camera_width / 2)) - (wrap_width / 2)
+                        w_left, very_bottom = view.view_to_region(wrap_x, 0, clip=False)
+                        w_right, very_bottom = view.view_to_region(wrap_x + wrap_width, 0, clip=False)
+                        w_width = w_right - w_left
+                        draw_box(w_left, bottom, w_width, height, color2=(.5, .5, 0, 1))
                     draw_box(left, bottom, width, height)
                     draw_text(10, 10, 15, overlay_info)
 
