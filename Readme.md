@@ -391,9 +391,14 @@ If a title is selected in the sequencer, and while the mouse is over the preview
 
 ## Advanced Scene Editing
 QuickTitling generates standard blender scenes that can be edited after they are generated.  If you wish to edit the scene, it is recommended to remove 'QuickTitle:' from the scene name, this will prevent QuickTitling from updating the scene and overwriting anything you may have changed, but it will also prevent the usage of the interface to adjust title settings.  
-New objects can be added and scene or render settings can be changed without issues.  
-If you wish to change a material, any settings not covered by the QuickTitling interface should be able to be changed without reverting.  Extra textures can be added to objects, just for an image type make sure they are using texture slots other than the first two.  
-If you wish to edit an object, it is recommended to rename it, this will prevent QuickTitling from finding the object.  After you rename it, delete it from the object list or it will be re-created on the next update.
+
+If you wish to maintain the ability to edit the title using QuickTitling:  
+* New objects can be added and scene and render settings can be changed without issues.  
+
+* If you wish to change a material, any settings not covered by the QuickTitling interface should be able to be changed without reverting.  Extra textures can be added to objects, just for an image type make sure they are using texture slots other than the first two.  
+
+* If you wish to edit an object, it is recommended to rename it, this will prevent QuickTitling from finding the object.  After you rename it, delete it from the object list or it will be re-created on the next update.  
+
 
 
 ## Changelog
