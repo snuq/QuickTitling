@@ -598,7 +598,8 @@ def quicktitling_overlay():
                 except:
                     title_object = None
                 if title_object:
-                    scene.frame_set(bpy.context.scene.frame_current - quicktitle_sequence.frame_start)
+                    new_frame = bpy.context.scene.frame_current - quicktitle_sequence.frame_start
+                    scene.frame_set(new_frame)  #Not sure why, but this causes a blender error 'Skip event: cannot write to ID classes' when called from the panel draw function... still works tho?
                     region = area.regions[2]
                     view = region.view2d
                     update_bounds(title_object=title_object)
@@ -2721,6 +2722,10 @@ class QuickTitlingObjectMoveUp(bpy.types.Operator):
         quicktitle = scene.quicktitler.current_quicktitle
         objects = quicktitle.objects
         if self.current:
+            quicktitle_sequence = titling_scene_selected()
+            frame = bpy.context.scene.frame_current
+            if not quicktitle_sequence or not (frame >= quicktitle_sequence.frame_final_start and frame <= quicktitle_sequence.frame_final_end):
+                return {'CANCELLED'}
             self.index = quicktitle.selected_object
         if self.index > 0:
             objects.move(self.index, self.index - 1)
@@ -2746,6 +2751,10 @@ class QuickTitlingObjectMoveDown(bpy.types.Operator):
         quicktitle = scene.quicktitler.current_quicktitle
         objects = quicktitle.objects
         if self.current:
+            quicktitle_sequence = titling_scene_selected()
+            frame = bpy.context.scene.frame_current
+            if not quicktitle_sequence or not (frame >= quicktitle_sequence.frame_final_start and frame <= quicktitle_sequence.frame_final_end):
+                return {'CANCELLED'}
             self.index = quicktitle.selected_object
         if self.index+1 < len(objects):
             objects.move(self.index, self.index + 1)
@@ -3468,6 +3477,15 @@ class QuickTitlingGrab(bpy.types.Operator):
     start_z = 0
     mouse_scale = 500
 
+    @classmethod
+    def poll(cls, context):
+        quicktitle_sequence = titling_scene_selected()
+        if quicktitle_sequence:
+            frame = bpy.context.scene.frame_current
+            if frame >= quicktitle_sequence.frame_final_start and frame <= quicktitle_sequence.frame_final_end:
+                return True
+        return False
+
     def modal(self, context, event):
         global overlay_info
         if event.value == 'PRESS':
@@ -3581,37 +3599,36 @@ class QuickTitlingGrab(bpy.types.Operator):
         titling_sequence = titling_scene_selected()
         self.mouse_x = event.mouse_x
         self.mouse_y = event.mouse_y
-        if titling_sequence:
-            self.scene = titling_sequence.scene
-            self.preset = self.scene.quicktitler.current_quicktitle
-            if self.lamp:
-                self.start_x = self.preset.shadowx
-                self.start_y = self.preset.shadowy
-                self.start_z = self.preset.shadowsize
-                region = context.region
-                left, bottom = region.view2d.region_to_view(0, 0)
-                right, top = region.view2d.region_to_view(region.width, region.height)
-                width = right - left
-                scale = width / region.width
-                self.mouse_scale = 1000 / scale
-                context.window_manager.modal_handler_add(self)
-                return {'RUNNING_MODAL'}
-            else:
-                if len(self.preset.objects) > self.preset.selected_object:
-                    self.object_preset = self.preset.objects[self.preset.selected_object]
-                    self.start_x = self.object_preset.x
-                    self.start_y = self.object_preset.y
-                    self.start_z = self.object_preset.z
-                    object_name = self.object_preset.internal_name
-                    if object_name in self.scene.objects:
-                        region = context.region
-                        left, bottom = region.view2d.region_to_view(0, 0)
-                        right, top = region.view2d.region_to_view(region.width, region.height)
-                        width = right - left
-                        scale = width / region.width
-                        self.mouse_scale = 1000 / scale
-                        context.window_manager.modal_handler_add(self)
-                        return {'RUNNING_MODAL'}
+        self.scene = titling_sequence.scene
+        self.preset = self.scene.quicktitler.current_quicktitle
+        if self.lamp:
+            self.start_x = self.preset.shadowx
+            self.start_y = self.preset.shadowy
+            self.start_z = self.preset.shadowsize
+            region = context.region
+            left, bottom = region.view2d.region_to_view(0, 0)
+            right, top = region.view2d.region_to_view(region.width, region.height)
+            width = right - left
+            scale = width / region.width
+            self.mouse_scale = 1000 / scale
+            context.window_manager.modal_handler_add(self)
+            return {'RUNNING_MODAL'}
+        else:
+            if len(self.preset.objects) > self.preset.selected_object:
+                self.object_preset = self.preset.objects[self.preset.selected_object]
+                self.start_x = self.object_preset.x
+                self.start_y = self.object_preset.y
+                self.start_z = self.object_preset.z
+                object_name = self.object_preset.internal_name
+                if object_name in self.scene.objects:
+                    region = context.region
+                    left, bottom = region.view2d.region_to_view(0, 0)
+                    right, top = region.view2d.region_to_view(region.width, region.height)
+                    width = right - left
+                    scale = width / region.width
+                    self.mouse_scale = 1000 / scale
+                    context.window_manager.modal_handler_add(self)
+                    return {'RUNNING_MODAL'}
 
         return {'CANCELLED'}
 
@@ -3634,6 +3651,15 @@ class QuickTitlingRotate(bpy.types.Operator):
     start_y = 0
     start_z = 0
     mouse_scale = 500
+
+    @classmethod
+    def poll(cls, context):
+        quicktitle_sequence = titling_scene_selected()
+        if quicktitle_sequence:
+            frame = bpy.context.scene.frame_current
+            if frame >= quicktitle_sequence.frame_final_start and frame <= quicktitle_sequence.frame_final_end:
+                return True
+        return False
 
     def modal(self, context, event):
         global overlay_info
@@ -3722,20 +3748,19 @@ class QuickTitlingRotate(bpy.types.Operator):
         titling_sequence = titling_scene_selected()
         self.mouse_x = event.mouse_x
         self.mouse_y = event.mouse_y
-        if titling_sequence:
-            self.scene = titling_sequence.scene
-            self.preset = self.scene.quicktitler.current_quicktitle
-            if len(self.preset.objects) > self.preset.selected_object:
-                self.object_preset = self.preset.objects[self.preset.selected_object]
-                self.start_x = self.object_preset.rot_x
-                self.start_y = self.object_preset.rot_y
-                self.start_z = self.object_preset.rot_z
-                object_name = self.object_preset.internal_name
-                if object_name in self.scene.objects:
-                    self.title_object = self.scene.objects[object_name]
-                    self.mouse_scale = 2
-                    context.window_manager.modal_handler_add(self)
-                    return {'RUNNING_MODAL'}
+        self.scene = titling_sequence.scene
+        self.preset = self.scene.quicktitler.current_quicktitle
+        if len(self.preset.objects) > self.preset.selected_object:
+            self.object_preset = self.preset.objects[self.preset.selected_object]
+            self.start_x = self.object_preset.rot_x
+            self.start_y = self.object_preset.rot_y
+            self.start_z = self.object_preset.rot_z
+            object_name = self.object_preset.internal_name
+            if object_name in self.scene.objects:
+                self.title_object = self.scene.objects[object_name]
+                self.mouse_scale = 2
+                context.window_manager.modal_handler_add(self)
+                return {'RUNNING_MODAL'}
 
         return {'CANCELLED'}
 
@@ -3759,6 +3784,15 @@ class QuickTitlingScale(bpy.types.Operator):
     start_y = 1
     start_z = 0
     mouse_scale = 500
+
+    @classmethod
+    def poll(cls, context):
+        quicktitle_sequence = titling_scene_selected()
+        if quicktitle_sequence:
+            frame = bpy.context.scene.frame_current
+            if frame >= quicktitle_sequence.frame_final_start and frame <= quicktitle_sequence.frame_final_end:
+                return True
+        return False
 
     def modal(self, context, event):
         global overlay_info
@@ -3838,21 +3872,20 @@ class QuickTitlingScale(bpy.types.Operator):
         titling_sequence = titling_scene_selected()
         self.mouse_x = event.mouse_x
         self.mouse_y = event.mouse_y
-        if titling_sequence:
-            self.scene = titling_sequence.scene
-            self.preset = self.scene.quicktitler.current_quicktitle
-            if len(self.preset.objects) > self.preset.selected_object:
-                self.object_preset = self.preset.objects[self.preset.selected_object]
-                self.start_scale = self.object_preset.scale
-                self.start_x = self.object_preset.width
-                self.start_y = self.object_preset.height
-                self.start_z = self.object_preset.extrude
-                object_name = self.object_preset.internal_name
-                if object_name in self.scene.objects:
-                    self.title_object = self.scene.objects[object_name]
-                    self.mouse_scale = 40
-                    context.window_manager.modal_handler_add(self)
-                    return {'RUNNING_MODAL'}
+        self.scene = titling_sequence.scene
+        self.preset = self.scene.quicktitler.current_quicktitle
+        if len(self.preset.objects) > self.preset.selected_object:
+            self.object_preset = self.preset.objects[self.preset.selected_object]
+            self.start_scale = self.object_preset.scale
+            self.start_x = self.object_preset.width
+            self.start_y = self.object_preset.height
+            self.start_z = self.object_preset.extrude
+            object_name = self.object_preset.internal_name
+            if object_name in self.scene.objects:
+                self.title_object = self.scene.objects[object_name]
+                self.mouse_scale = 40
+                context.window_manager.modal_handler_add(self)
+                return {'RUNNING_MODAL'}
 
         return {'CANCELLED'}
 
@@ -3861,25 +3894,33 @@ class QuickTitlingSelect(bpy.types.Operator):
     bl_idname = 'quicktitle.select'
     bl_label = 'Select Title Object'
 
-    def invoke(self, context, event):
+    @classmethod
+    def poll(cls, context):
         quicktitle_sequence = titling_scene_selected()
         if quicktitle_sequence:
-            scene = quicktitle_sequence.scene
-            render_x = scene.render.resolution_x
-            mouse_x = event.mouse_region_x
-            mouse_y = event.mouse_region_y
-            loc_x, loc_y = context.region.view2d.region_to_view(mouse_x, mouse_y)
-            x = (loc_x / render_x) * 2
-            y = (loc_y / render_x) * 2
-            title_object = object_at_location(scene, x, y)
-            if title_object:
-                title_object_presets = scene.quicktitler.current_quicktitle.objects
-                for index, object_preset in enumerate(title_object_presets):
-                    if object_preset.internal_name == title_object.name:
-                        scene.quicktitler.current_quicktitle.selected_object = index
-                        quicktitle_autoupdate()
-                        break
-            return {'FINISHED'}
+            frame = bpy.context.scene.frame_current
+            if frame >= quicktitle_sequence.frame_final_start and frame <= quicktitle_sequence.frame_final_end:
+                return True
+        return False
+
+    def invoke(self, context, event):
+        quicktitle_sequence = titling_scene_selected()
+        scene = quicktitle_sequence.scene
+        render_x = scene.render.resolution_x
+        mouse_x = event.mouse_region_x
+        mouse_y = event.mouse_region_y
+        loc_x, loc_y = context.region.view2d.region_to_view(mouse_x, mouse_y)
+        x = (loc_x / render_x) * 2
+        y = (loc_y / render_x) * 2
+        title_object = object_at_location(scene, x, y)
+        if title_object:
+            title_object_presets = scene.quicktitler.current_quicktitle.objects
+            for index, object_preset in enumerate(title_object_presets):
+                if object_preset.internal_name == title_object.name:
+                    scene.quicktitler.current_quicktitle.selected_object = index
+                    quicktitle_autoupdate()
+                    break
+        return {'FINISHED'}
 
 
 class QuickTitlingAddObject(bpy.types.Menu):
@@ -3890,9 +3931,10 @@ class QuickTitlingAddObject(bpy.types.Menu):
     def poll(cls, context):
         quicktitle_sequence = titling_scene_selected()
         if quicktitle_sequence:
-            return True
-        else:
-            return False
+            frame = bpy.context.scene.frame_current
+            if frame >= quicktitle_sequence.frame_final_start and frame <= quicktitle_sequence.frame_final_end:
+                return True
+        return False
 
     def draw(self, context):
         layout = self.layout
@@ -3921,9 +3963,11 @@ class QuickTitlingDeleteMenu(bpy.types.Menu):
     def poll(cls, context):
         quicktitle_sequence = titling_scene_selected()
         if quicktitle_sequence:
-            preset = quicktitle_sequence.scene.quicktitler.current_quicktitle
-            if len(preset.objects) > preset.selected_object:
-                return True
+            frame = bpy.context.scene.frame_current
+            if frame >= quicktitle_sequence.frame_final_start and frame <= quicktitle_sequence.frame_final_end:
+                preset = quicktitle_sequence.scene.quicktitler.current_quicktitle
+                if len(preset.objects) > preset.selected_object:
+                    return True
         return False
 
     def draw(self, context):
