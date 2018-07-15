@@ -443,3 +443,4 @@ If you wish to maintain the ability to edit the title using QuickTitling:
    * Added overlays in preview windows to show selected title objects
    * Added grab, rotate and scale shortcuts (G, R, S in preview area) for selected object. You can also constrain on an axis, and type in values
    * Added click to selected title elements! Unfortunately, for some reason, I can't make this right click... doesn't work, so had to do left...
+   * Added page up/page down shortcuts to chang the current object layer
