@@ -2714,11 +2714,14 @@ class QuickTitlingObjectMoveUp(bpy.types.Operator):
     bl_description = 'Moves an object up in the current QuickTitling preset.'
 
     index = bpy.props.IntProperty()
+    current = bpy.props.BoolProperty(default=False)
 
     def execute(self, context):
         scene = find_titling_scene()
         quicktitle = scene.quicktitler.current_quicktitle
         objects = quicktitle.objects
+        if self.current:
+            self.index = quicktitle.selected_object
         if self.index > 0:
             objects.move(self.index, self.index - 1)
             if quicktitle.selected_object == self.index:
@@ -2736,11 +2739,14 @@ class QuickTitlingObjectMoveDown(bpy.types.Operator):
     bl_description = 'Moves an object down in the current QuickTitling preset.'
 
     index = bpy.props.IntProperty()
+    current = bpy.props.BoolProperty(default=False)
 
     def execute(self, context):
         scene = find_titling_scene()
         quicktitle = scene.quicktitler.current_quicktitle
         objects = quicktitle.objects
+        if self.current:
+            self.index = quicktitle.selected_object
         if self.index+1 < len(objects):
             objects.move(self.index, self.index + 1)
             if quicktitle.selected_object == self.index:
@@ -3968,7 +3974,7 @@ def add_keymap():
     keymapitems = keymap.keymap_items
     for keymapitem in keymapitems:
         #Iterate through keymaps and delete old shortcuts
-        if keymapitem.type in ['G', 'R', 'S', 'LEFTMOUSE', 'A', 'X', 'DEL', 'L']:
+        if keymapitem.type in ['G', 'R', 'S', 'LEFTMOUSE', 'A', 'X', 'DEL', 'L', 'PAGE_UP', 'PAGE_DOWN']:
             keymapitems.remove(keymapitem)
     keymapitems.new('quicktitle.grab', 'G', 'PRESS')
     keymapitems.new('quicktitle.rotate', 'R', 'PRESS')
@@ -3982,6 +3988,10 @@ def add_keymap():
     delete_menu2.properties.name = 'quicktitler.delete_menu'
     grab_lamp = keymapitems.new('quicktitle.grab', 'L', 'PRESS')
     grab_lamp.properties.lamp = True
+    current_up = keymapitems.new('quicktitler.object_up', 'PAGE_UP', 'PRESS')
+    current_up.properties.current = True
+    current_down = keymapitems.new('quicktitler.object_down', 'PAGE_DOWN', 'PRESS')
+    current_down.properties.current = True
 
 
 def remove_keymap():
@@ -3989,7 +3999,7 @@ def remove_keymap():
     keymapitems = keymap.keymap_items
     for keymapitem in keymapitems:
         #Iterate through keymaps and delete old shortcuts
-        if keymapitem.type in ['G', 'R', 'S', 'LEFTMOUSE', 'A', 'X', 'DEL', 'L']:
+        if keymapitem.type in ['G', 'R', 'S', 'LEFTMOUSE', 'A', 'X', 'DEL', 'L', 'PAGE_UP', 'PAGE_DOWN']:
             keymapitems.remove(keymapitem)
 
 

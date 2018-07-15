@@ -387,6 +387,10 @@ If a title is selected in the sequencer, and while the mouse is over the preview
 
 * Press 'X' or 'Delete' to delete the selected object.  
 
+* Press 'Page Up' to move the selected object up one in the object stack.  
+
+* Press 'Page Down' to move the selected object down one in the object stack.  
+
 
 
 ## Advanced Scene Editing
