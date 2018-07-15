@@ -30,6 +30,9 @@ Select a title in the VSE to edit it, or select no titles to edit new presets, o
 
 Titles can be edited from the sequencer preview window, or from the QuickTitling panel
 
+You can add a new title from a built-in or custom preset directly in the sequencer by pressing 'Shift-T' and selecting a preset. This will overwrite the current selected preset, and create a new title at the cursor location.  
+This menu will also appear as a 'QuickTitle' sub-menu in the default sequencer strip add menu.  
+
 
 The QuickTitling panel is divided into two sections:
 * The top lets you select or import presets, create titles, and update the selected title.
@@ -443,4 +446,5 @@ If you wish to maintain the ability to edit the title using QuickTitling:
    * Added overlays in preview windows to show selected title objects
    * Added grab, rotate and scale shortcuts (G, R, S in preview area) for selected object. You can also constrain on an axis, and type in values
    * Added click to selected title elements! Unfortunately, for some reason, I can't make this right click... doesn't work, so had to do left...
-   * Added page up/page down shortcuts to chang the current object layer
+   * Added page up/page down shortcuts to change the current object layer
+   * Added Shift-T shortcut in sequencer to pop up the title preset menu and add a new title quickly

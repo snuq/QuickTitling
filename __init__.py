@@ -3213,6 +3213,16 @@ def split_list(alist, parts=1):
     return [alist[i*length // parts: (i+1)*length // parts] for i in range(parts)]
 
 
+class QuickTitlingPresetMenuAdd(bpy.types.Menu):
+    bl_idname = 'quicktitler.preset_menu_add'
+    bl_label = 'QuickTitles'
+
+    icon = bpy.props.EnumProperty("")
+
+    def draw(self, context):
+        draw_preset_menu(self, context, add=True)
+
+
 class QuickTitlingPresetMenu(bpy.types.Menu):
     #Menu to list the QuickTitler Presets in the scene
     bl_idname = 'quicktitler.preset_menu'
@@ -3221,58 +3231,90 @@ class QuickTitlingPresetMenu(bpy.types.Menu):
     icon = bpy.props.EnumProperty("")
 
     def draw(self, context):
-        presets = list_quicktitle_presets(context.scene)
-        layout = self.layout
+        draw_preset_menu(self, context)
 
-        global quicktitle_previews
-        global current_icon_id
 
-        split = layout.split()
+def draw_preset_menu(self, context, add=False):
+    presets = list_quicktitle_presets(context.scene)
+    layout = self.layout
 
-        column = split.column()
-        column.label("Custom Titles:")
-        column.scale_y = 3
-        for index, preset in enumerate(presets):
-            if preset[1] != 'BUILTIN':
+    global quicktitle_previews
+    global current_icon_id
+
+    split = layout.split()
+
+    column = split.column()
+    column.label("Custom Titles:")
+    column.scale_y = 3
+    for index, preset in enumerate(presets):
+        if preset[1] != 'BUILTIN':
+            if add:
+                column.operator('quicktitler.select_and_add', text=preset[0]).preset = 'custom,'+preset[0]
+            else:
                 column.operator('quicktitler.preset_select', text=preset[0]).preset = preset[0]
 
+    column = split.column()
+    column.scale_y = 3
+    column.label(" ")
+    for index, preset in enumerate(presets):
+        if preset[1] != 'BUILTIN':
+            column.operator("quicktitler.preset_delete", text="", icon="X").index = index
+
+    column = split.column()
+    column.label(" ")
+
+    split_presets = split_list(presets, 2)
+    for index, presets in enumerate(split_presets):
         column = split.column()
         column.scale_y = 3
-        column.label(" ")
-        for index, preset in enumerate(presets):
-            if preset[1] != 'BUILTIN':
-                column.operator("quicktitler.preset_delete", text="", icon="X").index = index
-
-        column = split.column()
-        column.label(" ")
-
-        split_presets = split_list(presets, 2)
-        for index, presets in enumerate(split_presets):
-            column = split.column()
-            column.scale_y = 3
-            if index == 0:
-                column.label("Built-in Titles:")
-                column.operator('quicktitler.preset_load', text='Default').preset = 'Default'
+        if index == 0:
+            column.label("Built-in Titles:")
+            if add:
+                column.operator('quicktitler.select_and_add', text='Default').preset = 'builtin,'+'Default'
             else:
-                column.label("")
-            for preset in presets:
-                if preset[1] == 'BUILTIN':
+                column.operator('quicktitler.preset_load', text='Default').preset = 'Default'
+        else:
+            column.label("")
+        for preset in presets:
+            if preset[1] == 'BUILTIN':
+                if add:
+                    column.operator('quicktitler.select_and_add', text=preset[0]).preset = 'builtin,'+preset[0]
+                else:
                     column.operator('quicktitler.preset_load', text=preset[0]).preset = preset[0]
 
-            column = split.column()
-            column.scale_y = .5
-            column.scale_x = .5
-            current_icon_id = 0
+        column = split.column()
+        column.scale_y = .5
+        column.scale_x = .5
+        current_icon_id = 0
+        column.template_icon_view(context.scene.quicktitler, 'current_icon')
+        if index == 0:
             column.template_icon_view(context.scene.quicktitler, 'current_icon')
-            if index == 0:
+        for preset in presets:
+            if preset[1] == 'BUILTIN':
+                image = get_presets_directory()+os.path.sep+preset[0]+'.jpg'
+                if preset[0]+'BUILTIN' not in quicktitle_previews:
+                    quicktitle_previews.load(preset[0]+'BUILTIN', image, 'IMAGE')
+                current_icon_id = quicktitle_previews[preset[0]+'BUILTIN'].icon_id
                 column.template_icon_view(context.scene.quicktitler, 'current_icon')
-            for preset in presets:
-                if preset[1] == 'BUILTIN':
-                    image = get_presets_directory()+os.path.sep+preset[0]+'.jpg'
-                    if preset[0]+'BUILTIN' not in quicktitle_previews:
-                        quicktitle_previews.load(preset[0]+'BUILTIN', image, 'IMAGE')
-                    current_icon_id = quicktitle_previews[preset[0]+'BUILTIN'].icon_id
-                    column.template_icon_view(context.scene.quicktitler, 'current_icon')
+
+
+class QuickTitlingPresetSelectAdd(bpy.types.Operator):
+    bl_idname = 'quicktitler.select_and_add'
+    bl_label = 'Select And Add Preset'
+
+    #Preset type,name
+    preset = bpy.props.StringProperty()
+
+    def execute(self, context):
+        preset_type, name = self.preset.split(',', 1)
+        bpy.ops.sequencer.select_all(action='DESELECT')
+        if preset_type == 'custom':
+            bpy.ops.quicktitler.preset_select(preset=name)
+            bpy.ops.quicktitler.create(action='create')
+        else:
+            bpy.ops.quicktitler.preset_load(preset=name)
+            bpy.ops.quicktitler.create(action='create')
+        return {'FINISHED'}
 
 
 class QuickTitlingPresetSelect(bpy.types.Operator):
@@ -4047,6 +4089,11 @@ def remove_keymap():
             keymapitems.remove(keymapitem)
 
 
+def draw_preset_add_menu(self, context):
+    layout = self.layout
+    layout.menu('quicktitler.preset_menu_add', text='QuickTitle')
+
+
 classes = [QuickTitlingGrab, QuickTitleAnimation, QuickTitleObject, QuickTitle, QuickTitleObjectListItem,
            QuickTitleAnimationListItem, QuickTitlingPanel, QuickTitlingSavePreset, QuickTitlingReplaceWithImage,
            QuickTitlingObjectMoveUp, QuickTitlingObjectMoveDown, QuickTitlingObjectAdd, QuickTitlingObjectSelect,
@@ -4055,7 +4102,7 @@ classes = [QuickTitlingGrab, QuickTitleAnimation, QuickTitleObject, QuickTitle, 
            QuickTitlingPresetMenu, QuickTitlingPresetSelect, QuickTitlingPresetLoad, QuickTitlingLoadFont,
            QuickTitlingFontMenu, QuickTitlingChangeFont, QuickTitlingMaterialMenu, QuickTitlingChangeMaterial,
            QuickTitlingCreate, QuickTitleSettings, QuickTitlingRotate, QuickTitlingScale, QuickTitlingSelect,
-           QuickTitlingAddObject, QuickTitlingDeleteMenu]
+           QuickTitlingAddObject, QuickTitlingDeleteMenu, QuickTitlingPresetSelectAdd, QuickTitlingPresetMenuAdd]
 
 
 def register():
@@ -4070,6 +4117,11 @@ def register():
     #Register shortcuts
     keymaps = bpy.context.window_manager.keyconfigs.addon.keymaps
     keymap = keymaps.new(name='SequencerPreview', space_type='SEQUENCE_EDITOR', region_type='WINDOW')
+
+    second_keymap = keymaps.new(name='Sequencer', space_type='SEQUENCE_EDITOR', region_type='WINDOW')
+    add_menu = second_keymap.keymap_items.new('wm.call_menu', 'T', 'PRESS', shift=True)
+    add_menu.properties.name = 'quicktitler.preset_menu_add'
+    bpy.types.SEQUENCER_MT_add.append(draw_preset_add_menu)
     #add_keymap()
 
 
