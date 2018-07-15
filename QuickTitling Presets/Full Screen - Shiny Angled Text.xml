@@ -1,0 +1,71 @@
+<preset>
+  <name>Full Screen - Shiny Angled Text</name>
+  <z_scale>21.0</z_scale>
+  <shadowamount>0.0</shadowamount>
+  <objects>
+    <name>Text</name>
+    <type>TEXT</type>
+    <y>-0.08999999612569809</y>
+    <scale>3.0</scale>
+    <material>QuickTitler TEXT Material</material>
+    <diffuse_color>3, 3, 3</diffuse_color>
+    <specular_intensity>1.0</specular_intensity>
+    <specular_hardness>100</specular_hardness>
+    <specular_color>255, 255, 255</specular_color>
+    <bevel>0.029999999329447746</bevel>
+    <bevel_resolution>1</bevel_resolution>
+    <text>Text</text>
+    <wrap_width>0.8999999761581421</wrap_width>
+    <outline>True</outline>
+    <outline_size>0.46000003814697266</outline_size>
+    <outline_alpha>0.6600000262260437</outline_alpha>
+    <outline_diffuse_color>255, 255, 255</outline_diffuse_color>
+    <animations>
+      <variable>Alpha</variable>
+      <in_amount>0.0</in_amount>
+      <out_amount>0.0</out_amount>
+    </animations>
+    <animations>
+      <variable>X Rotate</variable>
+      <animate_in>False</animate_in>
+      <animate_out>False</animate_out>
+      <in_length>0</in_length>
+      <out_length>0</out_length>
+      <in_amount>0.0</in_amount>
+      <out_amount>0.0</out_amount>
+      <cycle_type>SINE</cycle_type>
+      <cycle_x_scale>8.0</cycle_x_scale>
+      <cycle_y_scale>2.0</cycle_y_scale>
+      <cycle_offset>1.2999999523162842</cycle_offset>
+    </animations>
+    <animations>
+      <variable>Y Rotate</variable>
+      <animate_in>False</animate_in>
+      <animate_out>False</animate_out>
+      <in_length>0</in_length>
+      <out_length>0</out_length>
+      <in_amount>0.0</in_amount>
+      <out_amount>0.0</out_amount>
+      <cycle_type>SINE</cycle_type>
+      <cycle_x_scale>8.0</cycle_x_scale>
+      <cycle_y_scale>-2.0</cycle_y_scale>
+      <cycle_offset>1.2999999523162842</cycle_offset>
+    </animations>
+  </objects>
+  <objects>
+    <name>BG</name>
+    <type>BOX</type>
+    <cast_shadows>False</cast_shadows>
+    <material>QuickTitler BOX Material.001</material>
+    <use_shadeless>True</use_shadeless>
+    <diffuse_color>0, 0, 0</diffuse_color>
+    <specular_color>255, 255, 255</specular_color>
+    <wrap_width>0.8999999761581421</wrap_width>
+    <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
+    <animations>
+      <variable>Alpha</variable>
+      <in_amount>0.0</in_amount>
+      <out_amount>0.0</out_amount>
+    </animations>
+  </objects>
+</preset>

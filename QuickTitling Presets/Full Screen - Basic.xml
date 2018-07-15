@@ -1,0 +1,83 @@
+<preset>
+  <name>Full Screen - Basic</name>
+  <z_scale>5.0</z_scale>
+  <shadowsize>1.8579999208450317</shadowsize>
+  <shadowamount>1.0</shadowamount>
+  <objects>
+    <name>Line</name>
+    <type>BOX</type>
+    <y>0.10000000149011612</y>
+    <height>0.009999999776482582</height>
+    <material>QuickTitler BOX Material.001</material>
+    <diffuse_color>178, 177, 255</diffuse_color>
+    <specular_color>255, 255, 255</specular_color>
+    <extrude>0.11999999731779099</extrude>
+    <bevel>0.029999999329447746</bevel>
+    <wrap_width>0.8999999761581421</wrap_width>
+    <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
+    <animations>
+      <variable>Alpha</variable>
+      <in_amount>0.0</in_amount>
+      <out_amount>0.0</out_amount>
+    </animations>
+  </objects>
+  <objects>
+    <name>Lower Text</name>
+    <type>TEXT</type>
+    <scale>0.7900002002716064</scale>
+    <material>QuickTitler TEXT Material</material>
+    <diffuse_color>93, 86, 165</diffuse_color>
+    <specular_color>255, 255, 255</specular_color>
+    <extrude>0.11999999731779099</extrude>
+    <bevel>0.029999999329447746</bevel>
+    <text>Lower Text</text>
+    <wrap_width>0.8999999761581421</wrap_width>
+    <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
+    <animations>
+      <variable>Alpha</variable>
+      <in_amount>0.0</in_amount>
+      <out_amount>0.0</out_amount>
+    </animations>
+  </objects>
+  <objects>
+    <name>Top Text</name>
+    <type>TEXT</type>
+    <y>0.16500000655651093</y>
+    <material>QuickTitler TEXT Material.001</material>
+    <diffuse_color>255, 255, 255</diffuse_color>
+    <specular_color>255, 255, 255</specular_color>
+    <extrude>0.11999999731779099</extrude>
+    <bevel>0.029999995604157448</bevel>
+    <text>Top Text</text>
+    <wrap_width>0.8700000047683716</wrap_width>
+    <align>LEFT</align>
+    <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
+    <animations>
+      <variable>Alpha</variable>
+      <in_amount>0.0</in_amount>
+      <out_amount>0.0</out_amount>
+    </animations>
+    <animations>
+      <variable>X Slide</variable>
+      <in_amount>-2.0</in_amount>
+      <out_amount>2.0</out_amount>
+    </animations>
+  </objects>
+  <objects>
+    <name>Background</name>
+    <type>BOX</type>
+    <rot_x>-38.26799774169922</rot_x>
+    <scale>2.0</scale>
+    <material>QuickTitler BOX Material.002</material>
+    <diffuse_color>18, 18, 42</diffuse_color>
+    <specular_hardness>10</specular_hardness>
+    <specular_color>255, 255, 255</specular_color>
+    <wrap_width>0.8999999761581421</wrap_width>
+    <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
+    <animations>
+      <variable>Alpha</variable>
+      <in_amount>0.0</in_amount>
+      <out_amount>0.0</out_amount>
+    </animations>
+  </objects>
+</preset>
