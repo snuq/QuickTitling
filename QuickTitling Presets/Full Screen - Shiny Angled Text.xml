@@ -6,17 +6,16 @@
     <name>Text</name>
     <type>TEXT</type>
     <y>-0.08999999612569809</y>
-    <scale>3.0</scale>
+    <scale>4.0</scale>
     <material>QuickTitler TEXT Material</material>
-    <diffuse_color>3, 3, 3</diffuse_color>
+    <diffuse_color>0, 0, 0</diffuse_color>
     <specular_intensity>1.0</specular_intensity>
-    <specular_hardness>100</specular_hardness>
+    <specular_hardness>31</specular_hardness>
     <specular_color>255, 255, 255</specular_color>
-    <bevel>0.029999999329447746</bevel>
-    <bevel_resolution>1</bevel_resolution>
+    <extrude>0.029999999329447746</extrude>
+    <bevel>0.0299999937415123</bevel>
     <text>Text</text>
     <wrap_width>0.8999999761581421</wrap_width>
-    <outline>True</outline>
     <outline_size>0.46000003814697266</outline_size>
     <outline_alpha>0.6600000262260437</outline_alpha>
     <outline_diffuse_color>255, 255, 255</outline_diffuse_color>
@@ -59,6 +58,7 @@
     <material>QuickTitler BOX Material.001</material>
     <use_shadeless>True</use_shadeless>
     <diffuse_color>0, 0, 0</diffuse_color>
+    <specular_intensity>0.0</specular_intensity>
     <specular_color>255, 255, 255</specular_color>
     <wrap_width>0.8999999761581421</wrap_width>
     <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
