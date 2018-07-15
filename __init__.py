@@ -773,18 +773,18 @@ def load_quicktitle(filepath, preset):
     root = tree.getroot()
     preset.name = root.findtext('name', default=os.path.splitext(bpy.path.basename(filepath))[0])
     preset.description = root.findtext('description', default="")
-    preset.z_scale = abs(float(root.findtext('z_scale', default="1")))
-    preset.length = abs(int(root.findtext('length', default="300")))
-    preset.shadowsize = abs(float(root.findtext('shadowsize', default="1")))
-    shadowamount = abs(float(root.findtext('shadowamount', default="0.5")))
+    preset.z_scale = abs(float(root.findtext('z_scale', default=str(QuickTitle.z_scale[1]['default']))))
+    preset.length = abs(int(root.findtext('length', default=str(QuickTitle.length[1]['default']))))
+    preset.shadowsize = abs(float(root.findtext('shadowsize', default=str(QuickTitle.shadowsize[1]['default']))))
+    shadowamount = abs(float(root.findtext('shadowamount', default=str(QuickTitle.shadowamount[1]['default']))))
     if shadowamount > 1:
         preset.shadowamount = 1
     else:
         preset.shadowamount = shadowamount
-    preset.shadowsoft = abs(float(root.findtext('shadowsoft', default="1")))
-    preset.shadowx = float(root.findtext('shadowx', default="0"))
-    preset.shadowy = float(root.findtext('shadowy', default="0"))
-    preset.qualityshadows = to_bool(root.findtext('qualityshadows', default="False"))
+    preset.shadowsoft = abs(float(root.findtext('shadowsoft', default=str(QuickTitle.shadowsoft[1]['default']))))
+    preset.shadowx = float(root.findtext('shadowx', default=str(QuickTitle.shadowx[1]['default'])))
+    preset.shadowy = float(root.findtext('shadowy', default=str(QuickTitle.shadowy[1]['default'])))
+    preset.qualityshadows = to_bool(root.findtext('qualityshadows', default=str(QuickTitle.qualityshadows[1]['default'])))
     objects = root.findall('objects')
     preset.objects.clear()
     for title_object in objects:
@@ -795,99 +795,99 @@ def load_quicktitle(filepath, preset):
             newobject.type = object_type
         else:
             newobject.type = 'BOX'
-        newobject.x = float(title_object.findtext('x', default="0"))
-        newobject.y = float(title_object.findtext('y', default="0"))
-        newobject.z = float(title_object.findtext('z', default="0"))
-        newobject.rot_x = float(title_object.findtext('rot_x', default="0"))
-        newobject.rot_y = float(title_object.findtext('rot_y', default="0"))
-        newobject.rot_z = float(title_object.findtext('rot_z', default="0"))
-        scale = abs(float(title_object.findtext('scale', default="1")))
+        newobject.x = float(title_object.findtext('x', default=str(QuickTitleObject.x[1]['default'])))
+        newobject.y = float(title_object.findtext('y', default=str(QuickTitleObject.y[1]['default'])))
+        newobject.z = float(title_object.findtext('z', default=str(QuickTitleObject.z[1]['default'])))
+        newobject.rot_x = float(title_object.findtext('rot_x', default=str(QuickTitleObject.rot_x[1]['default'])))
+        newobject.rot_y = float(title_object.findtext('rot_y', default=str(QuickTitleObject.rot_y[1]['default'])))
+        newobject.rot_z = float(title_object.findtext('rot_z', default=str(QuickTitleObject.rot_z[1]['default'])))
+        scale = abs(float(title_object.findtext('scale', default=str(QuickTitleObject.scale[1]['default']))))
         if scale > 0:
             newobject.scale = scale
         else:
             newobject.scale = 1
-        width = abs(float(title_object.findtext('width', default="1")))
+        width = abs(float(title_object.findtext('width', default=str(QuickTitleObject.width[1]['default']))))
         if width > 0:
             newobject.width = width
         else:
             newobject.width = 1
-        height = abs(float(title_object.findtext('height', default="1")))
+        height = abs(float(title_object.findtext('height', default=str(QuickTitleObject.height[1]['default']))))
         if height > 0:
             newobject.height = height
         else:
             newobject.height = 1
-        shear = float(title_object.findtext('shear', default="0"))
+        shear = float(title_object.findtext('shear', default=str(QuickTitleObject.shear[1]['default'])))
         if shear < -1:
             shear = -1
         if shear > 1:
             shear = 1
         newobject.shear = shear
-        newobject.cast_shadows = to_bool(title_object.findtext('cast_shadows', default="True"))
-        newobject.set_material = to_bool(title_object.findtext('set_material', default="False"))
-        newobject.material = title_object.findtext('material', default="No Preset")
-        newobject.use_shadeless = to_bool(title_object.findtext('use_shadeless', default="False"))
-        newobject.use_transparency = to_bool(title_object.findtext('use_transparency', default="False"))
-        alpha = abs(float(title_object.findtext('alpha', default="1")))
+        newobject.cast_shadows = to_bool(title_object.findtext('cast_shadows', default=str(QuickTitleObject.cast_shadows[1]['default'])))
+        newobject.set_material = to_bool(title_object.findtext('set_material', default=str(QuickTitleObject.set_material[1]['default'])))
+        newobject.material = title_object.findtext('material', default=QuickTitleObject.material[1]['default'])
+        newobject.use_shadeless = to_bool(title_object.findtext('use_shadeless', default=str(QuickTitleObject.use_shadeless[1]['default'])))
+        newobject.use_transparency = to_bool(title_object.findtext('use_transparency', default=str(QuickTitleObject.use_transparency[1]['default'])))
+        alpha = abs(float(title_object.findtext('alpha', default=str(QuickTitleObject.alpha[1]['default']))))
         if alpha > 1:
             newobject.alpha = 1
         else:
             newobject.alpha = alpha
-        specular_intensity = abs(float(title_object.findtext('specular_intensity', default="0.5")))
+        specular_intensity = abs(float(title_object.findtext('specular_intensity', default=str(QuickTitleObject.specular_intensity[1]['default']))))
         if specular_intensity > 1:
             newobject.specular_intensity = 1
         else:
             newobject.specular_intensity = specular_intensity
-        specular_hardness = abs(int(title_object.findtext('specular_hardness', default="50")))
+        specular_hardness = abs(int(title_object.findtext('specular_hardness', default=str(QuickTitleObject.specular_hardness[1]['default']))))
         if specular_hardness > 511:
             newobject.specular_hardness = 511
         elif specular_hardness < 1:
             newobject.specular_hardness = 1
         else:
             newobject.specular_hardness = specular_hardness
-        newobject.extrude = abs(float(title_object.findtext('extrude', default="0")))
-        newobject.bevel = abs(float(title_object.findtext('bevel', default="0")))
-        newobject.bevel_resolution = abs(int(title_object.findtext('bevel_resolution', default="0")))
-        newobject.text = title_object.findtext('text', default="None")
-        newobject.font = title_object.findtext('font', default="Bfont")
-        newobject.word_wrap = to_bool(title_object.findtext('word_wrap', default="True"))
-        wrap_width = abs(float(title_object.findtext('wrap_width', default="1")))
+        newobject.extrude = abs(float(title_object.findtext('extrude', default=str(QuickTitleObject.extrude[1]['default']))))
+        newobject.bevel = abs(float(title_object.findtext('bevel', default=str(QuickTitleObject.bevel[1]['default']))))
+        newobject.bevel_resolution = abs(int(title_object.findtext('bevel_resolution', default=str(QuickTitleObject.bevel_resolution[1]['default']))))
+        newobject.text = title_object.findtext('text', default=QuickTitleObject.text[1]['default'])
+        newobject.font = title_object.findtext('font', default=QuickTitleObject.font[1]['default'])
+        newobject.word_wrap = to_bool(title_object.findtext('word_wrap', default=str(QuickTitleObject.word_wrap[1]['default'])))
+        wrap_width = abs(float(title_object.findtext('wrap_width', default=str(QuickTitleObject.wrap_width[1]['default']))))
         if wrap_width > 1:
             newobject.wrap_width = 1
         elif wrap_width < 0.01:
             newobject.wrap_width = 0.01
         else:
             newobject.wrap_width = wrap_width
-        align = title_object.findtext('align', default="CENTER")
+        align = title_object.findtext('align', default=QuickTitleObject.align[1]['default'])
         if align in ['LEFT', 'CENTER', 'RIGHT', 'JUSTIFY', 'FLUSH']:
             newobject.align = align
         else:
             newobject.align = 'CENTER'
-        newobject.outline = to_bool(title_object.findtext('outline', default="False"))
-        newobject.outline_size = abs(float(title_object.findtext('outline_size', default="1")))
-        outline_alpha = abs(float(title_object.findtext('outline_alpha', default='1')))
+        newobject.outline = to_bool(title_object.findtext('outline', default=str(QuickTitleObject.outline[1]['default'])))
+        newobject.outline_size = abs(float(title_object.findtext('outline_size', default=str(QuickTitleObject.outline_size[1]['default']))))
+        outline_alpha = abs(float(title_object.findtext('outline_alpha', default=str(QuickTitleObject.outline_alpha[1]['default']))))
         if outline_alpha > 1:
             outline_alpha = 1
         newobject.outline_alpha = outline_alpha
-        outline_color = title_object.findtext('outline_diffuse_color', default="0, 0, 0").replace(' ', '').split(',')
+        outline_color = title_object.findtext('outline_diffuse_color', "0, 0, 0").replace(' ', '').replace('(', '').replace(')', '').split(',')
         if len(outline_color) != 3:
             newobject.outline_diffuse_color = (0, 0, 0)
         else:
             newobject.outline_diffuse_color = (int(outline_color[0]) / 255.0, int(outline_color[1]) / 255.0, int(outline_color[2]) / 255.0)
-        newobject.texture = title_object.findtext('texture', default="")
-        newobject.alpha_texture = title_object.findtext('alpha_texture', default="")
-        newobject.loop = to_bool(title_object.findtext('loop', default='True'))
-        newobject.frame_offset = abs(int(title_object.findtext('frame_offset', default='0')))
-        frame_length = abs(int(title_object.findtext('frame_length', default='1')))
+        newobject.texture = title_object.findtext('texture', default=QuickTitleObject.texture[1]['default'])
+        newobject.alpha_texture = title_object.findtext('alpha_texture', default=QuickTitleObject.alpha_texture[1]['default'])
+        newobject.loop = to_bool(title_object.findtext('loop', default=str(QuickTitleObject.loop[1]['default'])))
+        newobject.frame_offset = abs(int(title_object.findtext('frame_offset', default=str(QuickTitleObject.frame_offset[1]['default']))))
+        frame_length = abs(int(title_object.findtext('frame_length', default=str(QuickTitleObject.frame_length[1]['default']))))
         if frame_length > 1:
             newobject.frame_length = frame_length
         else:
             newobject.frame_length = 1
-        diffuse_color = title_object.findtext('diffuse_color', default="255, 255, 255").replace(' ', '').split(',')
+        diffuse_color = title_object.findtext('diffuse_color', default="255, 255, 255").replace(' ', '').replace('(', '').replace(')', '').split(',')
         if len(diffuse_color) != 3:
             newobject.diffuse_color = (1, 1, 1)
         else:
             newobject.diffuse_color = (int(diffuse_color[0]) / 255.0, int(diffuse_color[1]) / 255.0, int(diffuse_color[2]) / 255.0)
-        specular_color = title_object.findtext('specular_color', default="255, 255, 255").replace(' ', '').split(',')
+        specular_color = title_object.findtext('specular_color', default="255, 255, 255").replace(' ', '').replace('(', '').replace(')', '').split(',')
         if len(specular_color) != 3:
             newobject.specular_color = (1, 1, 1)
         else:
@@ -895,22 +895,22 @@ def load_quicktitle(filepath, preset):
         object_animations = title_object.findall('animations')
         for animation in object_animations:
             newanimation = newobject.animations.add()
-            newanimation.variable = animation.findtext('variable', default="Alpha")
-            newanimation.animate_in = to_bool(animation.findtext('animate_in', default="True"))
-            newanimation.animate_out = to_bool(animation.findtext('animate_out', default="True"))
-            newanimation.in_length = abs(int(animation.findtext('in_length', default="15")))
-            newanimation.out_length = abs(int(animation.findtext('out_length', default="15")))
-            newanimation.in_offset = int(animation.findtext('in_offset', default="0"))
-            newanimation.out_offset = int(animation.findtext('out_offset', default="0"))
-            newanimation.in_amount = float(animation.findtext('in_amount', default="0"))
-            newanimation.out_amount = float(animation.findtext('out_amount', default="0"))
-            cycle_type = animation.findtext('cycle_type', default='NONE')
+            newanimation.variable = animation.findtext('variable', default=QuickTitleAnimation.variable[1]['default'])
+            newanimation.animate_in = to_bool(animation.findtext('animate_in', default=str(QuickTitleAnimation.animate_in[1]['default'])))
+            newanimation.animate_out = to_bool(animation.findtext('animate_out', default=str(QuickTitleAnimation.animate_out[1]['default'])))
+            newanimation.in_length = abs(int(animation.findtext('in_length', default=str(QuickTitleAnimation.in_length[1]['default']))))
+            newanimation.out_length = abs(int(animation.findtext('out_length', default=str(QuickTitleAnimation.out_length[1]['default']))))
+            newanimation.in_offset = int(animation.findtext('in_offset', default=str(QuickTitleAnimation.in_offset[1]['default'])))
+            newanimation.out_offset = int(animation.findtext('out_offset', default=str(QuickTitleAnimation.out_offset[1]['default'])))
+            newanimation.in_amount = float(animation.findtext('in_amount', default=str(QuickTitleAnimation.in_amount[1]['default'])))
+            newanimation.out_amount = float(animation.findtext('out_amount', default=str(QuickTitleAnimation.out_amount[1]['default'])))
+            cycle_type = animation.findtext('cycle_type', default=QuickTitleAnimation.cycle_type[1]['default'])
             if cycle_type not in ['NONE', 'SINE', 'TANGENT', 'RANDOM']:
                 cycle_type = 'NONE'
             newanimation.cycle_type = cycle_type
-            newanimation.cycle_x_scale = abs(float(animation.findtext('cycle_x_scale', default='1')))
-            newanimation.cycle_y_scale = float(animation.findtext('cycle_y_scale', default='1'))
-            newanimation.cycle_offset = float(animation.findtext('cycle_offset', default='0'))
+            newanimation.cycle_x_scale = abs(float(animation.findtext('cycle_x_scale', default=str(QuickTitleAnimation.cycle_x_scale[1]['default']))))
+            newanimation.cycle_y_scale = float(animation.findtext('cycle_y_scale', default=str(QuickTitleAnimation.cycle_y_scale[1]['default'])))
+            newanimation.cycle_offset = float(animation.findtext('cycle_offset', default=str(QuickTitleAnimation.cycle_offset[1]['default'])))
     return preset
 
 
