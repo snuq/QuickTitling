@@ -2,6 +2,12 @@
 
 This addon will create and edit simple scenes for title overlays.  
 
+Watch the demo video showing some features:  
+[![Demo Video](https://img.youtube.com/vi/d3RPO53RBBw/0.jpg)](https://www.youtube.com/watch?v=d3RPO53RBBw)
+
+Watch the tutorial video showing how to make a title:  
+[![Tutorial Video](https://img.youtube.com/vi/_wM1iMVHkaI/0.jpg)](https://www.youtube.com/watch?v=_wM1iMVHkaI)
+
 Development for this script is supported by my multimedia and video production business, [Creative Life Productions](http://www.creativelifeproductions.com)  
 But, time spent working on this addon is time I cannot spend earning a living, so if you find this addon useful, consider donating:  
 
