@@ -24,7 +24,6 @@ import mathutils
 import os
 import glob
 from math import pi
-from bpy.app.handlers import persistent
 from bpy_extras.io_utils import ImportHelper, ExportHelper
 from bpy_extras.image_utils import load_image
 import bpy.utils.previews
@@ -1105,6 +1104,7 @@ def quicktitle_create(quicktitle=False):
     #Basic scene setup
     bpy.ops.scene.new(type='EMPTY')
     title_scene = bpy.context.scene
+    title_scene.frame_start = 1
     title_scene.frame_end = quicktitle.length
     title_scene.layers = [True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True]
     title_scene.render.engine = 'BLENDER_RENDER'
