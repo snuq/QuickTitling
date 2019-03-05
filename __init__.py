@@ -1115,8 +1115,7 @@ def quicktitle_create(quicktitle=False):
     title_scene = bpy.context.scene
     title_scene.frame_start = 1
     title_scene.frame_end = quicktitle.length
-    title_scene.layers = [True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True]
-    title_scene.render.engine = 'BLENDER_RENDER'
+    title_scene.render.engine = 'BLENDER_EEVEE'
     title_scene.render.alpha_mode = 'TRANSPARENT'
     title_scene.render.image_settings.file_format = 'PNG'
     title_scene.render.image_settings.color_mode = 'RGBA'
@@ -1129,41 +1128,41 @@ def quicktitle_create(quicktitle=False):
     title_scene.name = name
 
     bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, 0))
-    lampcenter = bpy.context.scene.objects.active
+    lampcenter = bpy.context.active_object
 
     #Camera setup
     bpy.ops.object.camera_add()
-    camera = bpy.context.scene.objects.active
+    camera = bpy.context.active_object
     title_scene.camera = camera
     camera.location = (0, 0, 2.17)
     camera.name = "QuickTitlerCamera"
 
     #Basic lamps setup
     lamp_energy = 0.5
-    bpy.ops.object.lamp_add(location=(-1.1, -.6, .5))
-    lamp1 = bpy.context.scene.objects.active
+    bpy.ops.object.light_add(location=(-1.1, -.6, .5))
+    lamp1 = bpy.context.active_object
     lamp1.data.energy = lamp_energy
-    lamp1.data.shadow_method = 'NOSHADOW'
+    lamp1.data.use_shadow = False
     lamp1.parent = lampcenter
-    bpy.ops.object.lamp_add(location=(1.1, -.6, .5))
-    lamp2 = bpy.context.scene.objects.active
+    bpy.ops.object.light_add(location=(1.1, -.6, .5))
+    lamp2 = bpy.context.active_object
     lamp2.data.energy = lamp_energy
-    lamp2.data.shadow_method = 'NOSHADOW'
+    lamp2.data.use_shadow = False
     lamp2.parent = lampcenter
-    bpy.ops.object.lamp_add(location=(-1.1, .6, .5))
-    lamp3 = bpy.context.scene.objects.active
+    bpy.ops.object.light_add(location=(-1.1, .6, .5))
+    lamp3 = bpy.context.active_object
     lamp3.data.energy = lamp_energy
-    lamp3.data.shadow_method = 'NOSHADOW'
+    lamp3.data.use_shadow = False
     lamp3.parent = lampcenter
-    bpy.ops.object.lamp_add(location=(1.1, .6, .5))
-    lamp4 = bpy.context.scene.objects.active
+    bpy.ops.object.light_add(location=(1.1, .6, .5))
+    lamp4 = bpy.context.active_object
     lamp4.data.energy = lamp_energy
-    lamp4.data.shadow_method = 'NOSHADOW'
+    lamp4.data.use_shadow = False
     lamp4.parent = lampcenter
 
     #Shadow lamp setup
-    bpy.ops.object.lamp_add(type= 'SPOT', location=(0, 0, 1))
-    shadow_lamp = bpy.context.scene.objects.active
+    bpy.ops.object.light_add(type='SPOT', location=(0, 0, 1))
+    shadow_lamp = bpy.context.active_object
     basename = 'QuickTitlerLamp'
     if basename in bpy.data.objects:
         name = 'QuickTitlerLamp.001'
@@ -1176,27 +1175,21 @@ def quicktitle_create(quicktitle=False):
     shadow_lamp.name = name
     quicktitle_preset.shadowlamp_internal_name = shadow_lamp.name
     shadow_lamp.parent = lampcenter
-    shadow_lamp.data.use_only_shadow = True
-    shadow_lamp.data.use_specular = False
-    shadow_lamp.data.distance = 3
-    shadow_lamp.data.shadow_ray_samples = 4
+    #shadow_lamp.data.use_only_shadow = True #todo: how to do this in eevee?
+    shadow_lamp.data.specular_factor = 0
     shadow_lamp.data.shadow_soft_size = 0
     shadow_lamp.data.falloff_type = 'CONSTANT'
-    shadow_lamp.data.shadow_method = 'BUFFER_SHADOW'
-    shadow_lamp.data.shadow_buffer_type = 'REGULAR'
+    shadow_lamp.data.use_shadow = True
     shadow_lamp.data.shadow_buffer_soft = 10
     shadow_lamp.data.shadow_buffer_bias = 0.1
     shadow_lamp.data.shadow_buffer_size = 4096
     shadow_lamp.data.shadow_buffer_samples = 4
-    shadow_lamp.data.shadow_sample_buffers = 'BUFFERS_4'
     shadow_lamp.data.shadow_buffer_clip_end = 4
-    shadow_lamp.data.use_auto_clip_start = True
-    shadow_lamp.data.use_auto_clip_end = True
     shadow_lamp.data.spot_size = 2.6
     shadow_lamp.data.use_square = True
-    
+
     #Add scene to sequencer
-    bpy.context.screen.scene = scene
+    bpy.context.window.scene = scene
     bpy.ops.sequencer.scene_strip_add(frame_start=scene.frame_current, scene=title_scene.name)
     sequence = bpy.context.scene.sequence_editor.active_strip
     sequence.name = name
@@ -1213,7 +1206,7 @@ def create_object(scene, object_type, name):
         mesh.from_pydata(verts, [], faces)
         uvmap = mesh.uv_textures.new()
         title_object = bpy.data.objects.new(name=name, object_data=mesh)
-        scene.objects.link(title_object)
+        scene.collection.objects.link(title_object)
 
     elif object_type == 'CIRCLE':
         #create circle
@@ -1238,7 +1231,7 @@ def create_object(scene, object_type, name):
         spline.resolution_u = 12
         spline.order_u = 4
         title_object = bpy.data.objects.new(name=name, object_data=curve)
-        scene.objects.link(title_object)
+        scene.collection.objects.link(title_object)
 
     elif object_type == 'BOX':
         #create box
@@ -1257,14 +1250,14 @@ def create_object(scene, object_type, name):
         spline.resolution_u = 1
         spline.order_u = 2
         title_object = bpy.data.objects.new(name=name, object_data=curve)
-        scene.objects.link(title_object)
+        scene.collection.objects.link(title_object)
 
     else:
         #create text
         text = bpy.data.curves.new(name=name, type='FONT')
         text.size = 0.1
         title_object = bpy.data.objects.new(name=name, object_data=text)
-        scene.objects.link(title_object)
+        scene.collection.objects.link(title_object)
 
     return title_object
 
@@ -1574,8 +1567,8 @@ def setup_object(title_object, object_preset, material, scale_multiplier):
 def quicktitle_update(sequence, quicktitle, update_all=False):
     #Function to update a QuickTitle sequence
     scene = sequence.scene
-    oldscene = bpy.context.screen.scene
-    bpy.context.screen.scene = scene
+    oldscene = bpy.context.window.scene
+    bpy.context.window.scene = scene
     scenename = "QuickTitle: "+quicktitle.name
 
     #Update scene length, if changed, update all objects
@@ -1595,31 +1588,18 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
         shadow_lamp = scene.objects[quicktitle.shadowlamp_internal_name]
         softshadow = quicktitle.shadowsoft * 10
         shadow_lamp.data.shadow_buffer_soft = softshadow
-        if softshadow >= 20:
-            shadow_lamp.data.shadow_buffer_samples = 8
-            shadow_lamp.data.shadow_ray_samples = 8
-        elif softshadow >= 10:
-            shadow_lamp.data.shadow_buffer_samples = 6
-            shadow_lamp.data.shadow_ray_samples = 6
-        elif softshadow > 0:
-            shadow_lamp.data.shadow_buffer_samples = 4
-            shadow_lamp.data.shadow_ray_samples = 4
-        else:
-            shadow_lamp.data.shadow_buffer_samples = 1
-            shadow_lamp.data.shadow_ray_samples = 1
         shadow_lamp.data.energy = quicktitle.shadowamount
         shadow_lamp.data.shadow_soft_size = quicktitle.shadowsoft
         shadow_lamp.location = (quicktitle.shadowx, quicktitle.shadowy, quicktitle.shadowsize)
         if quicktitle.shadowamount > 0:
-            if quicktitle.qualityshadows:
-                shadow_lamp.data.shadow_method = 'RAY_SHADOW'
-            else:
-                shadow_lamp.data.shadow_method = 'BUFFER_SHADOW'
+            shadow_lamp.data.use_shadow = True
         else:
-            shadow_lamp.data.shadow_method = 'NOSHADOW'
+            shadow_lamp.data.use_shadow = False
     else:
         #shadow_lamp = None
         print('Selected Title Scene Is Incomplete: Missing Shadow Lamp')
+
+    #todo: update shadow settings for quicktitle.qualityshodows
 
     #update individual scene objects
     for object_layer, object_preset in enumerate(quicktitle.objects):
@@ -1806,7 +1786,7 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
     #update scene and sequence
     scene.name = scenename
     sequence.name = scenename
-    bpy.context.screen.scene = oldscene
+    bpy.context.window.scene = oldscene
     scene.update()
     bpy.ops.sequencer.reload(adjust_length=True)
     bpy.ops.sequencer.refresh_all()
@@ -2354,7 +2334,7 @@ class QuickTitle(bpy.types.PropertyGroup):
     qualityshadows: bpy.props.BoolProperty(
         name="High Quality Shadows",
         default=False,
-        description="This will switch shadows to ray tracing mode, making them more accurate and smooth, but greatly increasing render times.",
+        description="Increases shadow quality, but also increases render times.",
         update=quicktitle_autoupdate)
 
 
@@ -2702,9 +2682,9 @@ class QuickTitlingReplaceWithImage(bpy.types.Operator, ExportHelper):
             scene.render.filepath = imagepath
             oldscene = bpy.context.scene
             scene.frame_current = scene.frame_end / 2
-            bpy.context.screen.scene = scene
+            bpy.context.window.scene = scene
             bpy.ops.render.render(write_still=True)
-            bpy.context.screen.scene = oldscene
+            bpy.context.window.scene = oldscene
             self.report({'INFO'}, "Rendered QuickTitle as: "+imagepath)
 
             #load the image into the sequencer
@@ -3026,9 +3006,9 @@ class QuickTitlingPresetExport(bpy.types.Operator, ExportHelper):
 
             oldscene = bpy.context.scene
             scene.frame_current = scene.frame_end / 2
-            bpy.context.screen.scene = scene
+            bpy.context.window.scene = scene
             bpy.ops.render.render(write_still=True)
-            bpy.context.screen.scene = oldscene
+            bpy.context.window.scene = oldscene
             self.report({'INFO'}, "Rendered QuickTitle Preview As: "+imagepath)
 
             scene.render.resolution_x = old_res_x
