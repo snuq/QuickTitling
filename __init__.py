@@ -1934,91 +1934,91 @@ def quicktitle_animation_icon(animation_type):
     if animation_type == "Alpha":
         return "IMAGE_RGB_ALPHA"
     elif animation_type == "X Slide":
-        return "MAN_TRANS"
+        return "EMPTY_ARROWS"
     elif animation_type == "Y Slide":
-        return "MAN_TRANS"
+        return "EMPTY_ARROWS"
     elif animation_type == "Z Slide":
-        return "MAN_TRANS"
+        return "EMPTY_ARROWS"
     elif animation_type == "X Rotate":
-        return "MAN_ROT"
+        return "NDOF_TURN"
     elif animation_type == "Y Rotate":
-        return "MAN_ROT"
+        return "NDOF_TURN"
     elif animation_type == "Z Rotate":
-        return "MAN_ROT"
+        return "NDOF_TURN"
     elif animation_type == "Width":
-        return "MAN_SCALE"
+        return "FULLSCREEN_ENTER"
     elif animation_type == "Height":
-        return "MAN_SCALE"
+        return "FULLSCREEN_ENTER"
     elif animation_type == "Depth":
-        return "MAN_SCALE"
+        return "FULLSCREEN_ENTER"
     else:
         return "DOT"
 
 
 class QuickTitleAnimation(bpy.types.PropertyGroup):
     #animation object stored in quicktitle objects
-    variable = bpy.props.StringProperty(
+    variable: bpy.props.StringProperty(
         name="Animation Variable Name",
         default='Alpha')
-    animate_in = bpy.props.BoolProperty(
+    animate_in: bpy.props.BoolProperty(
         name="Animate Variable In",
         default=True,
         description="This will determine if this animation will change this variable from the beginning of the title.",
         update=quicktitle_autoupdate)
-    animate_out = bpy.props.BoolProperty(
+    animate_out: bpy.props.BoolProperty(
         name="Animate Variable Out",
         default=True,
         description="This will determine if this animation will change this variable at the end of the title.",
         update=quicktitle_autoupdate)
-    in_length = bpy.props.IntProperty(
+    in_length: bpy.props.IntProperty(
         name="Length Of In Animation",
         default=15,
         min=0,
         description="Length in frames of the animation applied to the beginning of the title.",
         update=quicktitle_autoupdate)
-    out_length = bpy.props.IntProperty(
+    out_length: bpy.props.IntProperty(
         name="Length Of Out Animation",
         default=15,
         min=0,
         description="Length in frames of the animation applied to the ending of the title.",
         update=quicktitle_autoupdate)
-    in_offset = bpy.props.IntProperty(
+    in_offset: bpy.props.IntProperty(
         name="Frame Offset Of In Animation",
         default=0,
         description="Distance in frames the animation will be offset from the beginning of the title.  Positive values result in a delayed animation, negative values result in an animation beginning before the start of the title.",
         update=quicktitle_autoupdate)
-    out_offset = bpy.props.IntProperty(
+    out_offset: bpy.props.IntProperty(
         name="Frame Offset Of Out Animation",
         default=0,
         description="Distance in frames the animation will be offset from the end of the title.  Positive values result in a delayed animation, negative values result in an animation beginning before the start of the title.",
         update=quicktitle_autoupdate)
-    in_amount = bpy.props.FloatProperty(
+    in_amount: bpy.props.FloatProperty(
         name="Amount Of In Animation",
         default=1,
         description="Beginning value of the starting animation.  This is a float with any value allowed, but depending on the variable being animated, some values will not make sense.",
         update=quicktitle_autoupdate)
-    out_amount = bpy.props.FloatProperty(
+    out_amount: bpy.props.FloatProperty(
         name="Amount Of Out Animation",
         default=1,
         description="Ending value of the end animation.  This is a float with any value allowed, but depending on the variable being animated, some values will not make sense.",
         update=quicktitle_autoupdate)
-    cycle_x_scale = bpy.props.FloatProperty(
+    cycle_x_scale: bpy.props.FloatProperty(
         name="X Scale",
         default=1,
         min=0,
         description="Horizontal scale of the cyclic animation.",
         update=quicktitle_autoupdate)
-    cycle_y_scale = bpy.props.FloatProperty(
+    cycle_y_scale: bpy.props.FloatProperty(
         name="Y Scale",
         default=1,
         description="Vertical scale of the cyclic animation.",
         update=quicktitle_autoupdate)
-    cycle_offset = bpy.props.FloatProperty(
+    cycle_offset: bpy.props.FloatProperty(
         name="Offset",
         default=0,
         description="Horizontal offset of the cyclic animation.",
         update=quicktitle_autoupdate)
-    cycle_type = bpy.props.EnumProperty(
+    cycle_type: bpy.props.EnumProperty(
         name="Cycle Type",
         default="NONE",
         items=[('NONE', 'None', '', 1), ('SINE', 'Sine', '', 2), ('TANGENT', 'Tangent', '', 3), ('RANDOM', 'Random', '', 4)],
@@ -2030,106 +2030,106 @@ class QuickTitleObject(bpy.types.PropertyGroup):
     #Preset for objects stored in a title scene
 
     #Basic variables for all object types:
-    name = bpy.props.StringProperty(
+    name: bpy.props.StringProperty(
         name="Object Name",
         description="Name to identify this object.")
-    internal_name = bpy.props.StringProperty(
+    internal_name: bpy.props.StringProperty(
         name="Blender Name",
         description="Reference name to this object used by Blender.")
-    type = bpy.props.EnumProperty(
+    type: bpy.props.EnumProperty(
         name="Object Type",
         items=[('TEXT', 'Text', '', 1), ('IMAGE', 'Image', '', 2), ('BOX', 'Box', '', 3), ('CIRCLE', 'Circle', '', 4)],
         description="Type of object")
-    x = bpy.props.FloatProperty(
+    x: bpy.props.FloatProperty(
         name="Object X Location",
         default=0,
         description="Horizontal location of this object.  0 is centered, 1 is the right side of screen, -1 is the left side of screen.",
         update=quicktitle_autoupdate)
-    y = bpy.props.FloatProperty(
+    y: bpy.props.FloatProperty(
         name="Object Y Location",
         default=0,
         description="Vertical location of this object.  0 is centered, top and bottom vary depending on the aspect ratio of the screen, 0.56 will usually be at the top, -0.56 at the bottom.",
         update=quicktitle_autoupdate)
-    z = bpy.props.FloatProperty(
+    z: bpy.props.FloatProperty(
         name="Object Z Position",
         default=0,
         description="Offset for 3d positioning of this object.  This value will affect the position and size of this object, as well as position above or below other objects.",
         update=quicktitle_autoupdate)
-    rot_x = bpy.props.FloatProperty(
+    rot_x: bpy.props.FloatProperty(
         name='X Rotation',
         default=0,
         description='Object rotation around the X axis (forward and back tilting).',
         update=quicktitle_autoupdate)
-    rot_y = bpy.props.FloatProperty(
+    rot_y: bpy.props.FloatProperty(
         name='Y Rotation',
         default=0,
         description='Object rotation around the Y axis (left and right wobble).',
         update=quicktitle_autoupdate)
-    rot_z = bpy.props.FloatProperty(
+    rot_z: bpy.props.FloatProperty(
         name='Z Rotation',
         default=0,
         description='Object rotation around the Z axis (spin).',
         update=quicktitle_autoupdate)
-    scale = bpy.props.FloatProperty(
+    scale: bpy.props.FloatProperty(
         name="Overall Object Scale",
         default=1,
         min=0,
         description="Overall scaling of this object.  1 is the original size, 0.5 is half size, 2 is double size.",
         update=quicktitle_autoupdate)
-    width = bpy.props.FloatProperty(
+    width: bpy.props.FloatProperty(
         name="Object Width Multiplier",
         default=1,
         min=0,
         description="Multiplies the size of the object on the width axis.  1 is original size, 0.5 is half size, 2 is double size.",
         update=quicktitle_autoupdate)
-    height = bpy.props.FloatProperty(
+    height: bpy.props.FloatProperty(
         name="Object Height Multiplier",
         default=1,
         min=0,
         description="Multiplies the size of the object on the height axis.  1 is the original size, 0.5 is half size, 2 is double size.",
         update=quicktitle_autoupdate)
-    shear = bpy.props.FloatProperty(
+    shear: bpy.props.FloatProperty(
         name="Shearing",
         default=0,
         min=-1,
         max=1,
         description="Creates an italic effect by shearing the object.  0 is no shearing, 1 is full forward lean, -1 is full backward lean.",
         update=quicktitle_autoupdate)
-    set_material = bpy.props.BoolProperty(
+    set_material: bpy.props.BoolProperty(
         name="Set Material",
         default=False,
         description="When unchecked, this object will use a default material, when checked, you may set the material manually.",
         update=quicktitle_autoupdate)
-    material = bpy.props.StringProperty(
+    material: bpy.props.StringProperty(
         name="Object Material",
         default="No Preset",
         update=quicktitle_autoupdate)
-    internal_material = bpy.props.StringProperty(
+    internal_material: bpy.props.StringProperty(
         name="Internal Object Material Name",
         default="No Preset")
-    cast_shadows = bpy.props.BoolProperty(
+    cast_shadows: bpy.props.BoolProperty(
         name="Cast Shadows",
         default=True,
         description="Allow this object to cast shadows on objects behind it.",
         update=quicktitle_autoupdate)
-    use_shadeless = bpy.props.BoolProperty(
+    use_shadeless: bpy.props.BoolProperty(
         name="Shadeless",
         default=False,
         description="Give this material a solid color with no shading or specularity.",
         update=quicktitle_autoupdate)
-    use_transparency = bpy.props.BoolProperty(
+    use_transparency: bpy.props.BoolProperty(
         name="Transparency",
         default=False,
         description="Enables transparency on this object.",
         update=quicktitle_autoupdate)
-    alpha = bpy.props.FloatProperty(
+    alpha: bpy.props.FloatProperty(
         name="Opacity",
         default=1,
         min=0,
         max=1,
         description="Opacity controls the transparency of this object.  1 is fully visible, 0.5 is half transparent, 0 is invisible.",
         update=quicktitle_autoupdate)
-    diffuse_color = bpy.props.FloatVectorProperty(
+    diffuse_color: bpy.props.FloatVectorProperty(
         name="Color Of The Material",
         size=3,
         default=(1, 1, 1),
@@ -2138,21 +2138,21 @@ class QuickTitleObject(bpy.types.PropertyGroup):
         subtype='COLOR',
         description="Basic color of this object.",
         update=quicktitle_autoupdate)
-    specular_intensity = bpy.props.FloatProperty(
+    specular_intensity: bpy.props.FloatProperty(
         name="Material Specularity",
         default=0.5,
         min=0,
         max=1,
         description="Controls the specularity, or shininess of this material.",
         update=quicktitle_autoupdate)
-    specular_hardness = bpy.props.IntProperty(
+    specular_hardness: bpy.props.IntProperty(
         name="Specular Hardness",
         default=50,
         min=1,
         max=511,
         description="Controls the sharpness of the specularity of this material.",
         update=quicktitle_autoupdate)
-    specular_color = bpy.props.FloatVectorProperty(
+    specular_color: bpy.props.FloatVectorProperty(
         name="Color Of The Specularity",
         size=3,
         default=(1, 1, 1),
@@ -2161,25 +2161,25 @@ class QuickTitleObject(bpy.types.PropertyGroup):
         subtype='COLOR',
         description="Specular color of this object.",
         update=quicktitle_autoupdate)
-    animations = bpy.props.CollectionProperty(
+    animations: bpy.props.CollectionProperty(
         type=QuickTitleAnimation)
-    selected_animation = bpy.props.IntProperty(
+    selected_animation: bpy.props.IntProperty(
         name='Selected Animation')
 
     #Variables specific to the Box and Text types:
-    extrude = bpy.props.FloatProperty(
+    extrude: bpy.props.FloatProperty(
         name="Extrude Amount",
         default=0,
         min=0,
         description="Amount of 3d extrusion to apply to this object.",
         update=quicktitle_autoupdate)
-    bevel = bpy.props.FloatProperty(
+    bevel: bpy.props.FloatProperty(
         name="Bevel Size",
         default=0,
         min=0,
         description="Size of the added beveled edge.",
         update=quicktitle_autoupdate)
-    bevel_resolution = bpy.props.IntProperty(
+    bevel_resolution: bpy.props.IntProperty(
         name="Bevel Resolution",
         default=0,
         min=0,
@@ -2187,27 +2187,27 @@ class QuickTitleObject(bpy.types.PropertyGroup):
         update=quicktitle_autoupdate)
 
     #Variables specific to the Text type:
-    text = bpy.props.StringProperty(
+    text: bpy.props.StringProperty(
         name="Text",
         default="None",
         update=quicktitle_autoupdate)
-    font = bpy.props.StringProperty(
+    font: bpy.props.StringProperty(
         name="Font",
         default="Bfont",
         description="Selected font for this text object",
         update=quicktitle_autoupdate)
-    word_wrap = bpy.props.BoolProperty(
+    word_wrap: bpy.props.BoolProperty(
         name="Word Wrapping",
         default=True,
         description="Enables word-wrapping on text objects to limit the text line width.",
         update=quicktitle_autoupdate)
-    wrap_width = bpy.props.FloatProperty(
+    wrap_width: bpy.props.FloatProperty(
         name="Word Wrap Width",
         default=.9,
         min=.01,
         description="If word-wrap is enabled, this will determine the width of the text box.  The actual size varies based on object scale.  At a scale of 1, 1 is the full width of the screen, 0.5 is half width, 0.01 will result in one word per line.",
         update=quicktitle_autoupdate)
-    align = bpy.props.EnumProperty(
+    align: bpy.props.EnumProperty(
         name="Text Alignment",
         items=[('LEFT', 'Left', '', 1), ('CENTER', 'Center', '', 2), ('RIGHT', 'Right', '', 3), ('JUSTIFY', 'Justify', '', 4), ('FLUSH', 'Flush', '', 5)],
         default='CENTER',
@@ -2215,26 +2215,26 @@ class QuickTitleObject(bpy.types.PropertyGroup):
         update=quicktitle_autoupdate)
 
     #Variables specific to all but Image type:
-    outline = bpy.props.BoolProperty(
+    outline: bpy.props.BoolProperty(
         name="Enable Outline",
         default=False,
         description="Add an outline around this object",
         update=quicktitle_autoupdate)
-    outline_size = bpy.props.FloatProperty(
+    outline_size: bpy.props.FloatProperty(
         name="Outline Size",
         default=1,
         min=0,
         max=100,
         description="Size of the displayed outline",
         update=quicktitle_autoupdate)
-    outline_alpha = bpy.props.FloatProperty(
+    outline_alpha: bpy.props.FloatProperty(
         name="Opacity",
         default=1,
         min=0,
         max=1,
         description="Opacity controls the transparency of this object.  1 is fully visible, 0.5 is half transparent, 0 is invisible.",
         update=quicktitle_autoupdate)
-    outline_diffuse_color = bpy.props.FloatVectorProperty(
+    outline_diffuse_color: bpy.props.FloatVectorProperty(
         name="Color Of The Material",
         size=3,
         default=(0, 0, 0),
@@ -2245,31 +2245,31 @@ class QuickTitleObject(bpy.types.PropertyGroup):
         update=quicktitle_autoupdate)
 
     #Variables specific to the Image type:
-    texture = bpy.props.StringProperty(
+    texture: bpy.props.StringProperty(
         name="Image Texture",
         default="",
         description="File path to the image or video texture.",
         subtype='FILE_PATH',
         update=quicktitle_autoupdate)
-    alpha_texture = bpy.props.StringProperty(
+    alpha_texture: bpy.props.StringProperty(
         name="Alpha Transparent Texture",
         default="",
         description="File path to the image used for transparency.",
         subtype='FILE_PATH',
         update=quicktitle_autoupdate)
     #Variables specific to video textures
-    loop = bpy.props.BoolProperty(
+    loop: bpy.props.BoolProperty(
         name="Loop Video",
         default=True,
         description="Enables looping of a video texture",
         update=quicktitle_autoupdate)
-    frame_offset = bpy.props.IntProperty(
+    frame_offset: bpy.props.IntProperty(
         name="Frame Offset",
         default=0,
         min=0,
         description="Number of frames to cut off from the beginning of the video.",
         update=quicktitle_autoupdate)
-    frame_length = bpy.props.IntProperty(
+    frame_length: bpy.props.IntProperty(
         name="Frame Length",
         default=1,
         min=1,
@@ -2279,70 +2279,70 @@ class QuickTitleObject(bpy.types.PropertyGroup):
 
 class QuickTitle(bpy.types.PropertyGroup):
     #preset for a QuickTitle scene
-    name = bpy.props.StringProperty(
+    name: bpy.props.StringProperty(
         name="Preset Name",
         default="Default",
         description="Name to identify this preset.",
         update=quicktitle_autoupdate)
-    description = bpy.props.StringProperty(
+    description: bpy.props.StringProperty(
         name="Description",
         default="",
         description="Use this text area to describe the preset in detail.")
-    z_scale = bpy.props.FloatProperty(
+    z_scale: bpy.props.FloatProperty(
         name="Z Depth Scale",
         default=1,
         min=0,
         description="Determines the depth distance between objects in the title.  This affects the size of the shadows as well.  A value of 0 will place all objects on the same level, 1 is default.",
         update=quicktitle_autoupdate_all)
-    objects = bpy.props.CollectionProperty(
+    objects: bpy.props.CollectionProperty(
         type=QuickTitleObject)
-    selected_object = bpy.props.IntProperty(
+    selected_object: bpy.props.IntProperty(
         name="Selected Object",
         default=0,
         min=0,
         update=quicktitle_autoupdate)
-    enable_shadows = bpy.props.BoolProperty(
+    enable_shadows: bpy.props.BoolProperty(
         name="Shadows",
         default=True,
         description="Enables shadows in this title.",
         update=quicktitle_autoupdate)
-    shadowlamp_internal_name = bpy.props.StringProperty(
+    shadowlamp_internal_name: bpy.props.StringProperty(
         name="Internal Name For The Shadow Lamp",
         default='')
-    shadowsize = bpy.props.FloatProperty(
+    shadowsize: bpy.props.FloatProperty(
         name="Shadow Distance",
         default=1,
         min=0,
         description="Distance of the shadow casting lamp, determines the overall size of the shadows.",
         update=quicktitle_autoupdate)
-    shadowamount = bpy.props.FloatProperty(
+    shadowamount: bpy.props.FloatProperty(
         name="Shadow Amount",
         default=.5,
         min=0,
         description="Overall opacity of the shadow.  0 is no shadows, 1 is full shadows.",
         update=quicktitle_autoupdate)
-    shadowsoft = bpy.props.FloatProperty(
+    shadowsoft: bpy.props.FloatProperty(
         name="Shadow Softness",
         default=1,
         min=0,
         description="The amount of blur applied to the shadow.  A value of 0 results in fully sharp shadows.",
         update=quicktitle_autoupdate)
-    shadowx = bpy.props.FloatProperty(
+    shadowx: bpy.props.FloatProperty(
         name="Shadow Lamp X Position",
         default=0,
         description="Horizontal position of the shadow casting lamp.  -1 is the left side of the screen, 0 is centered, and 1 is the right side of the screen.",
         update=quicktitle_autoupdate)
-    shadowy = bpy.props.FloatProperty(
+    shadowy: bpy.props.FloatProperty(
         name="Shadow Lamp Y Position",
         default=0,
         description="Vertical position of the shadow casting lamp.  Values depend on the image aspect ratio, 0.56 will usually be around the top of the screen, 0 at the center, and -0.56 around the bottom.",
         update=quicktitle_autoupdate)
-    length = bpy.props.IntProperty(
+    length: bpy.props.IntProperty(
         name="Scene Length",
         default=300,
         description="Length of the title preset in frames.  Change this value to automatically adjust animations and scene length.",
         update=quicktitle_autoupdate)
-    qualityshadows = bpy.props.BoolProperty(
+    qualityshadows: bpy.props.BoolProperty(
         name="High Quality Shadows",
         default=False,
         description="This will switch shadows to ray tracing mode, making them more accurate and smooth, but greatly increasing render times.",
@@ -2357,8 +2357,8 @@ class QuickTitleObjectListItem(bpy.types.UIList):
         pass
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        split = layout.split(percentage=0.9)
-        split.label(item.name, icon=quicktitle_object_icon(item.type))
+        split = layout.split(factor=0.9)
+        split.label(text=item.name, icon=quicktitle_object_icon(item.type))
         split.operator('quicktitler.delete_object', icon="X", text="").index = index
 
 
@@ -2366,8 +2366,8 @@ class QuickTitleAnimationListItem(bpy.types.UIList):
     #Draw an animation in the animation list
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        split = layout.split(percentage=0.9)
-        split.label(item.variable, icon=quicktitle_animation_icon(item.variable))
+        split = layout.split(factor=0.9)
+        split.label(text=item.variable, icon=quicktitle_animation_icon(item.variable))
         split.operator('quicktitler.delete_animation', icon="X", text="").index = index
 
 
@@ -2386,7 +2386,7 @@ class QuickTitlingPanel(bpy.types.Panel):
             #no title selected, display preset manager
             current_edited = context.scene.quicktitler.current_edited
             row = box.row()
-            row.label("Select Preset:")
+            row.label(text="Select Preset:")
             row.menu('quicktitler.preset_menu', text=quicktitle_preset.name)
             row = box.row()
             row.operator('quicktitler.preset_import', text='Import Preset')
@@ -2410,7 +2410,7 @@ class QuickTitlingPanel(bpy.types.Panel):
         row = bottom.row()
         modified = " (Modified)" if current_edited else ""
         if not quicktitle_sequence:
-            row.label("Edit This Preset:"+modified)
+            row.label(text="Edit This Preset:"+modified)
             row = bottom.row()
             split = row.split()
             split.operator('quicktitler.save_preset')
@@ -2418,7 +2418,7 @@ class QuickTitlingPanel(bpy.types.Panel):
             row.operator('quicktitler.preset_export', text='Export')
 
         else:
-            row.label("Edit Selected Title:"+modified)
+            row.label(text="Edit Selected Title:"+modified)
             row = bottom.row()
             split = row.split()
             split.operator('quicktitler.save_preset')
@@ -2436,7 +2436,7 @@ class QuickTitlingPanel(bpy.types.Panel):
         row.prop(quicktitle_preset, 'z_scale')
 
         row = bottom.row()
-        row.label("Objects:")
+        row.label(text="Objects:")
         preset_objects = quicktitle_preset.objects
         current_object_index = quicktitle_preset.selected_object
         if len(preset_objects) >= current_object_index + 1:
@@ -2451,7 +2451,7 @@ class QuickTitlingPanel(bpy.types.Panel):
         col.operator("quicktitler.object_down", text="", icon="TRIA_DOWN").index = quicktitle_preset.selected_object
 
         row = bottom.row(align=True)
-        row.label("Add:")
+        row.label(text="Add:")
         row.operator('quicktitler.add_object', text='Text', icon=quicktitle_object_icon('TEXT')).type = 'TEXT'
         row.operator('quicktitler.add_object', text='Image', icon=quicktitle_object_icon('IMAGE')).type = 'IMAGE'
         row.operator('quicktitler.add_object', text='Box', icon=quicktitle_object_icon('BOX')).type = 'BOX'
@@ -2474,7 +2474,7 @@ class QuickTitlingPanel(bpy.types.Panel):
                 row.prop(current_object, 'text')
 
                 row = subarea.row()
-                split = row.split(percentage=0.9, align=True)
+                split = row.split(factor=0.9, align=True)
                 split.menu('quicktitler.fonts_menu', text=current_object.font)
                 split.operator('quicktitler.load_font', text='+')
 
@@ -2486,15 +2486,15 @@ class QuickTitlingPanel(bpy.types.Panel):
                 row.prop(current_object, 'align', expand=True)
 
             row = outline.row(align=True)
-            split = row.split(percentage=.15, align=True)
-            split.label('Pos:')
+            split = row.split(factor=.15, align=True)
+            split.label(text='Pos:')
             split.prop(current_object, 'x', text='X')
             split.prop(current_object, 'y', text='Y')
             split.prop(current_object, 'z', text='Z')
 
             row = outline.row(align=True)
-            split = row.split(percentage=.15, align=True)
-            split.label('Rot:')
+            split = row.split(factor=.15, align=True)
+            split.label(text='Rot:')
             split.prop(current_object, 'rot_x', text='X')
             split.prop(current_object, 'rot_y', text='Y')
             split.prop(current_object, 'rot_z', text='Z')
@@ -2511,7 +2511,7 @@ class QuickTitlingPanel(bpy.types.Panel):
                 subarea = outline.box()
 
                 row = subarea.row()
-                row.label('Thickness', icon="MESH_CUBE")
+                row.label(text='Thickness', icon="MESH_CUBE")
                 row.prop(current_object, 'extrude', text='Amount')
 
                 row = subarea.row(align=True)
@@ -2520,10 +2520,10 @@ class QuickTitlingPanel(bpy.types.Panel):
 
                 subarea = outline.box()
                 row = subarea.row()
-                row.label("Outline", icon="INLINK")
+                row.label(text="Outline", icon="MOD_SKIN")
                 row.prop(current_object, 'outline', text="Enable")
                 row = subarea.row()
-                split = row.split(percentage=.85)
+                split = row.split(factor=.85)
                 subsplit = split.split()
                 subsplit.prop(current_object, 'outline_size', text='Size')
                 subsplit.prop(current_object, 'outline_alpha', text='Alpha')
@@ -2540,14 +2540,14 @@ class QuickTitlingPanel(bpy.types.Panel):
                 row.menu('quicktitler.materials_menu', text=current_object.material)
 
             row = subarea.row()
-            split = row.split(percentage=.85)
+            split = row.split(factor=.85)
             subsplit = split.split()
             subsplit.prop(current_object, 'use_shadeless', text='Use No Shading')
             subsplit.prop(current_object, 'cast_shadows', text='Cast Shadows')
             split.prop(current_object, 'diffuse_color', text='')
 
             row = subarea.row()
-            split = row.split(percentage=.85, align=True)
+            split = row.split(factor=.85, align=True)
             subsplit = split.split(align=True)
             subsplit.prop(current_object, 'specular_intensity', text="Specular")
             subsplit.prop(current_object, 'specular_hardness', text="Hardness")
@@ -2617,9 +2617,9 @@ class QuickTitlingPanel(bpy.types.Panel):
         outline = bottom.box()
 
         row = outline.row()
-        split = row.split(percentage=.1)
+        split = row.split(factor=.1)
         split.prop(quicktitle_preset, 'enable_shadows', icon="TRIA_DOWN" if quicktitle_preset.enable_shadows else "TRIA_RIGHT", icon_only=True, emboss=True)
-        split.label('Title Shadows', icon="LAMP_SPOT")
+        split.label(text='Title Shadows', icon="LIGHT")
 
         if quicktitle_preset.enable_shadows:
             row = outline.row()
@@ -2668,9 +2668,9 @@ class QuickTitlingReplaceWithImage(bpy.types.Operator, ExportHelper):
     bl_label = 'Replace With Image'
     bl_description = 'Renders out an image of the quicktitle scene, and places it on the timeline while muting the original.'
 
-    filepath = bpy.props.StringProperty()
+    filepath: bpy.props.StringProperty()
     filename_ext = ".png"
-    filter_glob = bpy.props.StringProperty(default="*.png", options={'HIDDEN'})
+    filter_glob: bpy.props.StringProperty(default="*.png", options={'HIDDEN'})
     check_extension = True
 
     def invoke(self, context, event):
@@ -2714,8 +2714,8 @@ class QuickTitlingObjectMoveUp(bpy.types.Operator):
     bl_label = 'Move Up'
     bl_description = 'Moves an object up in the current QuickTitling preset.'
 
-    index = bpy.props.IntProperty()
-    current = bpy.props.BoolProperty(default=False)
+    index: bpy.props.IntProperty()
+    current: bpy.props.BoolProperty(default=False)
 
     def execute(self, context):
         scene = find_titling_scene()
@@ -2743,8 +2743,8 @@ class QuickTitlingObjectMoveDown(bpy.types.Operator):
     bl_label = 'Move Down'
     bl_description = 'Moves an object down in the current QuickTitling preset.'
 
-    index = bpy.props.IntProperty()
-    current = bpy.props.BoolProperty(default=False)
+    index: bpy.props.IntProperty()
+    current: bpy.props.BoolProperty(default=False)
 
     def execute(self, context):
         scene = find_titling_scene()
@@ -2773,7 +2773,7 @@ class QuickTitlingObjectAdd(bpy.types.Operator):
     bl_description = 'Add an object in the current QuickTitling preset'
 
     #can be: TEXT, IMAGE, BOX, CIRCLE, DUPLICATE
-    type = bpy.props.StringProperty()
+    type: bpy.props.StringProperty()
 
     def execute(self, context):
         scene = find_titling_scene()
@@ -2818,7 +2818,7 @@ class QuickTitlingObjectSelect(bpy.types.Operator):
     bl_label = 'Select Object'
     bl_description = 'Select an object in the current QuickTitling preset'
 
-    index = bpy.props.IntProperty()
+    index: bpy.props.IntProperty()
 
     def execute(self, context):
         scene = find_titling_scene()
@@ -2832,7 +2832,7 @@ class QuickTitlingObjectDelete(bpy.types.Operator):
     bl_label = 'Delete Object'
     bl_description = 'Delete an object in the current QuickTitling preset'
 
-    index = bpy.props.IntProperty()
+    index: bpy.props.IntProperty()
 
     def execute(self, context):
         quicktitle_sequence = titling_scene_selected()
@@ -2891,7 +2891,7 @@ class QuickTitlingAnimationAdd(bpy.types.Operator):
     bl_label = 'Add Animation'
     bl_description = 'Add an animation to the current object in the current QuickTitling preset'
 
-    index = bpy.props.IntProperty()
+    index: bpy.props.IntProperty()
 
     def execute(self, context):
         title_object = get_current_object()
@@ -2929,7 +2929,7 @@ class QuickTitlingAnimationDelete(bpy.types.Operator):
     bl_label = 'Delete Animation'
     bl_description = 'Delete an animation from the current object in the current QuickTitling preset'
 
-    index = bpy.props.IntProperty()
+    index: bpy.props.IntProperty()
 
     def execute(self, context):
         object_preset = get_current_object()
@@ -2958,7 +2958,7 @@ class QuickTitlingPresetDelete(bpy.types.Operator):
     bl_label = 'Delete Presets'
     bl_description = 'Delete A Specific QuickTitling Preset'
 
-    index = bpy.props.IntProperty()
+    index: bpy.props.IntProperty()
 
     def execute(self, context):
         scene = context.scene
@@ -2973,8 +2973,8 @@ class QuickTitlingPresetExport(bpy.types.Operator, ExportHelper):
     bl_description = 'Exports the current selected QuickTitling preset to a file'
 
     filename_ext = ".xml"
-    filter_glob = bpy.props.StringProperty(default="*.xml", options={'HIDDEN'})
-    filepath = bpy.props.StringProperty()
+    filter_glob: bpy.props.StringProperty(default="*.xml", options={'HIDDEN'})
+    filepath: bpy.props.StringProperty()
     check_extension = True
 
     def invoke(self, context, event):
@@ -3194,8 +3194,8 @@ class QuickTitlingPresetImport(bpy.types.Operator, ImportHelper):
     bl_description = 'Imports a QuickTitling preset from a file'
 
     filename_ext = ".xml"
-    filter_glob = bpy.props.StringProperty(default="*.xml", options={'HIDDEN'})
-    filepath = bpy.props.StringProperty()
+    filter_glob: bpy.props.StringProperty(default="*.xml", options={'HIDDEN'})
+    filepath: bpy.props.StringProperty()
 
     def execute(self, context):
         #the file has been selected, attempt to parse it as a preset
@@ -3217,7 +3217,7 @@ class QuickTitlingPresetMenuAdd(bpy.types.Menu):
     bl_idname = 'quicktitler.preset_menu_add'
     bl_label = 'QuickTitles'
 
-    icon = bpy.props.EnumProperty("")
+    icon: bpy.props.EnumProperty("")
 
     def draw(self, context):
         draw_preset_menu(self, context, add=True)
@@ -3228,7 +3228,7 @@ class QuickTitlingPresetMenu(bpy.types.Menu):
     bl_idname = 'quicktitler.preset_menu'
     bl_label = 'List of saved presets'
 
-    icon = bpy.props.EnumProperty("")
+    icon: bpy.props.EnumProperty("")
 
     def draw(self, context):
         draw_preset_menu(self, context)
@@ -3244,7 +3244,7 @@ def draw_preset_menu(self, context, add=False):
     split = layout.split()
 
     column = split.column()
-    column.label("Custom Titles:")
+    column.label(text="Custom Titles:")
     column.scale_y = 3
     for index, preset in enumerate(presets):
         if preset[1] != 'BUILTIN':
@@ -3255,26 +3255,26 @@ def draw_preset_menu(self, context, add=False):
 
     column = split.column()
     column.scale_y = 3
-    column.label(" ")
+    column.label(text=" ")
     for index, preset in enumerate(presets):
         if preset[1] != 'BUILTIN':
             column.operator("quicktitler.preset_delete", text="", icon="X").index = index
 
     column = split.column()
-    column.label(" ")
+    column.label(text=" ")
 
     split_presets = split_list(presets, 2)
     for index, presets in enumerate(split_presets):
         column = split.column()
         column.scale_y = 3
         if index == 0:
-            column.label("Built-in Titles:")
+            column.label(text="Built-in Titles:")
             if add:
                 column.operator('quicktitler.select_and_add', text='Default').preset = 'builtin,'+'Default'
             else:
                 column.operator('quicktitler.preset_load', text='Default').preset = 'Default'
         else:
-            column.label("")
+            column.label(text="")
         for preset in presets:
             if preset[1] == 'BUILTIN':
                 if add:
@@ -3303,7 +3303,7 @@ class QuickTitlingPresetSelectAdd(bpy.types.Operator):
     bl_label = 'Select And Add Preset'
 
     #Preset type,name
-    preset = bpy.props.StringProperty()
+    preset: bpy.props.StringProperty()
 
     def execute(self, context):
         preset_type, name = self.preset.split(',', 1)
@@ -3324,7 +3324,7 @@ class QuickTitlingPresetSelect(bpy.types.Operator):
     bl_description = 'Select A QuickTitling Scene Preset'
 
     #Preset name
-    preset = bpy.props.StringProperty()
+    preset: bpy.props.StringProperty()
 
     def execute(self, context):
         if not self.preset:
@@ -3343,7 +3343,7 @@ class QuickTitlingPresetLoad(bpy.types.Operator):
     bl_description = 'Select A QuickTitling Builtin Preset'
 
     #Preset name
-    preset = bpy.props.StringProperty()
+    preset: bpy.props.StringProperty()
 
     def execute(self, context):
         if not self.preset:
@@ -3366,7 +3366,7 @@ class QuickTitlingLoadFont(bpy.types.Operator):
     bl_description = 'Load A New Font'
 
     #font file to be loaded
-    filepath = bpy.props.StringProperty(subtype="FILE_PATH")
+    filepath: bpy.props.StringProperty(subtype="FILE_PATH")
 
     def execute(self, context):
         #When the file browser finishes, this is called
@@ -3411,7 +3411,7 @@ class QuickTitlingChangeFont(bpy.types.Operator):
     bl_idname = 'quicktitler.change_font'
     bl_label = 'Change Font'
 
-    font = bpy.props.StringProperty()
+    font: bpy.props.StringProperty()
 
     def execute(self, context):
         current_object = get_current_object()
@@ -3439,7 +3439,7 @@ class QuickTitlingChangeMaterial(bpy.types.Operator):
     bl_idname = 'quicktitler.change_material'
     bl_label = 'Change material on the current object'
 
-    material = bpy.props.StringProperty()
+    material: bpy.props.StringProperty()
 
     def execute(self, context):
         current_object = get_current_object()
@@ -3458,7 +3458,7 @@ class QuickTitlingCreate(bpy.types.Operator):
     bl_description = 'Creates or updates a titler scene'
 
     #Should be set to 'create', 'update' or 'update-all'
-    action = bpy.props.StringProperty()
+    action: bpy.props.StringProperty()
 
     def execute(self, context):
         quicktitle = current_quicktitle()
@@ -3487,17 +3487,17 @@ def current_icon_enum(self, context):
 
 
 class QuickTitleSettings(bpy.types.PropertyGroup):
-    autoupdate = bpy.props.BoolProperty(
+    autoupdate: bpy.props.BoolProperty(
         name="Auto-Update Titles",
         default=True)
-    current_icon = bpy.props.EnumProperty(
+    current_icon: bpy.props.EnumProperty(
         name='Current Icon',
         items=current_icon_enum)
-    current_edited = bpy.props.BoolProperty(
+    current_edited: bpy.props.BoolProperty(
         name='Selected Title Is Edited',
         default=False)
-    current_quicktitle = bpy.props.PointerProperty(type=QuickTitle)
-    quicktitles = bpy.props.CollectionProperty(type=QuickTitle)
+    current_quicktitle: bpy.props.PointerProperty(type=QuickTitle)
+    quicktitles: bpy.props.CollectionProperty(type=QuickTitle)
 
 
 class QuickTitlingGrab(bpy.types.Operator):
@@ -3505,7 +3505,7 @@ class QuickTitlingGrab(bpy.types.Operator):
     bl_idname = 'quicktitle.grab'
     bl_label = "Grab/Move Title Object"
 
-    lamp = bpy.props.BoolProperty(default=False)
+    lamp: bpy.props.BoolProperty(default=False)
     feedback = ''
     value = ''
     constrain = False
