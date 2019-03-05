@@ -722,20 +722,20 @@ def to_bool(value):
 
 
 def set_default(preset):
-    preset.name = QuickTitle.name[1]['default']
-    preset.description = QuickTitle.description[1]['default']
-    preset.z_scale = QuickTitle.z_scale[1]['default']
+    preset.name = get_default('name', class_type='Title')
+    preset.description = get_default('description', class_type='Title')
+    preset.z_scale = get_default('z_scale', class_type='Title')
     preset.objects.clear()
     preset.selected_object = 0
-    preset.enable_shadows = QuickTitle.enable_shadows[1]['default']
+    preset.enable_shadows = get_default('enable_shadows', class_type='Title')
     preset.shadowlamp_internal_name = ""
-    preset.shadowsize = QuickTitle.shadowsize[1]['default']
-    preset.shadowamount = QuickTitle.shadowamount[1]['default']
-    preset.shadowsoft = QuickTitle.shadowsoft[1]['default']
-    preset.shadowx = QuickTitle.shadowx[1]['default']
-    preset.shadowy = QuickTitle.shadowy[1]['default']
-    preset.length = QuickTitle.length[1]['default']
-    preset.qualityshadows = QuickTitle.qualityshadows[1]['default']
+    preset.shadowsize = get_default('shadowsize', class_type='Title')
+    preset.shadowamount = get_default('shadowamount', class_type='Title')
+    preset.shadowsoft = get_default('shadowsoft', class_type='Title')
+    preset.shadowx = get_default('shadowx', class_type='Title')
+    preset.shadowy = get_default('shadowy', class_type='Title')
+    preset.length = get_default('length', class_type='Title')
+    preset.qualityshadows = get_default('qualityshadows', class_type='Title')
 
 
 def get_presets_directory():
@@ -766,6 +766,15 @@ def scene_quicktitle_from_name(quicktitles, name):
     return None
 
 
+def get_default(value, class_type='Object'):
+    if class_type == 'Object':
+        return QuickTitleObject.bl_rna.properties[value].default
+    elif class_type == 'Animation':
+        return QuickTitleAnimation.bl_rna.properties[value].default
+    else:  #class_type == 'Title'
+        return QuickTitle.bl_rna.properties[value].default
+
+
 def load_quicktitle(filepath, preset):
     #load a quicktitle preset from a given xml file
     import xml.etree.cElementTree as Tree
@@ -773,18 +782,18 @@ def load_quicktitle(filepath, preset):
     root = tree.getroot()
     preset.name = root.findtext('name', default=os.path.splitext(bpy.path.basename(filepath))[0])
     preset.description = root.findtext('description', default="")
-    preset.z_scale = abs(float(root.findtext('z_scale', default=str(QuickTitle.z_scale[1]['default']))))
-    preset.length = abs(int(root.findtext('length', default=str(QuickTitle.length[1]['default']))))
-    preset.shadowsize = abs(float(root.findtext('shadowsize', default=str(QuickTitle.shadowsize[1]['default']))))
-    shadowamount = abs(float(root.findtext('shadowamount', default=str(QuickTitle.shadowamount[1]['default']))))
+    preset.z_scale = abs(float(root.findtext('z_scale', default=str(get_default('z_scale', class_type='Title')))))
+    preset.length = abs(int(root.findtext('length', default=str(get_default('length', class_type='Title')))))
+    preset.shadowsize = abs(float(root.findtext('shadowsize', default=str(get_default('shadowsize', class_type='Title')))))
+    shadowamount = abs(float(root.findtext('shadowamount', default=str(get_default('shadowamount', class_type='Title')))))
     if shadowamount > 1:
         preset.shadowamount = 1
     else:
         preset.shadowamount = shadowamount
-    preset.shadowsoft = abs(float(root.findtext('shadowsoft', default=str(QuickTitle.shadowsoft[1]['default']))))
-    preset.shadowx = float(root.findtext('shadowx', default=str(QuickTitle.shadowx[1]['default'])))
-    preset.shadowy = float(root.findtext('shadowy', default=str(QuickTitle.shadowy[1]['default'])))
-    preset.qualityshadows = to_bool(root.findtext('qualityshadows', default=str(QuickTitle.qualityshadows[1]['default'])))
+    preset.shadowsoft = abs(float(root.findtext('shadowsoft', default=str(get_default('shadowsoft', class_type='Title')))))
+    preset.shadowx = float(root.findtext('shadowx', default=str(get_default('shadowx', class_type='Title'))))
+    preset.shadowy = float(root.findtext('shadowy', default=str(get_default('shadowy', class_type='Title'))))
+    preset.qualityshadows = to_bool(root.findtext('qualityshadows', default=str(get_default('qualityshadows', class_type='Title'))))
     objects = root.findall('objects')
     preset.objects.clear()
     for title_object in objects:
@@ -795,76 +804,76 @@ def load_quicktitle(filepath, preset):
             newobject.type = object_type
         else:
             newobject.type = 'BOX'
-        newobject.x = float(title_object.findtext('x', default=str(QuickTitleObject.x[1]['default'])))
-        newobject.y = float(title_object.findtext('y', default=str(QuickTitleObject.y[1]['default'])))
-        newobject.z = float(title_object.findtext('z', default=str(QuickTitleObject.z[1]['default'])))
-        newobject.rot_x = float(title_object.findtext('rot_x', default=str(QuickTitleObject.rot_x[1]['default'])))
-        newobject.rot_y = float(title_object.findtext('rot_y', default=str(QuickTitleObject.rot_y[1]['default'])))
-        newobject.rot_z = float(title_object.findtext('rot_z', default=str(QuickTitleObject.rot_z[1]['default'])))
-        scale = abs(float(title_object.findtext('scale', default=str(QuickTitleObject.scale[1]['default']))))
+        newobject.x = float(title_object.findtext('x', default=str(get_default('x'))))
+        newobject.y = float(title_object.findtext('y', default=str(get_default('y'))))
+        newobject.z = float(title_object.findtext('z', default=str(get_default('z'))))
+        newobject.rot_x = float(title_object.findtext('rot_x', default=str(get_default('rot_x'))))
+        newobject.rot_y = float(title_object.findtext('rot_y', default=str(get_default('rot_y'))))
+        newobject.rot_z = float(title_object.findtext('rot_z', default=str(get_default('rot_z'))))
+        scale = abs(float(title_object.findtext('scale', default=str(get_default('scale')))))
         if scale > 0:
             newobject.scale = scale
         else:
             newobject.scale = 1
-        width = abs(float(title_object.findtext('width', default=str(QuickTitleObject.width[1]['default']))))
+        width = abs(float(title_object.findtext('width', default=str(get_default('width')))))
         if width > 0:
             newobject.width = width
         else:
             newobject.width = 1
-        height = abs(float(title_object.findtext('height', default=str(QuickTitleObject.height[1]['default']))))
+        height = abs(float(title_object.findtext('height', default=str(get_default('height')))))
         if height > 0:
             newobject.height = height
         else:
             newobject.height = 1
-        shear = float(title_object.findtext('shear', default=str(QuickTitleObject.shear[1]['default'])))
+        shear = float(title_object.findtext('shear', default=str(get_default('shear'))))
         if shear < -1:
             shear = -1
         if shear > 1:
             shear = 1
         newobject.shear = shear
-        newobject.cast_shadows = to_bool(title_object.findtext('cast_shadows', default=str(QuickTitleObject.cast_shadows[1]['default'])))
-        newobject.set_material = to_bool(title_object.findtext('set_material', default=str(QuickTitleObject.set_material[1]['default'])))
-        newobject.material = title_object.findtext('material', default=QuickTitleObject.material[1]['default'])
-        newobject.use_shadeless = to_bool(title_object.findtext('use_shadeless', default=str(QuickTitleObject.use_shadeless[1]['default'])))
-        newobject.use_transparency = to_bool(title_object.findtext('use_transparency', default=str(QuickTitleObject.use_transparency[1]['default'])))
-        alpha = abs(float(title_object.findtext('alpha', default=str(QuickTitleObject.alpha[1]['default']))))
+        newobject.cast_shadows = to_bool(title_object.findtext('cast_shadows', default=str(get_default('cast_shadows'))))
+        newobject.set_material = to_bool(title_object.findtext('set_material', default=str(get_default('set_material'))))
+        newobject.material = title_object.findtext('material', default=get_default('material'))
+        newobject.use_shadeless = to_bool(title_object.findtext('use_shadeless', default=str(get_default('use_shadeless'))))
+        newobject.use_transparency = to_bool(title_object.findtext('use_transparency', default=str(get_default('use_transparency'))))
+        alpha = abs(float(title_object.findtext('alpha', default=str(get_default('alpha')))))
         if alpha > 1:
             newobject.alpha = 1
         else:
             newobject.alpha = alpha
-        specular_intensity = abs(float(title_object.findtext('specular_intensity', default=str(QuickTitleObject.specular_intensity[1]['default']))))
+        specular_intensity = abs(float(title_object.findtext('specular_intensity', default=str(get_default('specular_intensity')))))
         if specular_intensity > 1:
             newobject.specular_intensity = 1
         else:
             newobject.specular_intensity = specular_intensity
-        specular_hardness = abs(int(title_object.findtext('specular_hardness', default=str(QuickTitleObject.specular_hardness[1]['default']))))
+        specular_hardness = abs(int(title_object.findtext('specular_hardness', default=str(get_default('specular_hardness')))))
         if specular_hardness > 511:
             newobject.specular_hardness = 511
         elif specular_hardness < 1:
             newobject.specular_hardness = 1
         else:
             newobject.specular_hardness = specular_hardness
-        newobject.extrude = abs(float(title_object.findtext('extrude', default=str(QuickTitleObject.extrude[1]['default']))))
-        newobject.bevel = abs(float(title_object.findtext('bevel', default=str(QuickTitleObject.bevel[1]['default']))))
-        newobject.bevel_resolution = abs(int(title_object.findtext('bevel_resolution', default=str(QuickTitleObject.bevel_resolution[1]['default']))))
-        newobject.text = title_object.findtext('text', default=QuickTitleObject.text[1]['default'])
-        newobject.font = title_object.findtext('font', default=QuickTitleObject.font[1]['default'])
-        newobject.word_wrap = to_bool(title_object.findtext('word_wrap', default=str(QuickTitleObject.word_wrap[1]['default'])))
-        wrap_width = abs(float(title_object.findtext('wrap_width', default=str(QuickTitleObject.wrap_width[1]['default']))))
+        newobject.extrude = abs(float(title_object.findtext('extrude', default=str(get_default('extrude')))))
+        newobject.bevel = abs(float(title_object.findtext('bevel', default=str(get_default('bevel')))))
+        newobject.bevel_resolution = abs(int(title_object.findtext('bevel_resolution', default=str(get_default('bevel_resolution')))))
+        newobject.text = title_object.findtext('text', default=get_default('text'))
+        newobject.font = title_object.findtext('font', default=get_default('font'))
+        newobject.word_wrap = to_bool(title_object.findtext('word_wrap', default=str(get_default('word_wrap'))))
+        wrap_width = abs(float(title_object.findtext('wrap_width', default=str(get_default('wrap_width')))))
         if wrap_width > 1:
             newobject.wrap_width = 1
         elif wrap_width < 0.01:
             newobject.wrap_width = 0.01
         else:
             newobject.wrap_width = wrap_width
-        align = title_object.findtext('align', default=QuickTitleObject.align[1]['default'])
+        align = title_object.findtext('align', default=str(get_default('align')))
         if align in ['LEFT', 'CENTER', 'RIGHT', 'JUSTIFY', 'FLUSH']:
             newobject.align = align
         else:
             newobject.align = 'CENTER'
-        newobject.outline = to_bool(title_object.findtext('outline', default=str(QuickTitleObject.outline[1]['default'])))
-        newobject.outline_size = abs(float(title_object.findtext('outline_size', default=str(QuickTitleObject.outline_size[1]['default']))))
-        outline_alpha = abs(float(title_object.findtext('outline_alpha', default=str(QuickTitleObject.outline_alpha[1]['default']))))
+        newobject.outline = to_bool(title_object.findtext('outline', default=str(get_default('outline'))))
+        newobject.outline_size = abs(float(title_object.findtext('outline_size', default=str(get_default('outline_size')))))
+        outline_alpha = abs(float(title_object.findtext('outline_alpha', default=str(get_default('outline_alpha')))))
         if outline_alpha > 1:
             outline_alpha = 1
         newobject.outline_alpha = outline_alpha
@@ -873,11 +882,11 @@ def load_quicktitle(filepath, preset):
             newobject.outline_diffuse_color = (0, 0, 0)
         else:
             newobject.outline_diffuse_color = (int(outline_color[0]) / 255.0, int(outline_color[1]) / 255.0, int(outline_color[2]) / 255.0)
-        newobject.texture = title_object.findtext('texture', default=QuickTitleObject.texture[1]['default'])
-        newobject.alpha_texture = title_object.findtext('alpha_texture', default=QuickTitleObject.alpha_texture[1]['default'])
-        newobject.loop = to_bool(title_object.findtext('loop', default=str(QuickTitleObject.loop[1]['default'])))
-        newobject.frame_offset = abs(int(title_object.findtext('frame_offset', default=str(QuickTitleObject.frame_offset[1]['default']))))
-        frame_length = abs(int(title_object.findtext('frame_length', default=str(QuickTitleObject.frame_length[1]['default']))))
+        newobject.texture = title_object.findtext('texture', default=get_default('texture'))
+        newobject.alpha_texture = title_object.findtext('alpha_texture', default=get_default('alpha_texture'))
+        newobject.loop = to_bool(title_object.findtext('loop', default=str(get_default('loop'))))
+        newobject.frame_offset = abs(int(title_object.findtext('frame_offset', default=str(get_default('frame_offset')))))
+        frame_length = abs(int(title_object.findtext('frame_length', default=str(get_default('frame_length')))))
         if frame_length > 1:
             newobject.frame_length = frame_length
         else:
@@ -895,22 +904,22 @@ def load_quicktitle(filepath, preset):
         object_animations = title_object.findall('animations')
         for animation in object_animations:
             newanimation = newobject.animations.add()
-            newanimation.variable = animation.findtext('variable', default=QuickTitleAnimation.variable[1]['default'])
-            newanimation.animate_in = to_bool(animation.findtext('animate_in', default=str(QuickTitleAnimation.animate_in[1]['default'])))
-            newanimation.animate_out = to_bool(animation.findtext('animate_out', default=str(QuickTitleAnimation.animate_out[1]['default'])))
-            newanimation.in_length = abs(int(animation.findtext('in_length', default=str(QuickTitleAnimation.in_length[1]['default']))))
-            newanimation.out_length = abs(int(animation.findtext('out_length', default=str(QuickTitleAnimation.out_length[1]['default']))))
-            newanimation.in_offset = int(animation.findtext('in_offset', default=str(QuickTitleAnimation.in_offset[1]['default'])))
-            newanimation.out_offset = int(animation.findtext('out_offset', default=str(QuickTitleAnimation.out_offset[1]['default'])))
-            newanimation.in_amount = float(animation.findtext('in_amount', default=str(QuickTitleAnimation.in_amount[1]['default'])))
-            newanimation.out_amount = float(animation.findtext('out_amount', default=str(QuickTitleAnimation.out_amount[1]['default'])))
-            cycle_type = animation.findtext('cycle_type', default=QuickTitleAnimation.cycle_type[1]['default'])
+            newanimation.variable = animation.findtext('variable', default=str(get_default('variable', class_type='Animation')))
+            newanimation.animate_in = to_bool(animation.findtext('animate_in', default=str(get_default('animate_in', class_type='Animation'))))
+            newanimation.animate_out = to_bool(animation.findtext('animate_out', default=str(get_default('animate_out', class_type='Animation'))))
+            newanimation.in_length = abs(int(animation.findtext('in_length', default=str(get_default('in_length', class_type='Animation')))))
+            newanimation.out_length = abs(int(animation.findtext('out_length', default=str(get_default('out_length', class_type='Animation')))))
+            newanimation.in_offset = int(animation.findtext('in_offset', default=str(get_default('in_offset', class_type='Animation'))))
+            newanimation.out_offset = int(animation.findtext('out_offset', default=str(get_default('out_offset', class_type='Animation'))))
+            newanimation.in_amount = float(animation.findtext('in_amount', default=str(get_default('in_amount', class_type='Animation'))))
+            newanimation.out_amount = float(animation.findtext('out_amount', default=str(get_default('out_amount', class_type='Animation'))))
+            cycle_type = animation.findtext('cycle_type', default=get_default('cycle_type', class_type='Animation'))
             if cycle_type not in ['NONE', 'SINE', 'TANGENT', 'RANDOM']:
                 cycle_type = 'NONE'
             newanimation.cycle_type = cycle_type
-            newanimation.cycle_x_scale = abs(float(animation.findtext('cycle_x_scale', default=str(QuickTitleAnimation.cycle_x_scale[1]['default']))))
-            newanimation.cycle_y_scale = float(animation.findtext('cycle_y_scale', default=str(QuickTitleAnimation.cycle_y_scale[1]['default'])))
-            newanimation.cycle_offset = float(animation.findtext('cycle_offset', default=str(QuickTitleAnimation.cycle_offset[1]['default'])))
+            newanimation.cycle_x_scale = abs(float(animation.findtext('cycle_x_scale', default=str(get_default('cycle_x_scale', class_type='Animation')))))
+            newanimation.cycle_y_scale = float(animation.findtext('cycle_y_scale', default=str(get_default('cycle_y_scale', class_type='Animation'))))
+            newanimation.cycle_offset = float(animation.findtext('cycle_offset', default=str(get_default('cycle_offset', class_type='Animation'))))
     return preset
 
 
@@ -3037,130 +3046,130 @@ class QuickTitlingPresetExport(bpy.types.Operator, ExportHelper):
         Tree.SubElement(root, 'name').text = preset.name
         if preset.description:
             Tree.SubElement(root, 'description').text = preset.description
-        if preset.z_scale != QuickTitle.z_scale[1]['default']:
+        if preset.z_scale != get_default('z_scale', class_type='Title'):
             Tree.SubElement(root, 'z_scale').text = str(preset.z_scale)
-        if preset.length != QuickTitle.length[1]['default']:
+        if preset.length != get_default('length', class_type='Title'):
             Tree.SubElement(root, 'length').text = str(preset.length)
-        if preset.shadowsize != QuickTitle.shadowsize[1]['default']:
+        if preset.shadowsize != get_default('shadowsize', class_type='Title'):
             Tree.SubElement(root, 'shadowsize').text = str(preset.shadowsize)
-        if preset.shadowamount != QuickTitle.shadowamount[1]['default']:
+        if preset.shadowamount != get_default('shadowamount', class_type='Title'):
             Tree.SubElement(root, 'shadowamount').text = str(preset.shadowamount)
-        if preset.shadowsoft != QuickTitle.shadowsoft[1]['default']:
+        if preset.shadowsoft != get_default('shadowsoft', class_type='Title'):
             Tree.SubElement(root, 'shadowsoft').text = str(preset.shadowsoft)
-        if preset.shadowx != QuickTitle.shadowx[1]['default']:
+        if preset.shadowx != get_default('shadowx', class_type='Title'):
             Tree.SubElement(root, 'shadowx').text = str(preset.shadowx)
-        if preset.shadowy != QuickTitle.shadowy[1]['default']:
+        if preset.shadowy != get_default('shadowy', class_type='Title'):
             Tree.SubElement(root, 'shadowy').text = str(preset.shadowy)
-        if preset.qualityshadows != QuickTitle.qualityshadows[1]['default']:
+        if preset.qualityshadows != get_default('qualityshadows', class_type='Title'):
             Tree.SubElement(root, 'qualityshadows').text = str(preset.qualityshadows)
         for title_object in preset.objects:
             objects = Tree.SubElement(root, 'objects')
             Tree.SubElement(objects, 'name').text = title_object.name
             Tree.SubElement(objects, 'type').text = title_object.type
-            if title_object.x != QuickTitleObject.x[1]['default']:
+            if title_object.x != get_default('x'):
                 Tree.SubElement(objects, 'x').text = str(title_object.x)
-            if title_object.y != QuickTitleObject.y[1]['default']:
+            if title_object.y != get_default('y'):
                 Tree.SubElement(objects, 'y').text = str(title_object.y)
-            if title_object.z != QuickTitleObject.z[1]['default']:
+            if title_object.z != get_default('z'):
                 Tree.SubElement(objects, 'z').text = str(title_object.z)
-            if title_object.rot_x != QuickTitleObject.rot_x[1]['default']:
+            if title_object.rot_x != get_default('rot_x'):
                 Tree.SubElement(objects, 'rot_x').text = str(title_object.rot_x)
-            if title_object.rot_y != QuickTitleObject.rot_y[1]['default']:
+            if title_object.rot_y != get_default('rot_y'):
                 Tree.SubElement(objects, 'rot_y').text = str(title_object.rot_y)
-            if title_object.rot_z != QuickTitleObject.rot_z[1]['default']:
+            if title_object.rot_z != get_default('rot_z'):
                 Tree.SubElement(objects, 'rot_z').text = str(title_object.rot_z)
-            if title_object.scale != QuickTitleObject.scale[1]['default']:
+            if title_object.scale != get_default('scale'):
                 Tree.SubElement(objects, 'scale').text = str(title_object.scale)
-            if title_object.width != QuickTitleObject.width[1]['default']:
+            if title_object.width != get_default('width'):
                 Tree.SubElement(objects, 'width').text = str(title_object.width)
-            if title_object.height != QuickTitleObject.height[1]['default']:
+            if title_object.height != get_default('height'):
                 Tree.SubElement(objects, 'height').text = str(title_object.height)
-            if title_object.shear != QuickTitleObject.shear[1]['default']:
+            if title_object.shear != get_default('shear'):
                 Tree.SubElement(objects, 'shear').text = str(title_object.shear)
-            if title_object.cast_shadows != QuickTitleObject.cast_shadows[1]['default']:
+            if title_object.cast_shadows != get_default('cast_shadows'):
                 Tree.SubElement(objects, 'cast_shadows').text = str(title_object.cast_shadows)
-            if title_object.set_material != QuickTitleObject.set_material[1]['default']:
+            if title_object.set_material != get_default('set_material'):
                 Tree.SubElement(objects, 'set_material').text = str(title_object.set_material)
-            if title_object.material != QuickTitleObject.material[1]['default']:
+            if title_object.material != get_default('material'):
                 Tree.SubElement(objects, 'material').text = title_object.material
-            if title_object.use_shadeless != QuickTitleObject.use_shadeless[1]['default']:
+            if title_object.use_shadeless != get_default('use_shadeless'):
                 Tree.SubElement(objects, 'use_shadeless').text = str(title_object.use_shadeless)
-            if title_object.use_transparency != QuickTitleObject.use_transparency[1]['default']:
+            if title_object.use_transparency != get_default('use_transparency'):
                 Tree.SubElement(objects, 'use_transparency').text = str(title_object.use_transparency)
-            if title_object.alpha != QuickTitleObject.alpha[1]['default']:
+            if title_object.alpha != get_default('alpha'):
                 Tree.SubElement(objects, 'alpha').text = str(title_object.alpha)
-            if title_object.diffuse_color != QuickTitleObject.diffuse_color[1]['default']:
+            if title_object.diffuse_color != get_default('diffuse_color'):
                 diffuse_color = str(round(title_object.diffuse_color[0] * 255))+', '+str(round(title_object.diffuse_color[1] * 255))+', '+str(round(title_object.diffuse_color[2] * 255))
                 Tree.SubElement(objects, 'diffuse_color').text = diffuse_color
-            if title_object.specular_intensity != QuickTitleObject.specular_intensity[1]['default']:
+            if title_object.specular_intensity != get_default('specular_intensity'):
                 Tree.SubElement(objects, 'specular_intensity').text = str(title_object.specular_intensity)
-            if title_object.specular_hardness != QuickTitleObject.specular_hardness[1]['default']:
+            if title_object.specular_hardness != get_default('specular_hardness'):
                 Tree.SubElement(objects, 'specular_hardness').text = str(title_object.specular_hardness)
-            if title_object.specular_color != QuickTitleObject.specular_color[1]['default']:
+            if title_object.specular_color != get_default('specular_color'):
                 specular_color = str(round(title_object.specular_color[0] * 255))+', '+str(round(title_object.specular_color[1] * 255))+', '+str(round(title_object.specular_color[2] * 255))
                 Tree.SubElement(objects, 'specular_color').text = specular_color
-            if title_object.extrude != QuickTitleObject.extrude[1]['default']:
+            if title_object.extrude != get_default('extrude'):
                 Tree.SubElement(objects, 'extrude').text = str(title_object.extrude)
-            if title_object.bevel != QuickTitleObject.bevel[1]['default']:
+            if title_object.bevel != get_default('bevel'):
                 Tree.SubElement(objects, 'bevel').text = str(title_object.bevel)
-            if title_object.bevel_resolution != QuickTitleObject.bevel_resolution[1]['default']:
+            if title_object.bevel_resolution != get_default('bevel_resolution'):
                 Tree.SubElement(objects, 'bevel_resolution').text = str(title_object.bevel_resolution)
-            if title_object.text != QuickTitleObject.text[1]['default']:
+            if title_object.text != get_default('text'):
                 Tree.SubElement(objects, 'text').text = title_object.text
-            if title_object.font != QuickTitleObject.font[1]['default']:
+            if title_object.font != get_default('font'):
                 Tree.SubElement(objects, 'font').text = title_object.font
-            if title_object.word_wrap != QuickTitleObject.word_wrap[1]['default']:
+            if title_object.word_wrap != get_default('word_wrap'):
                 Tree.SubElement(objects, 'word_wrap').text = str(title_object.word_wrap)
-            if title_object.wrap_width != QuickTitleObject.wrap_width[1]['default']:
+            if title_object.wrap_width != get_default('wrap_width'):
                 Tree.SubElement(objects, 'wrap_width').text = str(title_object.wrap_width)
-            if title_object.align != QuickTitleObject.align[1]['default']:
+            if title_object.align != get_default('align'):
                 Tree.SubElement(objects, 'align').text = title_object.align
-            if title_object.outline != QuickTitleObject.outline[1]['default']:
+            if title_object.outline != get_default('outline'):
                 Tree.SubElement(objects, 'outline').text = str(title_object.outline)
-            if title_object.outline_size != QuickTitleObject.outline_size[1]['default']:
+            if title_object.outline_size != get_default('outline_size'):
                 Tree.SubElement(objects, 'outline_size').text = str(title_object.outline_size)
-            if title_object.outline_alpha != QuickTitleObject.outline_alpha[1]['default']:
+            if title_object.outline_alpha != get_default('outline_alpha'):
                 Tree.SubElement(objects, 'outline_alpha').text = str(title_object.outline_alpha)
-            if title_object.outline_diffuse_color != QuickTitleObject.outline_diffuse_color[1]['default']:
+            if title_object.outline_diffuse_color != get_default('outline_diffuse_color'):
                 outline_color = str(round(title_object.outline_diffuse_color[0] * 255))+', '+str(round(title_object.outline_diffuse_color[1] * 255))+', '+str(round(title_object.outline_diffuse_color[2] * 255))
                 Tree.SubElement(objects, 'outline_diffuse_color').text = outline_color
-            if title_object.texture != QuickTitleObject.texture[1]['default']:
+            if title_object.texture != get_default('texture'):
                 Tree.SubElement(objects, 'texture').text = title_object.texture
-            if title_object.alpha_texture != QuickTitleObject.alpha_texture[1]['default']:
+            if title_object.alpha_texture != get_default('alpha_texture'):
                 Tree.SubElement(objects, 'alpha_texture').text = title_object.alpha_texture
-            if title_object.loop != QuickTitleObject.loop[1]['default']:
+            if title_object.loop != get_default('loop'):
                 Tree.SubElement(objects, 'loop').text = str(title_object.loop)
-            if title_object.frame_offset != QuickTitleObject.frame_offset[1]['default']:
+            if title_object.frame_offset != get_default('frame_offset'):
                 Tree.SubElement(objects, 'frame_offset').text = str(title_object.frame_offset)
-            if title_object.frame_length != QuickTitleObject.frame_length[1]['default']:
+            if title_object.frame_length != get_default('frame_length'):
                 Tree.SubElement(objects, 'frame_length').text = str(title_object.frame_length)
 
             for animation in title_object.animations:
                 object_animations = Tree.SubElement(objects, 'animations')
                 Tree.SubElement(object_animations, 'variable').text = animation.variable
-                if animation.animate_in != QuickTitleAnimation.animate_in[1]['default']:
+                if animation.animate_in != get_default('animate_in', class_type='Animation'):
                     Tree.SubElement(object_animations, 'animate_in').text = str(animation.animate_in)
-                if animation.animate_out != QuickTitleAnimation.animate_out[1]['default']:
+                if animation.animate_out != get_default('animate_out', class_type='Animation'):
                     Tree.SubElement(object_animations, 'animate_out').text = str(animation.animate_out)
-                if animation.in_length != QuickTitleAnimation.in_length[1]['default']:
+                if animation.in_length != get_default('in_length', class_type='Animation'):
                     Tree.SubElement(object_animations, 'in_length').text = str(animation.in_length)
-                if animation.out_length != QuickTitleAnimation.out_length[1]['default']:
+                if animation.out_length != get_default('out_length', class_type='Animation'):
                     Tree.SubElement(object_animations, 'out_length').text = str(animation.out_length)
-                if animation.in_offset != QuickTitleAnimation.in_offset[1]['default']:
+                if animation.in_offset != get_default('in_offset', class_type='Animation'):
                     Tree.SubElement(object_animations, 'in_offset').text = str(animation.in_offset)
-                if animation.out_offset != QuickTitleAnimation.out_offset[1]['default']:
+                if animation.out_offset != get_default('out_offset', class_type='Animation'):
                     Tree.SubElement(object_animations, 'out_offset').text = str(animation.out_offset)
-                if animation.in_amount != QuickTitleAnimation.in_amount[1]['default']:
+                if animation.in_amount != get_default('in_amount', class_type='Animation'):
                     Tree.SubElement(object_animations, 'in_amount').text = str(animation.in_amount)
-                if animation.out_amount != QuickTitleAnimation.out_amount[1]['default']:
+                if animation.out_amount != get_default('out_amount', class_type='Animation'):
                     Tree.SubElement(object_animations, 'out_amount').text = str(animation.out_amount)
-                if animation.cycle_type != QuickTitleAnimation.cycle_type[1]['default']:
+                if animation.cycle_type != get_default('cycle_type', class_type='Animation'):
                     Tree.SubElement(object_animations, 'cycle_type').text = animation.cycle_type
-                if animation.cycle_x_scale != QuickTitleAnimation.cycle_x_scale[1]['default']:
+                if animation.cycle_x_scale != get_default('cycle_x_scale', class_type='Animation'):
                     Tree.SubElement(object_animations, 'cycle_x_scale').text = str(animation.cycle_x_scale)
-                if animation.cycle_y_scale != QuickTitleAnimation.cycle_y_scale[1]['default']:
+                if animation.cycle_y_scale != get_default('cycle_y_scale', class_type='Animation'):
                     Tree.SubElement(object_animations, 'cycle_y_scale').text = str(animation.cycle_y_scale)
-                if animation.cycle_offset != QuickTitleAnimation.cycle_offset[1]['default']:
+                if animation.cycle_offset != get_default('cycle_offset', class_type='Animation'):
                     Tree.SubElement(object_animations, 'cycle_offset').text = str(animation.cycle_offset)
         tree = Tree.ElementTree(root)
         indent(root)
