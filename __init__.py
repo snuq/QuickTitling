@@ -32,8 +32,8 @@ bl_info = {
     "name": "VSE Quick Titling",
     "description": "Enables easy creation of simple title scenes in the VSE",
     "author": "Hudson Barkley (Snu)",
-    "version": (0, 6, 0),
-    "blender": (2, 79, 0),
+    "version": (0, 6, 1),
+    "blender": (2, 80, 0),
     "location": "Sequencer Panels",
     "wiki_url": "https://github.com/snuq/QuickTitling",
     "category": "Sequencer"
