@@ -574,6 +574,8 @@ def add_overlay(self=None, context=None):
 
 
 def quicktitling_overlay():
+    #todo: update for blender 2.8
+    return
     quicktitle_sequence = titling_scene_selected()
     if not quicktitle_sequence:
         global overlays
@@ -1127,7 +1129,8 @@ def quicktitle_create(quicktitle=False):
     title_scene.render.engine = 'BLENDER_EEVEE'
     title_scene.eevee.use_ssr = True
     title_scene.eevee.use_ssr_refraction = True
-    title_scene.eevee.shadow_cube_size = '1024'
+    title_scene.eevee.shadow_cube_size = '512'
+    title_scene.eevee.shadow_cascade_size = '512'
 
     copy_title_preset(quicktitle, title_scene.quicktitler.current_quicktitle)
     quicktitle_preset = title_scene.quicktitler.current_quicktitle
@@ -1185,16 +1188,37 @@ def quicktitle_create(quicktitle=False):
     shadow_lamp.name = name
     quicktitle_preset.shadowlamp_internal_name = shadow_lamp.name
     shadow_lamp.parent = lampcenter
-    #shadow_lamp.data.use_only_shadow = True #todo: how to do this in eevee?
     shadow_lamp.data.specular_factor = 0
     shadow_lamp.data.shadow_soft_size = 0
     shadow_lamp.data.falloff_type = 'CONSTANT'
     shadow_lamp.data.use_shadow = True
     shadow_lamp.data.shadow_buffer_soft = 10
     shadow_lamp.data.shadow_buffer_bias = 0.1
-    shadow_lamp.data.shadow_buffer_size = 4096
+    shadow_lamp.data.shadow_buffer_exp = 50
     shadow_lamp.data.shadow_buffer_samples = 4
     shadow_lamp.data.shadow_buffer_clip_end = 4
+    shadow_lamp.data.shadow_buffer_clip_start = 0.01
+    shadow_lamp.data.spot_size = 2.6
+    shadow_lamp.data.use_square = True
+
+    bpy.ops.object.light_add(type='SPOT', location=(0, 0, 1))
+    shadow_lamp = bpy.context.active_object
+    basename = 'QuickTitlerLampInverse'
+    if basename in bpy.data.objects:
+        name = 'QuickTitlerLampInverse.001'
+        index = 1
+        while name in bpy.data.objects:
+            index = index+1
+            name = basename+str(index).zfill(3)
+    else:
+        name = basename
+    shadow_lamp.name = name
+    quicktitle_preset.shadowlamp_inverse_internal_name = shadow_lamp.name
+    shadow_lamp.parent = lampcenter
+    shadow_lamp.data.specular_factor = 0
+    shadow_lamp.data.shadow_soft_size = 0
+    shadow_lamp.data.falloff_type = 'CONSTANT'
+    shadow_lamp.data.use_shadow = False
     shadow_lamp.data.spot_size = 2.6
     shadow_lamp.data.use_square = True
 
@@ -1274,6 +1298,7 @@ def create_object(scene, object_type, name):
 
 def set_animations(title_object, object_preset, material, scene, z_offset, pos_multiplier, parent=None):
     #look for and clear animations that are no longer set
+    #todo: this is totally broken in 2.8
     if title_object.animation_data:
         if title_object.animation_data.action:
             if title_object.animation_data.action.fcurves:
@@ -1363,7 +1388,7 @@ def set_animations(title_object, object_preset, material, scene, z_offset, pos_m
                     points.append((end_frame, value))
                 clear_keyframes(fcurve)
                 for index, point in enumerate(points):
-                    fcurve.keyframe_points.add()
+                    fcurve.keyframe_points.add(count=1)
                     fcurve.keyframe_points[index].co = point
 
                 #Set cyclic animations
@@ -1419,6 +1444,7 @@ def set_animations(title_object, object_preset, material, scene, z_offset, pos_m
 def setup_object(title_object, object_preset, material, scale_multiplier):
     #settings for different title_object types
     if object_preset.type == 'IMAGE':
+        #todo: update for eevee
         #set up image type
         video = False
         shear = object_preset.shear
@@ -1601,13 +1627,17 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
         sequence.frame_offset_end = 0
 
     #attempt to find and update the shadow lamp
-    if quicktitle.shadowlamp_internal_name in scene.objects:
+    if quicktitle.shadowlamp_internal_name in scene.objects and quicktitle.shadowlamp_inverse_internal_name in scene.objects:
         shadow_lamp = scene.objects[quicktitle.shadowlamp_internal_name]
+        shadow_lamp_inverse = scene.objects[quicktitle.shadowlamp_inverse_internal_name]
         softshadow = quicktitle.shadowsoft * 10
         shadow_lamp.data.shadow_buffer_soft = softshadow
         shadow_lamp.data.energy = quicktitle.shadowamount
+        shadow_lamp_inverse.data.energy = -quicktitle.shadowamount
         shadow_lamp.data.shadow_soft_size = quicktitle.shadowsoft
+        shadow_lamp_inverse.data.shadow_soft_size = quicktitle.shadowsoft
         shadow_lamp.location = (quicktitle.shadowx, quicktitle.shadowy, quicktitle.shadowsize)
+        shadow_lamp_inverse.location = (quicktitle.shadowx, quicktitle.shadowy, quicktitle.shadowsize)
         if quicktitle.shadowamount > 0:
             shadow_lamp.data.use_shadow = True
         else:
@@ -1734,7 +1764,6 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
             if not shader:
                 #no shader connected, create it
                 if object_preset.use_shadeless:
-                    #todo: set up transparency with a mix shader, need to update code above to check for it
                     shader = material.node_tree.nodes.new("ShaderNodeEmission")
                 else:
                     shader = material.node_tree.nodes.new("ShaderNodeBsdfPrincipled")
@@ -1746,7 +1775,7 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
                 socket = input_name(shader, 'Metallic')
                 socket.default_value = object_preset.metallic
                 socket = input_name(shader, 'Transmission')
-                socket.default_value = object_preset.alpha
+                socket.default_value = 1 - object_preset.alpha
                 socket = input_name(shader, 'Base Color')
                 socket.default_value[0] = object_preset.diffuse_color[0]
                 socket.default_value[1] = object_preset.diffuse_color[1]
@@ -1760,6 +1789,7 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
                 socket.default_value[0] = object_preset.diffuse_color[0]
                 socket.default_value[1] = object_preset.diffuse_color[1]
                 socket.default_value[2] = object_preset.diffuse_color[2]
+                socket.default_value[3] = object_preset.alpha
                 socket = input_name(shader, 'Strength')
                 socket.default_value = 1
 
@@ -1801,21 +1831,45 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
                     material = bpy.data.materials.new(outline_object_name)
                 outline_object.active_material = material
 
-                material.diffuse_intensity = 1
-                material.diffuse_color = object_preset.outline_diffuse_color
-                material.specular_intensity = 0
-                material.use_shadeless = True
-                material.alpha = object_preset.outline_alpha
-                material.use_transparency = True if object_preset.outline_alpha < 1 else False
-                material.specular_alpha = 0
-                material.use_shadows = False
+                material.use_nodes = True
+                output_node = None
+                for check_node in material.node_tree.nodes:
+                    #find the output node
+                    if check_node.type == 'OUTPUT_MATERIAL':
+                        output_node = check_node
+                        break
+                if not output_node:
+                    #couldnt find an output node, create one
+                    output_node = material.node_tree.nodes.new("ShaderNodeOutputMaterial")
+                input_socket = output_node.inputs['Surface']
+                shader = None
+                if len(input_socket.links) > 0:
+                    #shader is connected
+                    shader = input_socket.links[0].from_node
 
+                    #check if shader is correct type, change it if it isnt
+                    if shader.type != 'EMISSION':
+                        material.node_tree.nodes.remove(shader)
+                        shader = None
+
+                if not shader:
+                    #no shader connected, create it
+                    shader = material.node_tree.nodes.new("ShaderNodeEmission")
+                    material.node_tree.links.new(shader.outputs[0], input_socket)
+
+                socket = input_name(shader, 'Color')
+                socket.default_value[0] = object_preset.outline_diffuse_color[0]
+                socket.default_value[1] = object_preset.outline_diffuse_color[1]
+                socket.default_value[2] = object_preset.outline_diffuse_color[2]
+                socket.default_value[3] = object_preset.outline_alpha
+                socket = input_name(shader, 'Strength')
+                socket.default_value = 1
+
+                material.blend_method = 'HASHED'
                 if object_preset.cast_shadows:
-                    material.use_cast_shadows = True
-                    material.use_cast_buffer_shadows = True
+                    material.transparent_shadow_method = 'HASHED'
                 else:
-                    material.use_cast_shadows = False
-                    material.use_cast_buffer_shadows = False
+                    material.transparent_shadow_method = 'NONE'
 
                 #adjust object
                 outline_object.location = (pos_multiplier * object_preset.x, pos_multiplier * object_preset.y, object_preset.z - z_offset - .001)
@@ -2174,11 +2228,11 @@ class QuickTitleObject(bpy.types.PropertyGroup):
         description="Enables transparency on this object.",
         update=quicktitle_autoupdate)
     alpha: bpy.props.FloatProperty(
-        name="Transparency",
+        name="Alpha",
         default=1,
         min=0,
         max=1,
-        description="Controls the transparency of this object.  0 is fully visible, 0.5 is somewhat transparent, 1 is highly transparent.",
+        description="Controls the transparency of this object.  1 is fully visible, 0.5 is somewhat transparent, 0 is highly transparent or invisible.",
         update=quicktitle_autoupdate)
     index_of_refraction: bpy.props.FloatProperty(
         name="Index Of Refraction",
@@ -2212,7 +2266,7 @@ class QuickTitleObject(bpy.types.PropertyGroup):
         update=quicktitle_autoupdate)
     roughness: bpy.props.FloatProperty(
         name="Roughness",
-        default=0.1,
+        default=0.3,
         min=0,
         max=1,
         description="Controls the sharpness of the shinyness of this material.",
@@ -2365,6 +2419,9 @@ class QuickTitle(bpy.types.PropertyGroup):
     shadowlamp_internal_name: bpy.props.StringProperty(
         name="Internal Name For The Shadow Lamp",
         default='')
+    shadowlamp_inverse_internal_name: bpy.props.StringProperty(
+        name="Internal Name For The Inverted Shadow Lamp",
+        default='')
     shadowsize: bpy.props.FloatProperty(
         name="Shadow Distance",
         default=1,
@@ -2432,6 +2489,7 @@ class QuickTitlingPanel(bpy.types.Panel):
     bl_label = "Quick Titling"
     bl_space_type = 'SEQUENCE_EDITOR'
     bl_region_type = 'UI'
+    bl_category = 'QuickTitling'
 
     def draw(self, context):
         layout = self.layout
@@ -2589,46 +2647,50 @@ class QuickTitlingPanel(bpy.types.Panel):
 
             row = subarea.row()
             row.label(text='Material:', icon="MATERIAL_DATA")
-            row.prop(current_object, 'set_material', text='Set Material')
+            row.prop(current_object, 'set_material', text='Use Custom Material')
 
             if current_object.set_material:
                 row = subarea.row()
                 row.menu('quicktitler.materials_menu', text=current_object.material)
 
-            row = subarea.row()
-            split = row.split(factor=.85)
-            subsplit = split.split()
-            subsplit.prop(current_object, 'use_shadeless', text='Use No Shading')
-            subsplit.prop(current_object, 'cast_shadows', text='Cast Shadows')
-            split.prop(current_object, 'diffuse_color', text='')
-
-            row = subarea.row()
-            row.prop(current_object, 'metallic', text="Metallic")
-
-            row = subarea.row(align=True)
-            row.prop(current_object, 'specular_intensity', text="Specular")
-            row.prop(current_object, 'roughness', text="Roughness")
-
-            row = subarea.row()
-            if current_object.type == 'IMAGE':
-                row.prop(current_object, 'use_transparency', text='Transparency')
-            row.prop(current_object, 'alpha', text='Transmission')
-            row.prop(current_object, 'index_of_refraction', text='IOR')
-
-            if current_object.type == 'IMAGE':
+            else:
                 row = subarea.row()
-                row.prop(current_object, 'texture', text='Texture', icon="IMAGE_RGB")
+                row.prop(current_object, 'use_shadeless', text='Use No Shading')
+                row.prop(current_object, 'diffuse_color', text='')
+                if current_object.use_shadeless:
+                    row = subarea.row()
+                    row.prop(current_object, 'cast_shadows', text='Cast Shadows')
+                else:
+                    row = subarea.row()
+                    row.prop(current_object, 'cast_shadows', text='Cast Shadows')
+                    row.prop(current_object, 'metallic', text="Metallic")
 
-                row = subarea.row()
-                row.prop(current_object, 'alpha_texture', text='Alpha Texture', icon="IMAGE_ALPHA")
-                texture_extension = os.path.splitext(current_object.texture)[1].lower()
-                alpha_extension = os.path.splitext(current_object.alpha_texture)[1].lower()
-                if texture_extension in bpy.path.extensions_movie or alpha_extension in bpy.path.extensions_movie:
+                    row = subarea.row(align=True)
+                    row.prop(current_object, 'specular_intensity', text="Specular")
+                    row.prop(current_object, 'roughness', text="Roughness")
+
+                if current_object.type == 'IMAGE':
                     row = subarea.row()
-                    row.prop(current_object, 'loop')
+                    row.prop(current_object, 'use_transparency', text='Use Alpha Channel')
+                    row.prop(current_object, 'alpha', text='Alpha')
                     row = subarea.row()
-                    row.prop(current_object, 'frame_offset')
-                    row.prop(current_object, 'frame_length')
+                    row.prop(current_object, 'texture', text='Texture', icon="IMAGE_RGB")
+
+                    row = subarea.row()
+                    row.prop(current_object, 'alpha_texture', text='Alpha Texture', icon="IMAGE_ALPHA")
+                    texture_extension = os.path.splitext(current_object.texture)[1].lower()
+                    alpha_extension = os.path.splitext(current_object.alpha_texture)[1].lower()
+                    if texture_extension in bpy.path.extensions_movie or alpha_extension in bpy.path.extensions_movie:
+                        row = subarea.row()
+                        row.prop(current_object, 'loop')
+                        row = subarea.row()
+                        row.prop(current_object, 'frame_offset')
+                        row.prop(current_object, 'frame_length')
+                else:
+                    row = subarea.row(align=True)
+                    row.prop(current_object, 'alpha', text='Alpha')
+                    if not current_object.use_shadeless:
+                        row.prop(current_object, 'index_of_refraction', text='IOR')
 
             subarea = outline.box()
 
