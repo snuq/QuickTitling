@@ -494,7 +494,7 @@ def object_at_location(scene, x, y):
 
             mesh = title_object.to_mesh(scene, True, 'PREVIEW')
             ob = bpy.data.objects.new(mesh.name, mesh)
-            scene.objects.link(ob)
+            scene.collection.objects.link(ob)
             ob.scale = title_object.scale
             ob.location = title_object.location
             ob.rotation_euler = title_object.rotation_euler
@@ -514,7 +514,7 @@ def object_at_location(scene, x, y):
         if data[0]:
             if data[4] == ob:
                 match_object = title_object
-        scene.objects.unlink(ob)
+        scene.collection.objects.unlink(ob)
         bpy.data.objects.remove(ob)
         bpy.data.meshes.remove(mesh)
     return match_object
@@ -841,18 +841,26 @@ def load_quicktitle(filepath, preset):
             newobject.alpha = 1
         else:
             newobject.alpha = alpha
+        index_of_refraction = abs(float(title_object.findtext('index_of_refraction', default=str(get_default('index_of_refraction')))))
+        if index_of_refraction > 50:
+            newobject.index_of_refraction = 1
+        else:
+            newobject.index_of_refraction = index_of_refraction
         specular_intensity = abs(float(title_object.findtext('specular_intensity', default=str(get_default('specular_intensity')))))
         if specular_intensity > 1:
             newobject.specular_intensity = 1
         else:
             newobject.specular_intensity = specular_intensity
-        specular_hardness = abs(int(title_object.findtext('specular_hardness', default=str(get_default('specular_hardness')))))
-        if specular_hardness > 511:
-            newobject.specular_hardness = 511
-        elif specular_hardness < 1:
-            newobject.specular_hardness = 1
+        metallic = abs(float(title_object.findtext('metallic', default=str(get_default('metallic')))))
+        if metallic > 1:
+            newobject.metallic = 1
         else:
-            newobject.specular_hardness = specular_hardness
+            newobject.metallic = metallic
+        roughness = abs(float(title_object.findtext('roughness', default=str(get_default('roughness')))))
+        if roughness > 1:
+            newobject.roughness = 1
+        else:
+            newobject.roughness = roughness
         newobject.extrude = abs(float(title_object.findtext('extrude', default=str(get_default('extrude')))))
         newobject.bevel = abs(float(title_object.findtext('bevel', default=str(get_default('bevel')))))
         newobject.bevel_resolution = abs(int(title_object.findtext('bevel_resolution', default=str(get_default('bevel_resolution')))))
@@ -896,11 +904,6 @@ def load_quicktitle(filepath, preset):
             newobject.diffuse_color = (1, 1, 1)
         else:
             newobject.diffuse_color = (int(diffuse_color[0]) / 255.0, int(diffuse_color[1]) / 255.0, int(diffuse_color[2]) / 255.0)
-        specular_color = title_object.findtext('specular_color', default="255, 255, 255").replace(' ', '').replace('(', '').replace(')', '').split(',')
-        if len(specular_color) != 3:
-            newobject.specular_color = (1, 1, 1)
-        else:
-            newobject.specular_color = (int(specular_color[0]) / 255.0, int(specular_color[1]) / 255.0, int(specular_color[2]) / 255.0)
         object_animations = title_object.findall('animations')
         for animation in object_animations:
             newanimation = newobject.animations.add()
@@ -989,10 +992,11 @@ def copy_object(oldobject, newobject):
     newobject.use_shadeless = oldobject.use_shadeless
     newobject.use_transparency = oldobject.use_transparency
     newobject.alpha = oldobject.alpha
+    newobject.index_of_refraction = oldobject.index_of_refraction
     newobject.diffuse_color = oldobject.diffuse_color
     newobject.specular_intensity = oldobject.specular_intensity
-    newobject.specular_hardness = oldobject.specular_hardness
-    newobject.specular_color = oldobject.specular_color
+    newobject.metallic = oldobject.metallic
+    newobject.roughness = oldobject.roughness
     newobject.extrude = oldobject.extrude
     newobject.bevel = oldobject.bevel
     newobject.bevel_resolution = oldobject.bevel_resolution
@@ -1115,10 +1119,16 @@ def quicktitle_create(quicktitle=False):
     title_scene = bpy.context.scene
     title_scene.frame_start = 1
     title_scene.frame_end = quicktitle.length
-    title_scene.render.engine = 'BLENDER_EEVEE'
     title_scene.render.alpha_mode = 'TRANSPARENT'
     title_scene.render.image_settings.file_format = 'PNG'
     title_scene.render.image_settings.color_mode = 'RGBA'
+
+    #setup eevee
+    title_scene.render.engine = 'BLENDER_EEVEE'
+    title_scene.eevee.use_ssr = True
+    title_scene.eevee.use_ssr_refraction = True
+    title_scene.eevee.shadow_cube_size = '1024'
+
     copy_title_preset(quicktitle, title_scene.quicktitler.current_quicktitle)
     quicktitle_preset = title_scene.quicktitler.current_quicktitle
     if quicktitle.name:
@@ -1204,7 +1214,7 @@ def create_object(scene, object_type, name):
         verts = [(-1, 1, 0.0), (1, 1, 0.0), (1, -1, 0.0), (-1, -1, 0.0)]
         faces = [(3, 2, 1, 0)]
         mesh.from_pydata(verts, [], faces)
-        uvmap = mesh.uv_textures.new()
+        uvmap = mesh.uv_layers.new()
         title_object = bpy.data.objects.new(name=name, object_data=mesh)
         scene.collection.objects.link(title_object)
 
@@ -1564,6 +1574,13 @@ def setup_object(title_object, object_preset, material, scale_multiplier):
             title_object.active_material = material
 
 
+def input_name(node, name):
+    for socket in node.inputs:
+        if socket.name == name:
+            return socket
+    return None
+
+
 def quicktitle_update(sequence, quicktitle, update_all=False):
     #Function to update a QuickTitle sequence
     scene = sequence.scene
@@ -1693,26 +1710,70 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
                     title_object.active_material = material
 
             #set up material
-            material.diffuse_intensity = 1
-            material.diffuse_color = object_preset.diffuse_color
-            material.specular_intensity = object_preset.specular_intensity
-            material.specular_hardness = object_preset.specular_hardness
-            material.specular_color = object_preset.specular_color
-            material.use_shadeless = object_preset.use_shadeless
-            material.alpha = object_preset.alpha
-            if object_preset.type != 'IMAGE':
-                material.use_transparency = True if object_preset.alpha < 1 else False
+            material.use_nodes = True
+            output_node = None
+            for check_node in material.node_tree.nodes:
+                #find the output node
+                if check_node.type == 'OUTPUT_MATERIAL':
+                    output_node = check_node
+                    break
+            if not output_node:
+                #couldnt find an output node, create one
+                output_node = material.node_tree.nodes.new("ShaderNodeOutputMaterial")
+            input_socket = output_node.inputs['Surface']
+            shader = None
+            if len(input_socket.links) > 0:
+                #shader is connected
+                shader = input_socket.links[0].from_node
+
+                #check if shader is correct type, change it if it isnt
+                if (object_preset.use_shadeless and shader.type == 'BSDF_PRINCIPLED') or (not object_preset.use_shadeless and shader.type == 'EMISSION'):
+                    material.node_tree.nodes.remove(shader)
+                    shader = None
+
+            if not shader:
+                #no shader connected, create it
+                if object_preset.use_shadeless:
+                    #todo: set up transparency with a mix shader, need to update code above to check for it
+                    shader = material.node_tree.nodes.new("ShaderNodeEmission")
+                else:
+                    shader = material.node_tree.nodes.new("ShaderNodeBsdfPrincipled")
+                material.node_tree.links.new(shader.outputs[0], input_socket)
+
+            if shader.type == 'BSDF_PRINCIPLED':
+                socket = input_name(shader, 'Specular')
+                socket.default_value = object_preset.specular_intensity
+                socket = input_name(shader, 'Metallic')
+                socket.default_value = object_preset.metallic
+                socket = input_name(shader, 'Transmission')
+                socket.default_value = object_preset.alpha
+                socket = input_name(shader, 'Base Color')
+                socket.default_value[0] = object_preset.diffuse_color[0]
+                socket.default_value[1] = object_preset.diffuse_color[1]
+                socket.default_value[2] = object_preset.diffuse_color[2]
+                socket = input_name(shader, 'Roughness')
+                socket.default_value = object_preset.roughness
+                socket = input_name(shader, 'IOR')
+                socket.default_value = object_preset.index_of_refraction
             else:
-                material.use_transparency = object_preset.use_transparency
-            material.specular_alpha = 0
+                socket = input_name(shader, 'Color')
+                socket.default_value[0] = object_preset.diffuse_color[0]
+                socket.default_value[1] = object_preset.diffuse_color[1]
+                socket.default_value[2] = object_preset.diffuse_color[2]
+                socket = input_name(shader, 'Strength')
+                socket.default_value = 1
+
+            material.use_screen_refraction = True
+            if object_preset.type != 'IMAGE':
+                material.blend_method = 'HASHED'
+            else:
+                material.blend_method = 'BLEND'
 
             if object_preset.cast_shadows:
-                material.use_cast_shadows = True
-                material.use_cast_buffer_shadows = True
+                material.transparent_shadow_method = 'HASHED'
 
             else:
-                material.use_cast_shadows = False
-                material.use_cast_buffer_shadows = False
+                material.transparent_shadow_method = 'NONE'
 
             setup_object(title_object, object_preset, material, scale_multiplier)
 
@@ -1724,8 +1785,8 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
                 outline_object = scene.objects[outline_object_name]
                 if not object_preset.outline:
                     #delete outline object
-                    scene.objects.unlink(outline_object)
-                    bpy.data.objects.remove(outline_object, True)
+                    scene.collection.objects.unlink(outline_object)
+                    bpy.data.objects.remove(outline_object, do_unlink=True)
                     outline_object = None
             else:
                 if object_preset.outline:
@@ -1776,10 +1837,11 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
                     other_object.use_shadeless = object_preset.use_shadeless
                     other_object.use_transparency = object_preset.use_transparency
                     other_object.alpha = object_preset.alpha
+                    other_object.index_of_refraction = object_preset.index_of_refraction
                     other_object.diffuse_color = object_preset.diffuse_color
                     other_object.specular_intensity = object_preset.specular_intensity
-                    other_object.specular_hardness = object_preset.specular_hardness
-                    other_object.specular_color = object_preset.specular_color
+                    other_object.metallic = object_preset.metallic
+                    other_object.roughness = object_preset.roughness
                     other_object.texture = object_preset.texture
                     other_object.alpha_texture = object_preset.alpha_texture
 
@@ -2112,11 +2174,18 @@ class QuickTitleObject(bpy.types.PropertyGroup):
         description="Enables transparency on this object.",
         update=quicktitle_autoupdate)
     alpha: bpy.props.FloatProperty(
-        name="Opacity",
+        name="Transparency",
         default=1,
         min=0,
         max=1,
-        description="Opacity controls the transparency of this object.  1 is fully visible, 0.5 is half transparent, 0 is invisible.",
+        description="Controls the transparency of this object.  0 is fully visible, 0.5 is somewhat transparent, 1 is highly transparent.",
+        update=quicktitle_autoupdate)
+    index_of_refraction: bpy.props.FloatProperty(
+        name="Index Of Refraction",
+        default=1.45,
+        min=0,
+        max=50,
+        description="Controls how zoomed in the transparent background is.  0 is no zoom, 1.45 average.",
         update=quicktitle_autoupdate)
     diffuse_color: bpy.props.FloatVectorProperty(
         name="Color Of The Material",
@@ -2134,21 +2203,19 @@ class QuickTitleObject(bpy.types.PropertyGroup):
         max=1,
         description="Controls the specularity, or shininess of this material.",
         update=quicktitle_autoupdate)
-    specular_hardness: bpy.props.IntProperty(
-        name="Specular Hardness",
-        default=50,
-        min=1,
-        max=511,
-        description="Controls the sharpness of the specularity of this material.",
-        update=quicktitle_autoupdate)
-    specular_color: bpy.props.FloatVectorProperty(
-        name="Color Of The Specularity",
-        size=3,
-        default=(1, 1, 1),
+    metallic: bpy.props.FloatProperty(
+        name="Metallic",
+        default=0,
         min=0,
         max=1,
-        subtype='COLOR',
-        description="Specular color of this object.",
+        description="Controls how metallic the material appears.",
+        update=quicktitle_autoupdate)
+    roughness: bpy.props.FloatProperty(
+        name="Roughness",
+        default=0.1,
+        min=0,
+        max=1,
+        description="Controls the sharpness of the shinyness of this material.",
         update=quicktitle_autoupdate)
     animations: bpy.props.CollectionProperty(
         type=QuickTitleAnimation)
@@ -2536,16 +2603,17 @@ class QuickTitlingPanel(bpy.types.Panel):
             split.prop(current_object, 'diffuse_color', text='')
 
             row = subarea.row()
-            split = row.split(factor=.85, align=True)
-            subsplit = split.split(align=True)
-            subsplit.prop(current_object, 'specular_intensity', text="Specular")
-            subsplit.prop(current_object, 'specular_hardness', text="Hardness")
-            split.prop(current_object, 'specular_color', text="")
+            row.prop(current_object, 'metallic', text="Metallic")
+
+            row = subarea.row(align=True)
+            row.prop(current_object, 'specular_intensity', text="Specular")
+            row.prop(current_object, 'roughness', text="Roughness")
 
             row = subarea.row()
             if current_object.type == 'IMAGE':
                 row.prop(current_object, 'use_transparency', text='Transparency')
-            row.prop(current_object, 'alpha', text='Alpha')
+            row.prop(current_object, 'alpha', text='Transmission')
+            row.prop(current_object, 'index_of_refraction', text='IOR')
 
             if current_object.type == 'IMAGE':
                 row = subarea.row()
@@ -2833,10 +2901,10 @@ class QuickTitlingObjectDelete(bpy.types.Operator):
                 outline_object_name = title_object.name+'outline'
                 if outline_object_name in scene.objects:
                     outline_object = scene.objects[outline_object_name]
-                    scene.objects.unlink(outline_object)
-                    bpy.data.objects.remove(outline_object, True)
-                scene.objects.unlink(title_object)
-                bpy.data.objects.remove(title_object, True)
+                    scene.collection.objects.unlink(outline_object)
+                    bpy.data.objects.remove(outline_object, do_unlink=True)
+                scene.collection.objects.unlink(title_object)
+                bpy.data.objects.remove(title_object, do_unlink=True)
 
         scene.quicktitler.current_quicktitle.objects.remove(self.index)
         quicktitle_autoupdate_all()
@@ -3078,16 +3146,17 @@ class QuickTitlingPresetExport(bpy.types.Operator, ExportHelper):
                 Tree.SubElement(objects, 'use_transparency').text = str(title_object.use_transparency)
             if title_object.alpha != get_default('alpha'):
                 Tree.SubElement(objects, 'alpha').text = str(title_object.alpha)
+            if title_object.index_of_refraction != get_default('index_of_refraction'):
+                Tree.SubElement(objects, 'index_of_refraction').text = str(title_object.index_of_refraction)
             if title_object.diffuse_color != get_default('diffuse_color'):
                 diffuse_color = str(round(title_object.diffuse_color[0] * 255))+', '+str(round(title_object.diffuse_color[1] * 255))+', '+str(round(title_object.diffuse_color[2] * 255))
                 Tree.SubElement(objects, 'diffuse_color').text = diffuse_color
             if title_object.specular_intensity != get_default('specular_intensity'):
                 Tree.SubElement(objects, 'specular_intensity').text = str(title_object.specular_intensity)
-            if title_object.specular_hardness != get_default('specular_hardness'):
-                Tree.SubElement(objects, 'specular_hardness').text = str(title_object.specular_hardness)
-            if title_object.specular_color != get_default('specular_color'):
-                specular_color = str(round(title_object.specular_color[0] * 255))+', '+str(round(title_object.specular_color[1] * 255))+', '+str(round(title_object.specular_color[2] * 255))
-                Tree.SubElement(objects, 'specular_color').text = specular_color
+            if title_object.metallic != get_default('metallic'):
+                Tree.SubElement(objects, 'metallic').text = str(title_object.metallic)
+            if title_object.roughness != get_default('roughness'):
+                Tree.SubElement(objects, 'roughness').text = str(title_object.roughness)
             if title_object.extrude != get_default('extrude'):
                 Tree.SubElement(objects, 'extrude').text = str(title_object.extrude)
             if title_object.bevel != get_default('bevel'):
