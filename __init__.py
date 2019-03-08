@@ -15,6 +15,7 @@
 #  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 #
 # ##### END GPL LICENSE BLOCK #####
+#todo: scenes in the vse are REALLY slow... why?
 
 import bpy
 import bgl
@@ -845,9 +846,14 @@ def load_quicktitle(filepath, preset):
             newobject.alpha = alpha
         index_of_refraction = abs(float(title_object.findtext('index_of_refraction', default=str(get_default('index_of_refraction')))))
         if index_of_refraction > 50:
-            newobject.index_of_refraction = 1
+            newobject.index_of_refraction = 50
         else:
             newobject.index_of_refraction = index_of_refraction
+        transmission = abs(float(title_object.findtext('transmission', default=str(get_default('transmission')))))
+        if transmission > 1:
+            newobject.transmission = 1
+        else:
+            newobject.transmission = transmission
         specular_intensity = abs(float(title_object.findtext('specular_intensity', default=str(get_default('specular_intensity')))))
         if specular_intensity > 1:
             newobject.specular_intensity = 1
@@ -995,6 +1001,7 @@ def copy_object(oldobject, newobject):
     newobject.use_transparency = oldobject.use_transparency
     newobject.alpha = oldobject.alpha
     newobject.index_of_refraction = oldobject.index_of_refraction
+    newobject.transmission = oldobject.transmission
     newobject.diffuse_color = oldobject.diffuse_color
     newobject.specular_intensity = oldobject.specular_intensity
     newobject.metallic = oldobject.metallic
@@ -1149,6 +1156,7 @@ def quicktitle_create(quicktitle=False):
     title_scene.camera = camera
     camera.location = (0, 0, 2.17)
     camera.name = "QuickTitlerCamera"
+    camera.data.lens = 39.2
 
     #Basic lamps setup
     lamp_energy = 0.5
@@ -1194,7 +1202,7 @@ def quicktitle_create(quicktitle=False):
     shadow_lamp.data.use_shadow = True
     shadow_lamp.data.shadow_buffer_soft = 10
     shadow_lamp.data.shadow_buffer_bias = 0.1
-    shadow_lamp.data.shadow_buffer_exp = 50
+    shadow_lamp.data.shadow_buffer_exp = 10
     shadow_lamp.data.shadow_buffer_samples = 4
     shadow_lamp.data.shadow_buffer_clip_end = 4
     shadow_lamp.data.shadow_buffer_clip_start = 0.01
@@ -1296,21 +1304,29 @@ def create_object(scene, object_type, name):
     return title_object
 
 
-def set_animations(title_object, object_preset, material, scene, z_offset, pos_multiplier, parent=None):
+def set_animations(title_object, object_preset, material, scene, z_offset, pos_multiplier, shaders, parent=None):
     #look for and clear animations that are no longer set
-    #todo: this is totally broken in 2.8
+    shader = shaders[0]
+    mix_shader = shaders[2]
+
+    #clear old animations
+    animation_types = []
+    for animation in object_preset.animations:
+        animation_types.append(animation.variable)
+    if material.node_tree.animation_data:
+        if material.node_tree.animation_data.action:
+            if material.node_tree.animation_data.action.fcurves:
+                fcurves = material.node_tree.animation_data.action.fcurves
+                for curve in fcurves:
+                    if curve.data_path == 'nodes["'+mix_shader.name+'"].inputs[0].default_value':
+                        if 'Alpha' not in animation_types:
+                            fcurves.remove(curve)
     if title_object.animation_data:
         if title_object.animation_data.action:
             if title_object.animation_data.action.fcurves:
                 fcurves = title_object.animation_data.action.fcurves
-                animation_types = []
-                for animation in object_preset.animations:
-                    animation_types.append(animation.variable)
                 for curve in fcurves:
-                    if curve.data_path == 'active_material.alpha':
-                        if 'Alpha' not in animation_types:
-                            fcurves.remove(curve)
-                    elif curve.data_path == 'location':
+                    if curve.data_path == 'location':
                         if curve.array_index == 0:
                             if 'X Slide' not in animation_types:
                                 fcurves.remove(curve)
@@ -1342,103 +1358,110 @@ def set_animations(title_object, object_preset, material, scene, z_offset, pos_m
                                 fcurves.remove(curve)
 
     #if animations are on this object, update them
-    if len(object_preset.animations) > 0:
-        if not title_object.animation_data:
-            animation = title_object.animation_data_create()
+    start_frame = scene.frame_start
+    end_frame = scene.frame_end
+    for animation_preset in object_preset.animations:
+        if animation_preset.variable == 'Alpha':
+            if not material.node_tree.animation_data:
+                animation = material.node_tree.animation_data_create()
+            else:
+                animation = material.node_tree.animation_data
         else:
-            animation = title_object.animation_data
+            if not title_object.animation_data:
+                animation = title_object.animation_data_create()
+            else:
+                animation = title_object.animation_data
         if not animation.action:
             action = bpy.data.actions.new(title_object.name)
             animation.action = action
         else:
             action = animation.action
-        start_frame = scene.frame_start
-        end_frame = scene.frame_end
         fcurves = action.fcurves
-        for animation_preset in object_preset.animations:
-            in_amount = animation_preset.in_amount
-            out_amount = animation_preset.out_amount
-            variable = animation_preset.variable
-            fcurve, value = get_fcurve(fcurves, variable, material=material, on_object=title_object if not parent else parent)
-            offsetvalue = value
-            scalevalue = 1
-            if 'Rotate' in variable:
-                in_amount = in_amount / 180 * pi
-                out_amount = out_amount / 180 * pi
-            if 'Slide' in variable:
-                scalevalue = 1 + (z_offset * .457)
-                offsetvalue = offsetvalue / pos_multiplier
-                if parent:
-                    offsetvalue = offsetvalue - .001
-                    value = value - .001
-            if variable == 'Alpha' or variable == 'Width' or variable == 'Height' or variable == 'Depth':
-                offsetvalue = 0
-                material.use_transparency = True
-            if fcurve:
-                points = []
-                if animation_preset.animate_in:
-                    points.append((start_frame + animation_preset.in_offset, (offsetvalue + in_amount) * scalevalue))
-                    points.append((start_frame + animation_preset.in_offset + animation_preset.in_length, value))
-                else:
-                    points.append((start_frame, value))
-                if animation_preset.animate_out:
-                    points.append((end_frame + animation_preset.out_offset - animation_preset.out_length, value))
-                    points.append((end_frame + animation_preset.out_offset, (offsetvalue + out_amount) * scalevalue))
-                else:
-                    points.append((end_frame, value))
-                clear_keyframes(fcurve)
-                for index, point in enumerate(points):
-                    fcurve.keyframe_points.add(count=1)
-                    fcurve.keyframe_points[index].co = point
 
-                #Set cyclic animations
-                if animation_preset.cycle_type != 'NONE':
-                    cycle_type = animation_preset.cycle_type
-                    x_scale = animation_preset.cycle_x_scale
-                    y_scale = animation_preset.cycle_y_scale
-                    offset = animation_preset.cycle_offset
-                    if len(fcurve.modifiers) > 0:
-                        for modifier in reversed(fcurve.modifiers):
-                            fcurve.modifiers.remove(modifier)
-                    if cycle_type == 'RANDOM':
-                        modifier = fcurve.modifiers.new(type='NOISE')
-                        modifier.scale = x_scale * 10
-                        modifier.strength = y_scale
-                        modifier.offset = offset
-                    if cycle_type == 'SINE':
-                        modifier = fcurve.modifiers.new(type='FNGENERATOR')
-                        modifier.function_type = 'SIN'
-                        modifier.use_additive = True
-                        modifier.amplitude = y_scale / 4
-                        if x_scale > 0:
-                            modifier.phase_multiplier = 1 / x_scale / 10
-                        else:
-                            modifier.phase_multiplier = 0
-                        modifier.phase_offset = -offset
-                    if cycle_type == 'TANGENT':
-                        modifier = fcurve.modifiers.new(type='FNGENERATOR')
-                        modifier.function_type = 'TAN'
-                        modifier.use_additive = True
-                        modifier.amplitude = y_scale / 20
-                        if x_scale > 0:
-                            modifier.phase_multiplier = 1 / x_scale / 10
-                        else:
-                            modifier.phase_multiplier = 0
-                        modifier.phase_offset = -offset
-                    modifier.use_restricted_range = True
-                    if animation_preset.animate_in:
-                        modifier.frame_start = start_frame + animation_preset.in_offset
-                        modifier.blend_in = animation_preset.in_length
+        in_amount = animation_preset.in_amount
+        out_amount = animation_preset.out_amount
+        variable = animation_preset.variable
+        fcurve, value = get_fcurve(fcurves, variable, material=material, on_object=title_object if not parent else parent, shader=shader, mix_shader=mix_shader)
+        offsetvalue = value
+        scalevalue = 1
+        if 'Rotate' in variable:
+            in_amount = in_amount / 180 * pi
+            out_amount = out_amount / 180 * pi
+        if 'Slide' in variable:
+            scalevalue = 1 + (z_offset * .457)
+            offsetvalue = offsetvalue / pos_multiplier
+            if parent:
+                offsetvalue = offsetvalue - .001
+                value = value - .001
+        if variable == 'Alpha':
+            offsetvalue = 0
+        if variable == 'Width' or variable == 'Height' or variable == 'Depth':
+            offsetvalue = 0
+        if fcurve:
+            points = []
+            if animation_preset.animate_in:
+                points.append((start_frame + animation_preset.in_offset, (offsetvalue + in_amount) * scalevalue))
+                points.append((start_frame + animation_preset.in_offset + animation_preset.in_length, value))
+            else:
+                points.append((start_frame, value))
+            if animation_preset.animate_out:
+                points.append((end_frame + animation_preset.out_offset - animation_preset.out_length, value))
+                points.append((end_frame + animation_preset.out_offset, (offsetvalue + out_amount) * scalevalue))
+            else:
+                points.append((end_frame, value))
+            clear_keyframes(fcurve)
+            for index, point in enumerate(points):
+                fcurve.keyframe_points.add(count=1)
+                fcurve.keyframe_points[index].co = point
+
+            #Set cyclic animations
+            if animation_preset.cycle_type != 'NONE':
+                cycle_type = animation_preset.cycle_type
+                x_scale = animation_preset.cycle_x_scale
+                y_scale = animation_preset.cycle_y_scale
+                offset = animation_preset.cycle_offset
+                if len(fcurve.modifiers) > 0:
+                    for modifier in reversed(fcurve.modifiers):
+                        fcurve.modifiers.remove(modifier)
+                if cycle_type == 'RANDOM':
+                    modifier = fcurve.modifiers.new(type='NOISE')
+                    modifier.scale = x_scale * 10
+                    modifier.strength = y_scale
+                    modifier.offset = offset
+                if cycle_type == 'SINE':
+                    modifier = fcurve.modifiers.new(type='FNGENERATOR')
+                    modifier.function_type = 'SIN'
+                    modifier.use_additive = True
+                    modifier.amplitude = y_scale / 4
+                    if x_scale > 0:
+                        modifier.phase_multiplier = 1 / x_scale / 10
                     else:
-                        modifier.frame_start = start_frame
-                        modifier.blend_in = 0
-                    if animation_preset.animate_out:
-                        modifier.frame_end = end_frame + animation_preset.out_offset
-                        modifier.blend_out = animation_preset.out_length
+                        modifier.phase_multiplier = 0
+                    modifier.phase_offset = -offset
+                if cycle_type == 'TANGENT':
+                    modifier = fcurve.modifiers.new(type='FNGENERATOR')
+                    modifier.function_type = 'TAN'
+                    modifier.use_additive = True
+                    modifier.amplitude = y_scale / 20
+                    if x_scale > 0:
+                        modifier.phase_multiplier = 1 / x_scale / 10
                     else:
-                        modifier.frame_end = end_frame
-                        modifier.blend_out = 0
-                fcurve.update()
+                        modifier.phase_multiplier = 0
+                    modifier.phase_offset = -offset
+                modifier.use_restricted_range = True
+                if animation_preset.animate_in:
+                    modifier.frame_start = start_frame + animation_preset.in_offset
+                    modifier.blend_in = animation_preset.in_length
+                else:
+                    modifier.frame_start = start_frame
+                    modifier.blend_in = 0
+                if animation_preset.animate_out:
+                    modifier.frame_end = end_frame + animation_preset.out_offset
+                    modifier.blend_out = animation_preset.out_length
+                else:
+                    modifier.frame_end = end_frame
+                    modifier.blend_out = 0
+            fcurve.update()
 
 
 def setup_object(title_object, object_preset, material, scale_multiplier):
@@ -1607,6 +1630,98 @@ def input_name(node, name):
     return None
 
 
+def get_output_node(material):
+    #for a material, returns the socket for the material output node, while ensuring that such node exists
+    material.use_nodes = True
+    output_node = None
+    for check_node in material.node_tree.nodes:
+        #find the output node
+        if check_node.type == 'OUTPUT_MATERIAL':
+            output_node = check_node
+            break
+    return output_node
+
+
+def clear_material(material):
+    for node in material.node_tree.nodes:
+        material.node_tree.nodes.remove(node)
+
+
+def setup_material(material, use_shadeless):
+    #recreates a material
+    clear_material(material)
+    tree = material.node_tree
+    nodes = tree.nodes
+
+    #create nodes
+    output_node = nodes.new('ShaderNodeOutputMaterial')
+    mix_shader = nodes.new('ShaderNodeMixShader')
+    transparent_shader = nodes.new('ShaderNodeBsdfTransparent')
+    if use_shadeless:
+        shader = nodes.new('ShaderNodeEmission')
+    else:
+        shader = nodes.new('ShaderNodeBsdfPrincipled')
+
+    #connect nodes
+    tree.links.new(mix_shader.outputs[0], output_node.inputs['Surface'])
+    tree.links.new(transparent_shader.outputs[0], mix_shader.inputs[1])
+    tree.links.new(shader.outputs[0], mix_shader.inputs[2])
+
+    #set up basic values on nodes
+    transparent_shader.inputs[0].default_value[3] = 0
+    mix_shader.inputs[0].default_value = 1
+    return [shader, transparent_shader, mix_shader, output_node]
+
+
+def get_connected_node(node, socket_name):
+    socket = node.inputs[socket_name]
+    if len(socket.links) > 0:
+        return socket.links[0].from_node
+    return None
+
+
+def check_material(material, use_shadeless):
+    #checks if the material node setup is correct for the type
+    output_node = get_output_node(material)
+    if not output_node:
+        return None
+    mix_shader = get_connected_node(output_node, 'Surface')
+    if not mix_shader:
+        return None
+    if mix_shader.type != 'MIX_SHADER':
+        return None
+    transparent_shader = get_connected_node(mix_shader, 1)
+    if not transparent_shader:
+        return None
+    if transparent_shader.type != 'BSDF_TRANSPARENT':
+        return None
+    shader = get_connected_node(mix_shader, 2)
+    if not shader:
+        return None
+    if use_shadeless:
+        if shader.type != 'EMISSION':
+            material.node_tree.nodes.remove(shader)
+            shader = material.node_tree.nodes.new('ShaderNodeEmission')
+            material.node_tree.links.new(shader.outputs[0], mix_shader.inputs[2])
+    else:
+        if shader.type != 'BSDF_PRINCIPLED':
+            material.node_tree.nodes.remove(shader)
+            shader = material.node_tree.nodes.new('ShaderNodeBsdfPrincipled')
+            material.node_tree.links.new(shader.outputs[0], mix_shader.inputs[2])
+    return [shader, transparent_shader, mix_shader, output_node]
+
+
+def get_shaders(material, use_shadeless=False):
+    #given a material, returns the shader node of the correct type, while ensuring it exists and is properly connected
+
+    material_data = check_material(material, use_shadeless)
+    if material_data:
+        shader, transparent_shader, mix_shader, output_node = material_data
+    else:
+        shader, transparent_shader, mix_shader, output_node = setup_material(material, use_shadeless)
+    return [shader, transparent_shader, mix_shader, output_node]
+
+
 def quicktitle_update(sequence, quicktitle, update_all=False):
     #Function to update a QuickTitle sequence
     scene = sequence.scene
@@ -1630,12 +1745,13 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
     if quicktitle.shadowlamp_internal_name in scene.objects and quicktitle.shadowlamp_inverse_internal_name in scene.objects:
         shadow_lamp = scene.objects[quicktitle.shadowlamp_internal_name]
         shadow_lamp_inverse = scene.objects[quicktitle.shadowlamp_inverse_internal_name]
-        softshadow = quicktitle.shadowsoft * 10
+        softshadow = quicktitle.shadowsoft * 5
         shadow_lamp.data.shadow_buffer_soft = softshadow
-        shadow_lamp.data.energy = quicktitle.shadowamount
-        shadow_lamp_inverse.data.energy = -quicktitle.shadowamount
-        shadow_lamp.data.shadow_soft_size = quicktitle.shadowsoft
-        shadow_lamp_inverse.data.shadow_soft_size = quicktitle.shadowsoft
+        shadow_multiplier = 1.2
+        shadow_lamp.data.energy = quicktitle.shadowamount * shadow_multiplier
+        shadow_lamp_inverse.data.energy = -(quicktitle.shadowamount * shadow_multiplier)
+        shadow_lamp.data.shadow_soft_size = .1
+        shadow_lamp_inverse.data.shadow_soft_size = .1
         shadow_lamp.location = (quicktitle.shadowx, quicktitle.shadowy, quicktitle.shadowsize)
         shadow_lamp_inverse.location = (quicktitle.shadowx, quicktitle.shadowy, quicktitle.shadowsize)
         if quicktitle.shadowamount > 0:
@@ -1740,34 +1856,11 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
                     title_object.active_material = material
 
             #set up material
-            material.use_nodes = True
-            output_node = None
-            for check_node in material.node_tree.nodes:
-                #find the output node
-                if check_node.type == 'OUTPUT_MATERIAL':
-                    output_node = check_node
-                    break
-            if not output_node:
-                #couldnt find an output node, create one
-                output_node = material.node_tree.nodes.new("ShaderNodeOutputMaterial")
-            input_socket = output_node.inputs['Surface']
-            shader = None
-            if len(input_socket.links) > 0:
-                #shader is connected
-                shader = input_socket.links[0].from_node
-
-                #check if shader is correct type, change it if it isnt
-                if (object_preset.use_shadeless and shader.type == 'BSDF_PRINCIPLED') or (not object_preset.use_shadeless and shader.type == 'EMISSION'):
-                    material.node_tree.nodes.remove(shader)
-                    shader = None
-
-            if not shader:
-                #no shader connected, create it
-                if object_preset.use_shadeless:
-                    shader = material.node_tree.nodes.new("ShaderNodeEmission")
-                else:
-                    shader = material.node_tree.nodes.new("ShaderNodeBsdfPrincipled")
-                material.node_tree.links.new(shader.outputs[0], input_socket)
+            shaders = get_shaders(material, use_shadeless=object_preset.use_shadeless)
+            shader = shaders[0]
+            mix_shader = shaders[2]
+            socket = mix_shader.inputs[0]
+            socket.default_value = object_preset.alpha
 
             if shader.type == 'BSDF_PRINCIPLED':
                 socket = input_name(shader, 'Specular')
@@ -1775,7 +1868,7 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
                 socket = input_name(shader, 'Metallic')
                 socket.default_value = object_preset.metallic
                 socket = input_name(shader, 'Transmission')
-                socket.default_value = 1 - object_preset.alpha
+                socket.default_value = object_preset.transmission
                 socket = input_name(shader, 'Base Color')
                 socket.default_value[0] = object_preset.diffuse_color[0]
                 socket.default_value[1] = object_preset.diffuse_color[1]
@@ -1784,20 +1877,18 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
                 socket.default_value = object_preset.roughness
                 socket = input_name(shader, 'IOR')
                 socket.default_value = object_preset.index_of_refraction
+
             else:
                 socket = input_name(shader, 'Color')
                 socket.default_value[0] = object_preset.diffuse_color[0]
                 socket.default_value[1] = object_preset.diffuse_color[1]
                 socket.default_value[2] = object_preset.diffuse_color[2]
-                socket.default_value[3] = object_preset.alpha
                 socket = input_name(shader, 'Strength')
                 socket.default_value = 1
 
             material.use_screen_refraction = True
-            if object_preset.type != 'IMAGE':
-                material.blend_method = 'HASHED'
-            else:
-                material.blend_method = 'BLEND'
+            material.blend_method = 'BLEND'
+            material.show_transparent_back = False
 
             if object_preset.cast_shadows:
                 material.transparent_shadow_method = 'HASHED'
@@ -1807,7 +1898,7 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
 
             setup_object(title_object, object_preset, material, scale_multiplier)
 
-            set_animations(title_object, object_preset, material, scene, z_offset, pos_multiplier)
+            set_animations(title_object, object_preset, material, scene, z_offset, pos_multiplier, shaders)
 
             outline_object_name = title_object.name+'outline'
             outline_object = None
@@ -1831,41 +1922,20 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
                     material = bpy.data.materials.new(outline_object_name)
                 outline_object.active_material = material
 
-                material.use_nodes = True
-                output_node = None
-                for check_node in material.node_tree.nodes:
-                    #find the output node
-                    if check_node.type == 'OUTPUT_MATERIAL':
-                        output_node = check_node
-                        break
-                if not output_node:
-                    #couldnt find an output node, create one
-                    output_node = material.node_tree.nodes.new("ShaderNodeOutputMaterial")
-                input_socket = output_node.inputs['Surface']
-                shader = None
-                if len(input_socket.links) > 0:
-                    #shader is connected
-                    shader = input_socket.links[0].from_node
-
-                    #check if shader is correct type, change it if it isnt
-                    if shader.type != 'EMISSION':
-                        material.node_tree.nodes.remove(shader)
-                        shader = None
-
-                if not shader:
-                    #no shader connected, create it
-                    shader = material.node_tree.nodes.new("ShaderNodeEmission")
-                    material.node_tree.links.new(shader.outputs[0], input_socket)
+                shaders = get_shaders(material, use_shadeless=True)
+                shader = shaders[0]
+                mix_shader = shaders[2]
+                socket = mix_shader.inputs[0]
+                socket.default_value = object_preset.outline_alpha
 
                 socket = input_name(shader, 'Color')
                 socket.default_value[0] = object_preset.outline_diffuse_color[0]
                 socket.default_value[1] = object_preset.outline_diffuse_color[1]
                 socket.default_value[2] = object_preset.outline_diffuse_color[2]
-                socket.default_value[3] = object_preset.outline_alpha
                 socket = input_name(shader, 'Strength')
                 socket.default_value = 1
 
-                material.blend_method = 'HASHED'
+                material.blend_method = 'BLEND'
                 if object_preset.cast_shadows:
                     material.transparent_shadow_method = 'HASHED'
                 else:
@@ -1876,7 +1946,7 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
                 outline_object.scale = (scale_multiplier * object_preset.scale * object_preset.width, scale_multiplier * object_preset.scale * object_preset.height, object_preset.scale)
                 outline_object.rotation_euler = (object_preset.rot_x / 180.0 * pi, object_preset.rot_y / 180.0 * pi, -object_preset.rot_z / 180.0 * pi)
                 setup_object(outline_object, object_preset, material, scale_multiplier)
-                set_animations(outline_object, object_preset, material, scene, z_offset, pos_multiplier, parent=title_object)
+                set_animations(outline_object, object_preset, material, scene, z_offset, pos_multiplier, shaders, parent=title_object)
                 #outline_object.data.offset = object_preset.outline_size / 100
                 outline_object.data.extrude = 0
                 outline_object.data.bevel_depth = object_preset.outline_size / 100
@@ -1908,14 +1978,14 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
     bpy.ops.sequencer.refresh_all()
 
 
-def get_fcurve(fcurves, variable, material=None, on_object=None):
-    #find and return an fcurve matching the given internal script variable name
+def get_fcurve(fcurves, variable, material=None, on_object=None, shader=None, mix_shader=None):
+    #find or create and return an fcurve matching the given internal script variable name
     fcurve = None
     value = None
     if variable == 'Alpha':
-        data_path = 'active_material.alpha'
-        if material:
-            value = material.alpha
+        data_path = 'nodes["'+mix_shader.name+'"].inputs[0].default_value'
+        if mix_shader:
+            value = mix_shader.inputs[0].default_value
         fcurve = fcurves.find(data_path)
         if not fcurve:
             fcurve = fcurves.new(data_path)
@@ -2232,14 +2302,21 @@ class QuickTitleObject(bpy.types.PropertyGroup):
         default=1,
         min=0,
         max=1,
-        description="Controls the transparency of this object.  1 is fully visible, 0.5 is somewhat transparent, 0 is highly transparent or invisible.",
+        description="Controls the transparency of this object.  1 is fully visible, 0.5 is somewhat transparent, 0 is invisible.",
+        update=quicktitle_autoupdate)
+    transmission: bpy.props.FloatProperty(
+        name="Transmission",
+        default=0,
+        min=0,
+        max=1,
+        description="Controls the glass transparency of this object, only interacts with other objects in the title.  0 is full opacity, 1 is perfect glass transparency.",
         update=quicktitle_autoupdate)
     index_of_refraction: bpy.props.FloatProperty(
         name="Index Of Refraction",
-        default=1.45,
+        default=1,
         min=0,
         max=50,
-        description="Controls how zoomed in the transparent background is.  0 is no zoom, 1.45 average.",
+        description="Controls how zoomed in and blurred the transparent background is.  1 is no zoom, 1.4 is medium.",
         update=quicktitle_autoupdate)
     diffuse_color: bpy.props.FloatVectorProperty(
         name="Color Of The Material",
@@ -2645,6 +2722,7 @@ class QuickTitlingPanel(bpy.types.Panel):
 
             subarea = outline.box()
 
+            #todo: clean up panel layout a bit on material settings area
             row = subarea.row()
             row.label(text='Material:', icon="MATERIAL_DATA")
             row.prop(current_object, 'set_material', text='Use Custom Material')
@@ -2690,6 +2768,8 @@ class QuickTitlingPanel(bpy.types.Panel):
                     row = subarea.row(align=True)
                     row.prop(current_object, 'alpha', text='Alpha')
                     if not current_object.use_shadeless:
+                        row = subarea.row(align=True)
+                        row.prop(current_object, 'transmission', text='Transmission')
                         row.prop(current_object, 'index_of_refraction', text='IOR')
 
             subarea = outline.box()
@@ -3210,6 +3290,8 @@ class QuickTitlingPresetExport(bpy.types.Operator, ExportHelper):
                 Tree.SubElement(objects, 'alpha').text = str(title_object.alpha)
             if title_object.index_of_refraction != get_default('index_of_refraction'):
                 Tree.SubElement(objects, 'index_of_refraction').text = str(title_object.index_of_refraction)
+            if title_object.transmission != get_default('transmission'):
+                Tree.SubElement(objects, 'transmission').text = str(title_object.transmission)
             if title_object.diffuse_color != get_default('diffuse_color'):
                 diffuse_color = str(round(title_object.diffuse_color[0] * 255))+', '+str(round(title_object.diffuse_color[1] * 255))+', '+str(round(title_object.diffuse_color[2] * 255))
                 Tree.SubElement(objects, 'diffuse_color').text = diffuse_color
@@ -3355,6 +3437,7 @@ class QuickTitlingPresetMenu(bpy.types.Menu):
 
 
 def draw_preset_menu(self, context, add=False):
+    #todo: not all presets images displaying properly?
     presets = list_quicktitle_presets(context.scene)
     layout = self.layout
 
