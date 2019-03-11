@@ -1,4 +1,5 @@
-NOTE THAT THE 2.8 BRANCH IS NOT WORKING YET
+NOTE: The 2.8 branch is mostly working, but it has not been fully tested and some known bugs exist.
+
 
 # QuickTitling Addon For Blender
 

@@ -24,6 +24,8 @@ import bmesh
 import mathutils
 import os
 import glob
+import gpu
+from gpu_extras.batch import batch_for_shader
 from math import pi
 from bpy_extras.io_utils import ImportHelper, ExportHelper
 from bpy_extras.image_utils import load_image
@@ -478,11 +480,8 @@ overlay_info = ''
 
 keymap = None
 
-current_bounds = []
-
 
 def object_at_location(scene, x, y):
-    #todo: broken in 2.8
     #Casts a ray from the camera to the given coordinates and returns the first object in that direction, or None
     camera = scene.camera
     #since blender doesnt detect curve objects... go through and make low-poly copies of all curves, then delete them. bah.
@@ -494,7 +493,7 @@ def object_at_location(scene, x, y):
             title_object.data.resolution_u = 2
             title_object.data.bevel_resolution = 0
 
-            mesh = title_object.to_mesh(scene, True, 'PREVIEW')
+            mesh = title_object.to_mesh(bpy.context.depsgraph, True)
             ob = bpy.data.objects.new(mesh.name, mesh)
             scene.collection.objects.link(ob)
             ob.scale = title_object.scale
@@ -506,7 +505,8 @@ def object_at_location(scene, x, y):
             title_object.data.bevel_resolution = old_bevel_resolution
     direction = (mathutils.Vector((x, y, 0)) - camera.location).normalized()
     scene.update()
-    data = scene.ray_cast(camera.location, direction)
+    data = scene.ray_cast(scene.view_layers[0], camera.location, direction)
+    print(data)
     if data[0]:
         match_object = data[4]
     else:
@@ -522,49 +522,31 @@ def object_at_location(scene, x, y):
     return match_object
 
 
-def draw_rect(x, y, w, h, color=(1.0, 1.0, 1.0, 1.0)):
-    bgl.glBegin(bgl.GL_QUADS)
-    bgl.glColor4f(*color)
-    bgl.glVertex2f(x, y)
-    bgl.glVertex2f(x+w, y)
-    bgl.glVertex2f(x+w, y+h)
-    bgl.glVertex2f(x, y+h)
-    bgl.glEnd()
-
-
-def draw_box(x, y, w, h, color1=(0, 0, 0, .5), color2=(1, 1, 0, 1)):
-    bgl.glEnable(bgl.GL_BLEND)
-    bgl.glBegin(bgl.GL_LINE_STRIP)
-    bgl.glColor4f(*color1)
-    bgl.glVertex2i(x, y)
-    bgl.glVertex2i(x+w, y)
-    bgl.glVertex2i(x+w, y+h)
-    bgl.glVertex2i(x, y+h)
-    bgl.glVertex2i(x, y)
-    bgl.glEnd()
-
-    bgl.glBegin(bgl.GL_LINE_STRIP)
-    bgl.glColor4f(*color2)
-    x = x - 1
-    y = y - 1
-    w = w + 2
-    h = h + 2
-    bgl.glVertex2i(x, y)
-    bgl.glVertex2i(x+w, y)
-    bgl.glVertex2i(x+w, y+h)
-    bgl.glVertex2i(x, y+h)
-    bgl.glVertex2i(x, y)
-    bgl.glEnd()
+def draw_line(sx, sy, ex, ey, width, color=(1.0, 1.0, 1.0, 1.0)):
+    del width
+    coords = [(sx, sy), (ex, ey)]
+    shader = gpu.shader.from_builtin('2D_UNIFORM_COLOR')
+    batch = batch_for_shader(shader, 'LINES', {'pos': coords})
+    shader.bind()
+    shader.uniform_float('color', color)
+    batch.draw(shader)
 
 
 def draw_text(x, y, size, text, color=(1.0, 1.0, 1.0, 1.0)):
     font_id = 0
-    bgl.glColor4f(*color)
-    blf.shadow(font_id, 5, 0, 0, 0, 1)
-    blf.enable(font_id, blf.SHADOW)
+    blf.color(font_id, *color)
     blf.position(font_id, x, y, 0)
     blf.size(font_id, size, 72)
     blf.draw(font_id, text)
+
+
+def draw_box(left, bottom, right, top, color=(1.0, 1.0, 0.0, 1.0)):
+    coords = [(left, bottom), (left, top), (left, top), (right, top), (right, top), (right, bottom), (right, bottom), (left, bottom)]
+    shader = gpu.shader.from_builtin('2D_UNIFORM_COLOR')
+    batch = batch_for_shader(shader, 'LINES', {'pos': coords})
+    shader.bind()
+    shader.uniform_float('color', color)
+    batch.draw(shader)
 
 
 def add_overlay(self=None, context=None):
@@ -576,8 +558,6 @@ def add_overlay(self=None, context=None):
 
 
 def quicktitling_overlay():
-    #todo: update for blender 2.8
-    return
     quicktitle_sequence = titling_scene_selected()
     if not quicktitle_sequence:
         global overlays
@@ -602,18 +582,15 @@ def quicktitling_overlay():
                     title_object = None
                 if title_object:
                     new_frame = bpy.context.scene.frame_current - quicktitle_sequence.frame_start
-                    scene.frame_set(new_frame)  #Not sure why, but this causes a blender error 'Skip event: cannot write to ID classes' when called from the panel draw function... still works tho?
+                    scene.frame_set(new_frame)
                     region = area.regions[2]
                     view = region.view2d
-                    update_bounds(title_object=title_object)
-                    global current_bounds
-                    if not current_bounds:
-                        return
-                    min_x, min_y, max_x, max_y = current_bounds
+                    min_x = title_object_preset.bbleft
+                    max_x = title_object_preset.bbright
+                    min_y = title_object_preset.bbbottom
+                    max_y = title_object_preset.bbtop
                     left, bottom = view.view_to_region(min_x, min_y, clip=False)
                     right, top = view.view_to_region(max_x, max_y, clip=False)
-                    width = right - left
-                    height = top - bottom
                     if title_object_preset.type == 'TEXT' and title_object_preset.word_wrap:
                         #display text bounding box
                         camera_width = scene.render.resolution_x
@@ -623,9 +600,8 @@ def quicktitling_overlay():
                         wrap_x = (wrap_x_per * (camera_width / 2)) - (wrap_width / 2)
                         w_left, very_bottom = view.view_to_region(wrap_x, 0, clip=False)
                         w_right, very_bottom = view.view_to_region(wrap_x + wrap_width, 0, clip=False)
-                        w_width = w_right - w_left
-                        draw_box(w_left, bottom, w_width, height, color2=(.5, .5, 0, 1))
-                    draw_box(left, bottom, width, height)
+                        draw_box(w_left, bottom, w_right, top, color=(.5, .5, 0, 1))
+                    draw_box(left, bottom, right, top)
                     draw_text(10, 10, 15, overlay_info)
 
 
@@ -633,87 +609,54 @@ def clamp(x, minimum, maximum):
     return max(minimum, min(x, maximum))
 
 
-def update_bounds(self=None, context=None, title_object=None):
-    quicktitle_sequence = titling_scene_selected()
-    global current_bounds
-    if quicktitle_sequence:
-        scene = quicktitle_sequence.scene
-        preset = scene.quicktitler.current_quicktitle
-        if not title_object:
-            try:
-                title_object_preset = preset.objects[preset.selected_object]
-                title_object_name = title_object_preset.internal_name
-                title_object = scene.objects[title_object_name]
-            except:
-                title_object = None
-        if title_object:
-            camera = scene.camera
-            camera_x = scene.render.resolution_x
-            camera_y = scene.render.resolution_y
-            current_bounds = camera_view_bounds_2d(scene, camera, title_object, camera_x, camera_y)
-            return
-    current_bounds = []
+def update_bounds(title_object, title_object_preset, title_scene, scale_multiplier, pos_multiplier):
+    camera = title_scene.camera
+    camera_x = bpy.context.scene.render.resolution_x
+    camera_y = bpy.context.scene.render.resolution_y
+    bounds = camera_view_bounds_2d(title_scene, camera, title_object, camera_x, camera_y, scale_multiplier, pos_multiplier)
+    title_object_preset.bbleft = bounds[0]
+    title_object_preset.bbbottom = bounds[1]
+    title_object_preset.bbright = bounds[2]
+    title_object_preset.bbtop = bounds[3]
 
 
-def camera_view_bounds_2d(scene, cam_ob, me_ob, camera_x, camera_y):
-    """
-    Returns camera space bounding box of mesh object.
+def generate_matrix_world(ob):
+    scale_matrix = mathutils.Matrix.Scale(ob.scale[0], 4, (1, 0, 0)) @ mathutils.Matrix.Scale(ob.scale[1], 4, (0, 1, 0)) @ mathutils.Matrix.Scale(ob.scale[2], 4, (0, 0, 1))
+    rotation_matrix = mathutils.Matrix.Rotation(ob.rotation_euler[0], 4, 'X') @ mathutils.Matrix.Rotation(ob.rotation_euler[1], 4, 'Y') @ mathutils.Matrix.Rotation(ob.rotation_euler[2], 4, 'Z')
+    matrix = mathutils.Matrix.Translation(ob.location) @ scale_matrix @ rotation_matrix
+    return matrix
 
-    Negative 'z' value means the point is behind the camera.
 
-    Takes shift-x/y, lens angle and sensor size into account
-    as well as perspective/ortho projections.
-    """
+def camera_view_bounds_2d(scene, camera, title_object, camera_x, camera_y, scale_multiplier, pos_multiplier):
+    #todo: not working quite well yet - double sized for some objects, z scale isnt quite right
+    bbox = title_object.bound_box
+    xs = []
+    ys = []
+    #matrix = title_object.matrix_world
+    matrix = generate_matrix_world(title_object)
 
-    mat = cam_ob.matrix_world.normalized().inverted()
-    me = bpy.data.meshes.new('QuickTitling Temp Mesh')
-    bm = bmesh.new()
-    for vert in me_ob.bound_box:
-        bm.verts.new(vert)
-    bm.to_mesh(me)
-    bm.free()
-    me.transform(me_ob.matrix_world)
-    me.transform(mat)
-    vertices = me.vertices
+    for vert in bbox:
+        transformed_vert = matrix @ mathutils.Vector(vert)
+        xs.append(transformed_vert[0])
+        ys.append(transformed_vert[1])
 
-    camera = cam_ob.data
-    frame = [-v for v in camera.view_frame(scene=scene)[:3]]
-    camera_persp = camera.type != 'ORTHO'
+    multiplier = scale_multiplier
+    min_x = min(xs) * multiplier
+    max_x = max(xs) * multiplier
+    min_y = min(ys) * multiplier
+    max_y = max(ys) * multiplier
 
-    lx = []
-    ly = []
+    camera_x_half = (camera_x / 2)
+    camera_y_half = (camera_y / 2)
 
-    for v in vertices:
-        co_local = v.co
-        z = -co_local.z
+    min_x_px = clamp(min_x * camera_x_half, -camera_x_half, camera_x_half)
+    max_x_px = clamp(max_x * camera_x_half, -camera_x_half, camera_x_half)
+    min_y_px = clamp(min_y * camera_x_half, -camera_y_half, camera_y_half)
+    max_y_px = clamp(max_y * camera_x_half, -camera_y_half, camera_y_half)
 
-        if camera_persp:
-            if z == 0.0:
-                lx.append(0.5)
-                ly.append(0.5)
-            # Does it make any sense to drop these?
-            #if z <= 0.0:
-            #    continue
-            else:
-                frame = [(v / (v.z / z)) for v in frame]
+    dimensions = [min_x_px, min_y_px, max_x_px, max_y_px]
 
-        min_x, max_x = frame[1].x, frame[2].x
-        min_y, max_y = frame[0].y, frame[1].y
-
-        x = (co_local.x - min_x) / (max_x - min_x)
-        y = (co_local.y - min_y) / (max_y - min_y)
-
-        lx.append(x)
-        ly.append(y)
-
-    min_x = clamp(min(lx), 0.0, 1.0)
-    max_x = clamp(max(lx), 0.0, 1.0)
-    min_y = clamp(min(ly), 0.0, 1.0)
-    max_y = clamp(max(ly), 0.0, 1.0)
-
-    bpy.data.meshes.remove(me)
-
-    return [min_x * camera_x - (camera_x / 2), min_y * camera_y - (camera_y / 2), max_x * camera_x - (camera_x / 2), max_y * camera_y - (camera_y / 2)]
+    return dimensions
 
 
 def to_bool(value):
@@ -739,7 +682,6 @@ def set_default(preset):
     preset.shadowx = get_default('shadowx', class_type='Title')
     preset.shadowy = get_default('shadowy', class_type='Title')
     preset.length = get_default('length', class_type='Title')
-    preset.qualityshadows = get_default('qualityshadows', class_type='Title')
 
 
 def get_presets_directory():
@@ -797,7 +739,6 @@ def load_quicktitle(filepath, preset):
     preset.shadowsoft = abs(float(root.findtext('shadowsoft', default=str(get_default('shadowsoft', class_type='Title')))))
     preset.shadowx = float(root.findtext('shadowx', default=str(get_default('shadowx', class_type='Title'))))
     preset.shadowy = float(root.findtext('shadowy', default=str(get_default('shadowy', class_type='Title'))))
-    preset.qualityshadows = to_bool(root.findtext('qualityshadows', default=str(get_default('qualityshadows', class_type='Title'))))
     objects = root.findall('objects')
     preset.objects.clear()
     for title_object in objects:
@@ -1055,7 +996,6 @@ def copy_title_preset(old_title, title):
     title.shadowx = old_title.shadowx
     title.shadowy = old_title.shadowy
     title.length = old_title.length
-    title.qualityshadows = old_title.qualityshadows
     title.objects.clear()
     for oldobject in old_title.objects:
         newobject = title.objects.add()
@@ -1769,8 +1709,6 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
         #shadow_lamp = None
         print('Selected Title Scene Is Incomplete: Missing Shadow Lamp')
 
-    #todo: update shadow settings for quicktitle.qualityshodows
-
     #update individual scene objects
     for object_layer, object_preset in enumerate(quicktitle.objects):
         if object_layer == quicktitle.selected_object:
@@ -1906,6 +1844,8 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
             setup_object(title_object, object_preset, material, scale_multiplier, shaders)
 
             set_animations(title_object, object_preset, material, scene, z_offset, pos_multiplier, shaders)
+
+            update_bounds(title_object, object_preset, scene, scale_multiplier, pos_multiplier)
 
             outline_object_name = title_object.name+'outline'
             outline_object = None
@@ -2464,6 +2404,15 @@ class QuickTitleObject(bpy.types.PropertyGroup):
         min=1,
         description="Length of video to display in frames",
         update=quicktitle_autoupdate)
+    #bounding box
+    bbleft: bpy.props.FloatProperty(
+        name="Bounding Box Left")
+    bbright: bpy.props.FloatProperty(
+        name="Bounding Box Right")
+    bbtop: bpy.props.FloatProperty(
+        name="Bounding Box Top")
+    bbbottom: bpy.props.FloatProperty(
+        name="Bounding Box Bottom")
 
 
 class QuickTitle(bpy.types.PropertyGroup):
@@ -2533,11 +2482,6 @@ class QuickTitle(bpy.types.PropertyGroup):
         name="Scene Length",
         default=300,
         description="Length of the title preset in frames.  Change this value to automatically adjust animations and scene length.",
-        update=quicktitle_autoupdate)
-    qualityshadows: bpy.props.BoolProperty(
-        name="High Quality Shadows",
-        default=False,
-        description="Increases shadow quality, but also increases render times.",
         update=quicktitle_autoupdate)
 
 
@@ -2724,10 +2668,9 @@ class QuickTitlingPanel(bpy.types.Panel):
 
             subarea = outline.box()
 
-            #todo: clean up panel layout a bit on material settings area
             row = subarea.row()
             row.label(text='Material:', icon="MATERIAL_DATA")
-            row.prop(current_object, 'set_material', text='Use Custom Material')
+            row.prop(current_object, 'set_material', text='Set Material')
 
             if current_object.set_material:
                 row = subarea.row()
@@ -2735,14 +2678,13 @@ class QuickTitlingPanel(bpy.types.Panel):
 
             else:
                 row = subarea.row()
-                row.prop(current_object, 'use_shadeless', text='Use No Shading')
-                row.prop(current_object, 'diffuse_color', text='')
-                if current_object.use_shadeless:
+                split = row.split(factor=.85)
+                subsplit = split.split()
+                subsplit.prop(current_object, 'use_shadeless', text='Use No Shading')
+                subsplit.prop(current_object, 'cast_shadows', text='Cast Shadows')
+                split.prop(current_object, 'diffuse_color', text='')
+                if not current_object.use_shadeless:
                     row = subarea.row()
-                    row.prop(current_object, 'cast_shadows', text='Cast Shadows')
-                else:
-                    row = subarea.row()
-                    row.prop(current_object, 'cast_shadows', text='Cast Shadows')
                     row.prop(current_object, 'metallic', text="Metallic")
 
                     row = subarea.row(align=True)
@@ -2832,9 +2774,6 @@ class QuickTitlingPanel(bpy.types.Panel):
             row = outline.row(align=True)
             row.prop(quicktitle_preset, 'shadowx', text='X Offset')
             row.prop(quicktitle_preset, 'shadowy', text='Y Offset')
-
-            row = outline.row()
-            row.prop(quicktitle_preset, 'qualityshadows')
 
 
 class QuickTitlingSavePreset(bpy.types.Operator):
@@ -3251,8 +3190,6 @@ class QuickTitlingPresetExport(bpy.types.Operator, ExportHelper):
             Tree.SubElement(root, 'shadowx').text = str(preset.shadowx)
         if preset.shadowy != get_default('shadowy', class_type='Title'):
             Tree.SubElement(root, 'shadowy').text = str(preset.shadowy)
-        if preset.qualityshadows != get_default('qualityshadows', class_type='Title'):
-            Tree.SubElement(root, 'qualityshadows').text = str(preset.qualityshadows)
         for title_object in preset.objects:
             objects = Tree.SubElement(root, 'objects')
             Tree.SubElement(objects, 'name').text = title_object.name
@@ -3436,7 +3373,6 @@ class QuickTitlingPresetMenu(bpy.types.Menu):
 
 
 def draw_preset_menu(self, context, add=False):
-    #todo: not all presets images displaying properly?
     presets = list_quicktitle_presets(context.scene)
     layout = self.layout
 
@@ -3490,6 +3426,7 @@ def draw_preset_menu(self, context, add=False):
         current_icon_id = 0
         column.template_icon_view(context.scene.quicktitler, 'current_icon')
         if index == 0:
+            #display a blank icon for the default setting
             column.template_icon_view(context.scene.quicktitler, 'current_icon')
         for preset in presets:
             if preset[1] == 'BUILTIN':
@@ -3497,6 +3434,7 @@ def draw_preset_menu(self, context, add=False):
                 if preset[0]+'BUILTIN' not in quicktitle_previews:
                     quicktitle_previews.load(preset[0]+'BUILTIN', image, 'IMAGE')
                 current_icon_id = quicktitle_previews[preset[0]+'BUILTIN'].icon_id
+                #todo: only first 2 preset images displaying properly... all values seem correct, maybe its a bug in template_icon_view?
                 column.template_icon_view(context.scene.quicktitler, 'current_icon')
 
 
@@ -3685,7 +3623,7 @@ class QuickTitlingCreate(bpy.types.Operator):
 
 def current_icon_enum(self, context):
     global current_icon_id
-    return [('icon', 'ICON', "", current_icon_id, 0)]
+    return [(str(current_icon_id), 'ICON', "", current_icon_id, 0)]
 
 
 class QuickTitleSettings(bpy.types.PropertyGroup):
