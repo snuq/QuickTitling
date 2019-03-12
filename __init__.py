@@ -15,12 +15,15 @@
 #  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 #
 # ##### END GPL LICENSE BLOCK #####
-#todo: scenes in the vse are REALLY slow... why?
+
+"""
+Known Issues:
+    only first 2 preset images displaying properly... all values seem correct, maybe its a bug in template_icon_view?
+    scenes in the vse are REALLY slow... seems to be a bug in blender right now
+"""
 
 import bpy
-import bgl
 import blf
-import bmesh
 import mathutils
 import os
 import glob
@@ -506,7 +509,6 @@ def object_at_location(scene, x, y):
     direction = (mathutils.Vector((x, y, 0)) - camera.location).normalized()
     scene.update()
     data = scene.ray_cast(scene.view_layers[0], camera.location, direction)
-    print(data)
     if data[0]:
         match_object = data[4]
     else:
@@ -613,7 +615,7 @@ def update_bounds(title_object, title_object_preset, title_scene, scale_multipli
     camera = title_scene.camera
     camera_x = bpy.context.scene.render.resolution_x
     camera_y = bpy.context.scene.render.resolution_y
-    bounds = camera_view_bounds_2d(title_scene, camera, title_object, camera_x, camera_y, scale_multiplier, pos_multiplier)
+    bounds = camera_view_bounds_2d(title_scene, camera, title_object, title_object_preset, camera_x, camera_y, scale_multiplier, pos_multiplier)
     title_object_preset.bbleft = bounds[0]
     title_object_preset.bbbottom = bounds[1]
     title_object_preset.bbright = bounds[2]
@@ -623,28 +625,38 @@ def update_bounds(title_object, title_object_preset, title_scene, scale_multipli
 def generate_matrix_world(ob):
     scale_matrix = mathutils.Matrix.Scale(ob.scale[0], 4, (1, 0, 0)) @ mathutils.Matrix.Scale(ob.scale[1], 4, (0, 1, 0)) @ mathutils.Matrix.Scale(ob.scale[2], 4, (0, 0, 1))
     rotation_matrix = mathutils.Matrix.Rotation(ob.rotation_euler[0], 4, 'X') @ mathutils.Matrix.Rotation(ob.rotation_euler[1], 4, 'Y') @ mathutils.Matrix.Rotation(ob.rotation_euler[2], 4, 'Z')
+    rotation_matrix.invert()
     matrix = mathutils.Matrix.Translation(ob.location) @ scale_matrix @ rotation_matrix
     return matrix
 
 
-def camera_view_bounds_2d(scene, camera, title_object, camera_x, camera_y, scale_multiplier, pos_multiplier):
-    #todo: not working quite well yet - double sized for some objects, z scale isnt quite right
-    bbox = title_object.bound_box
+def camera_view_bounds_2d(scene, camera, title_object, title_object_preset, camera_x, camera_y, scale_multiplier, pos_multiplier):
+    if title_object.type == 'MESH':
+        #forget about the bounding box and just use the mesh itself
+        bbox = title_object.data.vertices
+    elif title_object.type == 'FONT':
+        #well what do you know, this bounding box actually works correctly!
+        bbox = title_object.bound_box
+    else:
+        #use the curve points
+        bbox = title_object.data.splines[0].points
     xs = []
     ys = []
     #matrix = title_object.matrix_world
     matrix = generate_matrix_world(title_object)
 
     for vert in bbox:
+        if title_object.type != 'FONT':
+            vert = vert.co
         transformed_vert = matrix @ mathutils.Vector(vert)
         xs.append(transformed_vert[0])
         ys.append(transformed_vert[1])
 
     multiplier = scale_multiplier
-    min_x = min(xs) * multiplier
-    max_x = max(xs) * multiplier
-    min_y = min(ys) * multiplier
-    max_y = max(ys) * multiplier
+    min_x = min(xs) / multiplier
+    max_x = max(xs) / multiplier
+    min_y = min(ys) / multiplier
+    max_y = max(ys) / multiplier
 
     camera_x_half = (camera_x / 2)
     camera_y_half = (camera_y / 2)
@@ -1178,7 +1190,7 @@ def quicktitle_create(quicktitle=False):
 
 
 def create_object(scene, object_type, name):
-    scene.cursor_location = (0.0, 0.0, 0.0)
+    scene.cursor.location = (0.0, 0.0, 0.0)
     if object_type == 'IMAGE':
         #create image
         mesh = bpy.data.meshes.new(name=name)
@@ -1480,7 +1492,7 @@ def setup_object(title_object, object_preset, material, scale_multiplier, shader
             #alpha texture is not set or has been unset, remove it from material
             alpha_image_node.image = None
 
-    if object_preset.type == 'CIRCLE' or object_preset.type == 'BOX' or object_preset.type == 'TEXT':
+    if object_preset.type in ['CIRCLE', 'BOX', 'TEXT']:
         #set up the circle, box and text settings
         title_object.data.extrude = object_preset.extrude / 10.0
         title_object.data.bevel_depth = object_preset.bevel / 10.0
@@ -3434,7 +3446,6 @@ def draw_preset_menu(self, context, add=False):
                 if preset[0]+'BUILTIN' not in quicktitle_previews:
                     quicktitle_previews.load(preset[0]+'BUILTIN', image, 'IMAGE')
                 current_icon_id = quicktitle_previews[preset[0]+'BUILTIN'].icon_id
-                #todo: only first 2 preset images displaying properly... all values seem correct, maybe its a bug in template_icon_view?
                 column.template_icon_view(context.scene.quicktitler, 'current_icon')
 
 

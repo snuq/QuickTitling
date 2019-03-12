@@ -1,6 +1,3 @@
-NOTE: The 2.8 branch is mostly working, but it has not been fully tested and some known bugs exist.
-
-
 # QuickTitling Addon For Blender
 
 This addon will create and edit simple scenes for title overlays.  
