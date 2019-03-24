@@ -1095,7 +1095,7 @@ def quicktitle_create(quicktitle=False):
     if quicktitle.name:
         name = "QuickTitle: "+quicktitle.name
     else:
-        name = "QuickTitle: "+quicktitle.text
+        name = "QuickTitle"
     title_scene.name = name
 
     bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, 0))
