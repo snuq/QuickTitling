@@ -20,6 +20,15 @@
 Known Issues:
     only first 2 preset images displaying properly... all values seem correct, maybe its a bug in template_icon_view?
     scenes in the vse are REALLY slow... seems to be a bug in blender right now
+
+Bugs:
+    duplicate doesnt copy height, alpha (and possibly other settings)... sometimes?
+
+Todo:
+    increase shadow map res
+    add option to enable soft shadows in render settings
+    add option to enable/disable screen space reflections
+
 """
 
 import bpy
@@ -1205,6 +1214,7 @@ def create_object(scene, object_type, name):
         #create circle
         curve = bpy.data.curves.new(name=name, type='CURVE')
         curve.dimensions = '2D'
+        curve.fill_mode = 'BOTH'
         curve.resolution_u = 12
         curve.twist_mode = 'MINIMUM'
         spline = curve.splines.new('NURBS')
@@ -1230,6 +1240,7 @@ def create_object(scene, object_type, name):
         #create box
         curve = bpy.data.curves.new(name=name, type='CURVE')
         curve.dimensions = '2D'
+        curve.fill_mode = 'BOTH'
         curve.resolution_u = 1
         curve.twist_mode = 'MINIMUM'
         spline = curve.splines.new('NURBS')
@@ -1848,10 +1859,10 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
             material.show_transparent_back = False
 
             if object_preset.cast_shadows:
-                material.transparent_shadow_method = 'HASHED'
+                material.shadow_method = 'CLIP'
 
             else:
-                material.transparent_shadow_method = 'NONE'
+                material.shadow_method = 'NONE'
 
             setup_object(title_object, object_preset, material, scale_multiplier, shaders)
 
@@ -1896,9 +1907,9 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
 
                 material.blend_method = 'BLEND'
                 if object_preset.cast_shadows:
-                    material.transparent_shadow_method = 'HASHED'
+                    material.shadow_method = 'CLIP'
                 else:
-                    material.transparent_shadow_method = 'NONE'
+                    material.shadow_method = 'NONE'
 
                 #adjust object
                 outline_object.location = (pos_multiplier * object_preset.x, pos_multiplier * object_preset.y, object_preset.z - z_offset - .001)
@@ -2497,7 +2508,7 @@ class QuickTitle(bpy.types.PropertyGroup):
         update=quicktitle_autoupdate)
 
 
-class QuickTitleObjectListItem(bpy.types.UIList):
+class QUICKTITLING_UL_ObjectListItem(bpy.types.UIList):
     #Draw an object in the object list in the QuickTitler panel
 
     def draw_filter(self, context, layout):
@@ -2510,7 +2521,7 @@ class QuickTitleObjectListItem(bpy.types.UIList):
         split.operator('quicktitler.delete_object', icon="X", text="").index = index
 
 
-class QuickTitleAnimationListItem(bpy.types.UIList):
+class QUICKTITLING_UL_AnimationListItem(bpy.types.UIList):
     #Draw an animation in the animation list
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
@@ -2519,7 +2530,7 @@ class QuickTitleAnimationListItem(bpy.types.UIList):
         split.operator('quicktitler.delete_animation', icon="X", text="").index = index
 
 
-class QuickTitlingPanel(bpy.types.Panel):
+class QUICKTITLING_PT_Panel(bpy.types.Panel):
     #Panel for QuickTitling settings and operators
     bl_label = "Quick Titling"
     bl_space_type = 'SEQUENCE_EDITOR'
@@ -2536,7 +2547,7 @@ class QuickTitlingPanel(bpy.types.Panel):
             current_edited = context.scene.quicktitler.current_edited
             row = box.row()
             row.label(text="Select Preset:")
-            row.menu('quicktitler.preset_menu', text=quicktitle_preset.name)
+            row.menu('QUICKTITLING_MT_preset_menu', text=quicktitle_preset.name)
             row = box.row()
             row.operator('quicktitler.preset_import', text='Import Preset')
             row = box.row()
@@ -2594,7 +2605,7 @@ class QuickTitlingPanel(bpy.types.Panel):
             current_object = None
 
         row = bottom.row()
-        row.template_list("QuickTitleObjectListItem", "", quicktitle_preset, 'objects', quicktitle_preset, 'selected_object', rows=2)
+        row.template_list("QUICKTITLING_UL_ObjectListItem", "", quicktitle_preset, 'objects', quicktitle_preset, 'selected_object', rows=2)
         col = row.column(align=True)
         col.operator("quicktitler.object_up", text="", icon="TRIA_UP").index = quicktitle_preset.selected_object
         col.operator("quicktitler.object_down", text="", icon="TRIA_DOWN").index = quicktitle_preset.selected_object
@@ -2624,7 +2635,7 @@ class QuickTitlingPanel(bpy.types.Panel):
 
                 row = subarea.row()
                 split = row.split(factor=0.9, align=True)
-                split.menu('quicktitler.fonts_menu', text=current_object.font)
+                split.menu('QUICKTITLING_MT_fonts_menu', text=current_object.font)
                 split.operator('quicktitler.load_font', text='+')
 
                 row = subarea.row()
@@ -2686,7 +2697,7 @@ class QuickTitlingPanel(bpy.types.Panel):
 
             if current_object.set_material:
                 row = subarea.row()
-                row.menu('quicktitler.materials_menu', text=current_object.material)
+                row.menu('QUICKTITLING_MT_materials_menu', text=current_object.material)
 
             else:
                 row = subarea.row()
@@ -2730,14 +2741,14 @@ class QuickTitlingPanel(bpy.types.Panel):
             subarea = outline.box()
 
             row = subarea.row()
-            row.menu('quicktitler.animations_menu', text='Add Animation', icon="ANIM_DATA")
+            row.menu('QUICKTITLING_MT_animations_menu', text='Add Animation', icon="ANIM_DATA")
 
             if current_object.animations:
                 row = subarea.row()
                 row.operator('quicktitler.apply_animations', text='Apply To All Objects')
 
                 row = subarea.row()
-                row.template_list("QuickTitleAnimationListItem", "", current_object, 'animations', current_object, 'selected_animation', rows=2)
+                row.template_list("QUICKTITLING_UL_AnimationListItem", "", current_object, 'animations', current_object, 'selected_animation', rows=2)
 
                 if current_object.selected_animation < len(current_object.animations):
                     animation = current_object.animations[current_object.selected_animation]
@@ -3091,7 +3102,7 @@ class QuickTitlingAnimationDelete(bpy.types.Operator):
 
 class QuickTitlingAnimationMenu(bpy.types.Menu):
     #Menu for listing animation types
-    bl_idname = 'quicktitler.animations_menu'
+    bl_idname = 'QUICKTITLING_MT_animations_menu'
     bl_label = 'List of animations'
 
     def draw(self, context):
@@ -3364,7 +3375,7 @@ def split_list(alist, parts=1):
 
 
 class QuickTitlingPresetMenuAdd(bpy.types.Menu):
-    bl_idname = 'quicktitler.preset_menu_add'
+    bl_idname = 'QUICKTITLING_MT_preset_menu_add'
     bl_label = 'QuickTitles'
 
     icon: bpy.props.EnumProperty("")
@@ -3375,7 +3386,7 @@ class QuickTitlingPresetMenuAdd(bpy.types.Menu):
 
 class QuickTitlingPresetMenu(bpy.types.Menu):
     #Menu to list the QuickTitler Presets in the scene
-    bl_idname = 'quicktitler.preset_menu'
+    bl_idname = 'QUICKTITLING_MT_preset_menu'
     bl_label = 'List of saved presets'
 
     icon: bpy.props.EnumProperty("")
@@ -3542,7 +3553,7 @@ class QuickTitlingLoadFont(bpy.types.Operator):
 
 class QuickTitlingFontMenu(bpy.types.Menu):
     #Menu for listing and changing QuickTitler fonts
-    bl_idname = 'quicktitler.fonts_menu'
+    bl_idname = 'QUICKTITLING_MT_fonts_menu'
     bl_label = 'List of loaded fonts'
 
     def draw(self, context):
@@ -3574,7 +3585,7 @@ class QuickTitlingChangeFont(bpy.types.Operator):
 
 class QuickTitlingMaterialMenu(bpy.types.Menu):
     #Menu to list all Materials in blend file, and assign them to QuickTitler objects
-    bl_idname = 'quicktitler.materials_menu'
+    bl_idname = 'QUICKTITLING_MT_materials_menu'
     bl_label = 'List of loaded materials'
 
     def draw(self, context):
@@ -4117,7 +4128,7 @@ class QuickTitlingSelect(bpy.types.Operator):
 
 
 class QuickTitlingAddObject(bpy.types.Menu):
-    bl_idname = 'quicktitler.add_object_menu'
+    bl_idname = 'QUICKTITLING_MT_add_object_menu'
     bl_label = 'Add Title Object'
 
     @classmethod
@@ -4149,7 +4160,7 @@ class QuickTitlingAddObject(bpy.types.Menu):
 
 
 class QuickTitlingDeleteMenu(bpy.types.Menu):
-    bl_idname = 'quicktitler.delete_menu'
+    bl_idname = 'QUICKTITLING_MT_delete_menu'
     bl_label = 'Delete Selected Title Object'
 
     @classmethod
@@ -4218,11 +4229,11 @@ def add_keymap():
     keymapitems.new('quicktitle.scale', 'S', 'PRESS')
     keymapitems.new('quicktitle.select', 'LEFTMOUSE', 'PRESS')
     add_menu = keymapitems.new('wm.call_menu', 'A', 'PRESS', shift=True)
-    add_menu.properties.name = 'quicktitler.add_object_menu'
+    add_menu.properties.name = 'QUICKTITLING_MT_add_object_menu'
     delete_menu = keymapitems.new('wm.call_menu', 'X', 'PRESS')
-    delete_menu.properties.name = 'quicktitler.delete_menu'
+    delete_menu.properties.name = 'QUICKTITLING_MT_delete_menu'
     delete_menu2 = keymapitems.new('wm.call_menu', 'DEL', 'PRESS')
-    delete_menu2.properties.name = 'quicktitler.delete_menu'
+    delete_menu2.properties.name = 'QUICKTITLING_MT_delete_menu'
     grab_lamp = keymapitems.new('quicktitle.grab', 'L', 'PRESS')
     grab_lamp.properties.lamp = True
     current_up = keymapitems.new('quicktitler.object_up', 'PAGE_UP', 'PRESS')
@@ -4242,11 +4253,11 @@ def remove_keymap():
 
 def draw_preset_add_menu(self, context):
     layout = self.layout
-    layout.menu('quicktitler.preset_menu_add', text='QuickTitle')
+    layout.menu('QUICKTITLING_MT_preset_menu_add', text='QuickTitle')
 
 
-classes = [QuickTitlingGrab, QuickTitleAnimation, QuickTitleObject, QuickTitle, QuickTitleObjectListItem,
-           QuickTitleAnimationListItem, QuickTitlingPanel, QuickTitlingSavePreset, QuickTitlingReplaceWithImage,
+classes = [QuickTitlingGrab, QuickTitleAnimation, QuickTitleObject, QuickTitle, QUICKTITLING_UL_ObjectListItem,
+           QUICKTITLING_UL_AnimationListItem, QUICKTITLING_PT_Panel, QuickTitlingSavePreset, QuickTitlingReplaceWithImage,
            QuickTitlingObjectMoveUp, QuickTitlingObjectMoveDown, QuickTitlingObjectAdd, QuickTitlingObjectSelect,
            QuickTitlingObjectDelete, QuickTitlingAnimationApply, QuickTitlingAnimationAdd, QuickTitlingAnimationDelete,
            QuickTitlingAnimationMenu, QuickTitlingPresetDelete, QuickTitlingPresetExport, QuickTitlingPresetImport,
@@ -4271,7 +4282,7 @@ def register():
 
     second_keymap = keymaps.new(name='Sequencer', space_type='SEQUENCE_EDITOR', region_type='WINDOW')
     add_menu = second_keymap.keymap_items.new('wm.call_menu', 'T', 'PRESS', shift=True)
-    add_menu.properties.name = 'quicktitler.preset_menu_add'
+    add_menu.properties.name = 'QUICKTITLING_MT_preset_menu_add'
     bpy.types.SEQUENCER_MT_add.append(draw_preset_add_menu)
     #add_keymap()
 
