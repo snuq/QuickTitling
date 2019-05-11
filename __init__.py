@@ -493,6 +493,14 @@ overlay_info = ''
 keymap = None
 
 
+def find_load_image(path):
+    abs_path = bpy.path.abspath(path)
+    for image in bpy.data.images:
+        if bpy.path.abspath(image.filepath) == abs_path:
+            return image
+    return load_image(path)
+
+
 def object_at_location(scene, x, y):
     #Casts a ray from the camera to the given coordinates and returns the first object in that direction, or None
     camera = scene.camera
@@ -744,6 +752,7 @@ def get_default(value, class_type='Object'):
 
 def load_quicktitle(filepath, preset):
     #load a quicktitle preset from a given xml file
+    preset_location = os.path.dirname(bpy.path.abspath(filepath))
     import xml.etree.cElementTree as Tree
     tree = Tree.parse(filepath)
     root = tree.getroot()
@@ -860,8 +869,18 @@ def load_quicktitle(filepath, preset):
             newobject.outline_diffuse_color = (0, 0, 0)
         else:
             newobject.outline_diffuse_color = (int(outline_color[0]) / 255.0, int(outline_color[1]) / 255.0, int(outline_color[2]) / 255.0)
-        newobject.texture = title_object.findtext('texture', default=get_default('texture'))
-        newobject.alpha_texture = title_object.findtext('alpha_texture', default=get_default('alpha_texture'))
+        texture = title_object.findtext('texture', default=get_default('texture'))
+        if not os.path.isfile(os.path.abspath(bpy.path.abspath(texture))):
+            test_texture = os.path.join(preset_location, texture)
+            if os.path.isfile(test_texture):
+                texture = test_texture
+        newobject.texture = texture
+        alpha_texture = title_object.findtext('alpha_texture', default=get_default('alpha_texture'))
+        if not os.path.isfile(os.path.abspath(bpy.path.abspath(alpha_texture))):
+            test_texture = os.path.join(preset_location, alpha_texture)
+            if os.path.isfile(test_texture):
+                alpha_texture = test_texture
+        newobject.alpha_texture = alpha_texture
         newobject.loop = to_bool(title_object.findtext('loop', default=str(get_default('loop'))))
         newobject.frame_offset = abs(int(title_object.findtext('frame_offset', default=str(get_default('frame_offset')))))
         frame_length = abs(int(title_object.findtext('frame_length', default=str(get_default('frame_length')))))
@@ -1436,6 +1455,7 @@ def setup_object(title_object, object_preset, material, scale_multiplier, shader
         alpha_mix_node = shaders[7]
         if object_preset.texture:
             #image texture is set
+            connect_material_texture(material, shaders, connect=True)
             path = os.path.abspath(bpy.path.abspath(object_preset.texture))
             extension = os.path.splitext(path)[1].lower()
             if extension in bpy.path.extensions_movie:
@@ -1445,7 +1465,7 @@ def setup_object(title_object, object_preset, material, scale_multiplier, shader
                 video = False
             if os.path.isfile(path) and (extension in bpy.path.extensions_image or video):
                 #The file is a known file type, load it
-                image = load_image(path)
+                image = find_load_image(path)
                 image.update()
                 image_node.image = image
                 if video:
@@ -1467,6 +1487,7 @@ def setup_object(title_object, object_preset, material, scale_multiplier, shader
                 title_object.data.vertices[3].co = (-ix - shear, -iy, 0)
         else:
             #image texture is not set or has been unset, remove it from material if needed and set plane back to original dimensions
+            connect_material_texture(material, shaders, connect=False)
             title_object.data.vertices[0].co = (-1 + shear, 1, 0)
             title_object.data.vertices[1].co = (1 + shear, 1, 0)
             title_object.data.vertices[2].co = (1 - shear, -1, 0)
@@ -1486,7 +1507,7 @@ def setup_object(title_object, object_preset, material, scale_multiplier, shader
                 video = False
             if os.path.isfile(path) and (extension in bpy.path.extensions_image or video):
                 #The file is a known file type, load it
-                image = load_image(path)
+                image = find_load_image(path)
                 image.update()
                 alpha_image_node.image = image
                 alpha_mix_node.inputs[0].default_value = 1
@@ -1573,6 +1594,18 @@ def clear_material(material):
         material.node_tree.nodes.remove(node)
 
 
+def connect_material_texture(material, shaders, connect=True):
+    shader, transparent_shader, mix_shader, output_node, transparency_factor, image_node, alpha_image_node, alpha_mix_node = shaders
+    tree = material.node_tree
+    if connect:
+        tree.links.new(image_node.outputs[0], shader.inputs[0])
+    else:
+        for link in tree.links:
+            if link.from_node == image_node and link.to_node == shader:
+                tree.links.remove(link)
+                break
+
+
 def setup_material(material, use_shadeless, mat_type):
     #recreates a material
     clear_material(material)
@@ -1598,7 +1631,7 @@ def setup_material(material, use_shadeless, mat_type):
         alpha_mix_node = nodes.new('ShaderNodeMixRGB')
         alpha_mix_node.inputs[0].default_value = 0
         tree.links.new(alpha_mix_node.outputs[0], transparency_factor.inputs[0])
-        tree.links.new(image_node.outputs[0], shader.inputs[0])
+        #tree.links.new(image_node.outputs[0], shader.inputs[0])
         tree.links.new(image_node.outputs[1], alpha_mix_node.inputs[1])
         tree.links.new(alpha_image_node.outputs[0], alpha_mix_node.inputs[2])
 
@@ -1654,7 +1687,7 @@ def check_material(material, use_shadeless, mat_type):
             return None
         if alpha_mix_node.type != 'MIX_RGB':
             return None
-        image_node = get_connected_node(shader, 0)
+        image_node = get_connected_node(alpha_mix_node, 1)
         if not image_node:
             return None
         if image_node.type != 'TEX_IMAGE':
