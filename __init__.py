@@ -16,20 +16,6 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-"""
-Known Issues:
-    only first 2 preset images displaying properly... all values seem correct, maybe its a bug in template_icon_view?
-    scenes in the vse are REALLY slow... seems to be a bug in blender right now
-
-Bugs:
-    duplicate doesnt copy height, alpha (and possibly other settings)... sometimes?
-
-Todo:
-    increase shadow map res
-    add option to enable soft shadows in render settings
-    add option to enable/disable screen space reflections
-
-"""
 
 import bpy
 import blf
@@ -493,12 +479,15 @@ overlay_info = ''
 keymap = None
 
 
-def find_load_image(path):
+def find_load_image(path, load=True):
     abs_path = bpy.path.abspath(path)
     for image in bpy.data.images:
         if bpy.path.abspath(image.filepath) == abs_path:
             return image
-    return load_image(path)
+    if load:
+        return load_image(path)
+    else:
+        return None
 
 
 def object_at_location(scene, x, y):
@@ -508,21 +497,24 @@ def object_at_location(scene, x, y):
     title_copies = []
     for title_object in scene.objects:
         if title_object.type in ['CURVE', 'FONT']:
+            scale = title_object.scale
+            location = title_object.location
+            rotation = title_object.rotation_euler
             old_resolution_u = title_object.data.resolution_u
             old_bevel_resolution = title_object.data.bevel_resolution
-            title_object.data.resolution_u = 2
-            title_object.data.bevel_resolution = 0
+            #title_object.data.resolution_u = 2
+            #title_object.data.bevel_resolution = 0
 
             mesh = title_object.to_mesh(bpy.context.depsgraph, True)
-            ob = bpy.data.objects.new(mesh.name, mesh)
+            ob = bpy.data.objects.new(mesh.name+' Raycast', mesh)
             scene.collection.objects.link(ob)
-            ob.scale = title_object.scale
-            ob.location = title_object.location
-            ob.rotation_euler = title_object.rotation_euler
+            ob.scale = scale
+            ob.location = location
+            ob.rotation_euler = rotation
             title_copies.append([mesh, ob, title_object])
 
-            title_object.data.resolution_u = old_resolution_u
-            title_object.data.bevel_resolution = old_bevel_resolution
+            #title_object.data.resolution_u = old_resolution_u
+            #title_object.data.bevel_resolution = old_bevel_resolution
     direction = (mathutils.Vector((x, y, 0)) - camera.location).normalized()
     scene.update()
     data = scene.ray_cast(scene.view_layers[0], camera.location, direction)
@@ -538,6 +530,7 @@ def object_at_location(scene, x, y):
         scene.collection.objects.unlink(ob)
         bpy.data.objects.remove(ob)
         bpy.data.meshes.remove(mesh)
+    scene.update()
     return match_object
 
 
@@ -705,12 +698,18 @@ def set_default(preset):
     preset.selected_object = 0
     preset.enable_shadows = get_default('enable_shadows', class_type='Title')
     preset.shadowlamp_internal_name = ""
+    preset.lampcenter_internal_name = ""
     preset.shadowsize = get_default('shadowsize', class_type='Title')
     preset.shadowamount = get_default('shadowamount', class_type='Title')
     preset.shadowsoft = get_default('shadowsoft', class_type='Title')
     preset.shadowx = get_default('shadowx', class_type='Title')
     preset.shadowy = get_default('shadowy', class_type='Title')
     preset.length = get_default('length', class_type='Title')
+    preset.lightscalex = get_default('lightscalex', class_type='Title')
+    preset.lightscaley = get_default('lightscaley', class_type='Title')
+    preset.lightx = get_default('lightx', class_type='Title')
+    preset.lighty = get_default('lighty', class_type='Title')
+    preset.lightrot = get_default('lightrot', class_type='Title')
 
 
 def get_presets_directory():
@@ -769,6 +768,11 @@ def load_quicktitle(filepath, preset):
     preset.shadowsoft = abs(float(root.findtext('shadowsoft', default=str(get_default('shadowsoft', class_type='Title')))))
     preset.shadowx = float(root.findtext('shadowx', default=str(get_default('shadowx', class_type='Title'))))
     preset.shadowy = float(root.findtext('shadowy', default=str(get_default('shadowy', class_type='Title'))))
+    preset.lightscalex = float(root.findtext('lightscalex', default=str(get_default('lightscalex', class_type='Title'))))
+    preset.lightscaley = float(root.findtext('lightscaley', default=str(get_default('lightscaley', class_type='Title'))))
+    preset.lightx = float(root.findtext('lightx', default=str(get_default('lightx', class_type='Title'))))
+    preset.lighty = float(root.findtext('lighty', default=str(get_default('lighty', class_type='Title'))))
+    preset.lightrot = float(root.findtext('lightrot', default=str(get_default('lightrot', class_type='Title'))))
     objects = root.findall('objects')
     preset.objects.clear()
     for title_object in objects:
@@ -808,6 +812,7 @@ def load_quicktitle(filepath, preset):
         newobject.shear = shear
         newobject.cast_shadows = to_bool(title_object.findtext('cast_shadows', default=str(get_default('cast_shadows'))))
         newobject.set_material = to_bool(title_object.findtext('set_material', default=str(get_default('set_material'))))
+        newobject.set_material_name = title_object.findtext('set_material_name', default=get_default('set_material_name'))
         newobject.material = title_object.findtext('material', default=get_default('material'))
         newobject.use_shadeless = to_bool(title_object.findtext('use_shadeless', default=str(get_default('use_shadeless'))))
         alpha = abs(float(title_object.findtext('alpha', default=str(get_default('alpha')))))
@@ -869,6 +874,8 @@ def load_quicktitle(filepath, preset):
             newobject.outline_diffuse_color = (0, 0, 0)
         else:
             newobject.outline_diffuse_color = (int(outline_color[0]) / 255.0, int(outline_color[1]) / 255.0, int(outline_color[2]) / 255.0)
+        window_mapping = title_object.findtext('window_mapping', default=get_default('window_mapping'))
+        newobject.window_mapping = to_bool(window_mapping)
         texture = title_object.findtext('texture', default=get_default('texture'))
         if not os.path.isfile(os.path.abspath(bpy.path.abspath(texture))):
             test_texture = os.path.join(preset_location, texture)
@@ -976,6 +983,7 @@ def copy_object(oldobject, newobject):
     newobject.height = oldobject.height
     newobject.shear = oldobject.shear
     newobject.set_material = oldobject.set_material
+    newobject.set_material_name = oldobject.set_material_name
     newobject.material = oldobject.material
     newobject.cast_shadows = oldobject.cast_shadows
     newobject.use_shadeless = oldobject.use_shadeless
@@ -998,6 +1006,7 @@ def copy_object(oldobject, newobject):
     newobject.outline_size = oldobject.outline_size
     newobject.outline_alpha = oldobject.outline_alpha
     newobject.outline_diffuse_color = oldobject.outline_diffuse_color
+    newobject.window_mapping = oldobject.window_mapping
     newobject.texture = oldobject.texture
     newobject.alpha_texture = oldobject.alpha_texture
     newobject.loop = oldobject.loop
@@ -1035,6 +1044,11 @@ def copy_title_preset(old_title, title):
     title.shadowsoft = old_title.shadowsoft
     title.shadowx = old_title.shadowx
     title.shadowy = old_title.shadowy
+    title.lightscalex = old_title.lightscalex
+    title.lightscaley = old_title.lightscaley
+    title.lightx = old_title.lightx
+    title.lighty = old_title.lighty
+    title.lightrot = old_title.lightrot
     title.length = old_title.length
     title.objects.clear()
     for oldobject in old_title.objects:
@@ -1115,7 +1129,7 @@ def quicktitle_create(quicktitle=False):
     title_scene.render.engine = 'BLENDER_EEVEE'
     title_scene.eevee.use_ssr = True
     title_scene.eevee.use_ssr_refraction = True
-    title_scene.eevee.shadow_cube_size = '512'
+    title_scene.eevee.shadow_cube_size = '1024'
     title_scene.eevee.shadow_cascade_size = '512'
 
     copy_title_preset(quicktitle, title_scene.quicktitler.current_quicktitle)
@@ -1128,6 +1142,17 @@ def quicktitle_create(quicktitle=False):
 
     bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, 0))
     lampcenter = bpy.context.active_object
+    basename = 'QuickTitlerLampCenter'
+    if basename in bpy.data.objects:
+        name = 'QuickTitlerLampCenter.001'
+        index = 1
+        while name in bpy.data.objects:
+            index = index+1
+            name = basename+str(index).zfill(3)
+    else:
+        name = basename
+    lampcenter.name = name
+    quicktitle_preset.lampcenter_internal_name = lampcenter.name
 
     #Camera setup
     bpy.ops.object.camera_add()
@@ -1174,7 +1199,7 @@ def quicktitle_create(quicktitle=False):
         name = basename
     shadow_lamp.name = name
     quicktitle_preset.shadowlamp_internal_name = shadow_lamp.name
-    shadow_lamp.parent = lampcenter
+    #shadow_lamp.parent = lampcenter
     shadow_lamp.data.specular_factor = 0
     shadow_lamp.data.shadow_soft_size = 0
     shadow_lamp.data.falloff_type = 'CONSTANT'
@@ -1201,7 +1226,7 @@ def quicktitle_create(quicktitle=False):
         name = basename
     shadow_lamp.name = name
     quicktitle_preset.shadowlamp_inverse_internal_name = shadow_lamp.name
-    shadow_lamp.parent = lampcenter
+    #shadow_lamp.parent = lampcenter
     shadow_lamp.data.specular_factor = 0
     shadow_lamp.data.shadow_soft_size = 0
     shadow_lamp.data.falloff_type = 'CONSTANT'
@@ -1287,20 +1312,21 @@ def create_object(scene, object_type, name):
 
 def set_animations(title_object, object_preset, material, scene, z_offset, pos_multiplier, shaders, parent=None):
     #look for and clear animations that are no longer set
-    transparency_factor = shaders[4]
 
     #clear old animations
     animation_types = []
     for animation in object_preset.animations:
         animation_types.append(animation.variable)
-    if material.node_tree.animation_data:
-        if material.node_tree.animation_data.action:
-            if material.node_tree.animation_data.action.fcurves:
-                fcurves = material.node_tree.animation_data.action.fcurves
-                for curve in fcurves:
-                    if curve.data_path == 'nodes["'+transparency_factor.name+'"].inputs[1].default_value':
-                        if 'Alpha' not in animation_types:
-                            fcurves.remove(curve)
+    if material:
+        transparency_factor = shaders[4]
+        if material.node_tree.animation_data:
+            if material.node_tree.animation_data.action:
+                if material.node_tree.animation_data.action.fcurves:
+                    fcurves = material.node_tree.animation_data.action.fcurves
+                    for curve in fcurves:
+                        if curve.data_path == 'nodes["'+transparency_factor.name+'"].inputs[1].default_value':
+                            if 'Alpha' not in animation_types:
+                                fcurves.remove(curve)
     if title_object.animation_data:
         if title_object.animation_data.action:
             if title_object.animation_data.action.fcurves:
@@ -1342,6 +1368,8 @@ def set_animations(title_object, object_preset, material, scene, z_offset, pos_m
     end_frame = scene.frame_end
     for animation_preset in object_preset.animations:
         if animation_preset.variable == 'Alpha':
+            if not material:
+                continue
             if not material.node_tree.animation_data:
                 animation = material.node_tree.animation_data_create()
             else:
@@ -1444,40 +1472,22 @@ def set_animations(title_object, object_preset, material, scene, z_offset, pos_m
             fcurve.update()
 
 
-def setup_object(title_object, object_preset, material, scale_multiplier, shaders):
+def setup_object(title_object, object_preset, scale_multiplier):
     #settings for different title_object types
-    #shaders = [shader, transparent_shader, mix_shader, output_node, transparency_factor, image_node, alpha_image_node, alpha_mix_node]
+    #shaders = [shader, transparent_shader, mix_shader, output_node, transparency_factor, image_node, alpha_image_node, alpha_mix_node, texture_map_node]
     shear = object_preset.shear
     if object_preset.type == 'IMAGE':
+        image = None
         #set up image type
-        image_node = shaders[5]
-        alpha_image_node = shaders[6]
-        alpha_mix_node = shaders[7]
-        if object_preset.texture:
+        if object_preset.set_material:
+            texture = None
+        else:
+            texture = object_preset.texture
+        if texture:
             #image texture is set
-            connect_material_texture(material, shaders, connect=True)
-            path = os.path.abspath(bpy.path.abspath(object_preset.texture))
-            extension = os.path.splitext(path)[1].lower()
-            if extension in bpy.path.extensions_movie:
-                #The file is a known video file type, load it
-                video = True
-            else:
-                video = False
-            if os.path.isfile(path) and (extension in bpy.path.extensions_image or video):
-                #The file is a known file type, load it
-                image = find_load_image(path)
-                image.update()
-                image_node.image = image
-                if video:
-                    #set video defaults
-                    object_preset.frame_length = image.frame_duration
-                    object_preset.frame_offset = 0
-                    image_node.image_user.frame_duration = image.frame_duration
-                    image_node.image_user.frame_start = 1
-                    image_node.image_user.frame_offset = 0
-                    image_node.image_user.use_cyclic = object_preset.loop
-                    image_node.image_user.use_auto_refresh = True
-
+            path = os.path.abspath(bpy.path.abspath(texture))
+            image = find_load_image(path)
+            if image:
                 #set plane size based on image aspect ratio
                 ix = 1
                 iy = (image.size[1] / image.size[0])
@@ -1485,44 +1495,12 @@ def setup_object(title_object, object_preset, material, scale_multiplier, shader
                 title_object.data.vertices[1].co = (ix + shear, iy, 0)
                 title_object.data.vertices[2].co = (ix - shear, -iy, 0)
                 title_object.data.vertices[3].co = (-ix - shear, -iy, 0)
-        else:
+        if image is None:
             #image texture is not set or has been unset, remove it from material if needed and set plane back to original dimensions
-            connect_material_texture(material, shaders, connect=False)
             title_object.data.vertices[0].co = (-1 + shear, 1, 0)
             title_object.data.vertices[1].co = (1 + shear, 1, 0)
             title_object.data.vertices[2].co = (1 - shear, -1, 0)
             title_object.data.vertices[3].co = (-1 - shear, -1, 0)
-            image_node.image = None
-
-        alpha_mix_node.inputs[0].default_value = 0
-
-        if object_preset.alpha_texture:
-            #alpha texture is set
-            path = os.path.abspath(bpy.path.abspath(object_preset.alpha_texture))
-            extension = os.path.splitext(path)[1].lower()
-            if extension in bpy.path.extensions_movie:
-                #The file is a known video file type, load it
-                video = True
-            else:
-                video = False
-            if os.path.isfile(path) and (extension in bpy.path.extensions_image or video):
-                #The file is a known file type, load it
-                image = find_load_image(path)
-                image.update()
-                alpha_image_node.image = image
-                alpha_mix_node.inputs[0].default_value = 1
-                if video:
-                    #set video defaults
-                    object_preset.frame_length = image.frame_duration
-                    object_preset.frame_offset = 0
-                    alpha_image_node.image_user.frame_duration = image.frame_duration
-                    alpha_image_node.image_user.frame_start = 1
-                    alpha_image_node.image_user.frame_offset = 0
-                    alpha_image_node.image_user.use_cyclic = object_preset.loop
-                    alpha_image_node.image_user.use_auto_refresh = True
-        else:
-            #alpha texture is not set or has been unset, remove it from material
-            alpha_image_node.image = None
 
     if object_preset.type in ['CIRCLE', 'BOX', 'TEXT']:
         #set up the circle, box and text settings
@@ -1567,7 +1545,6 @@ def setup_object(title_object, object_preset, material, scale_multiplier, shader
         else:
             title_object.data.text_boxes[0].width = 0
             title_object.data.text_boxes[0].x = 0
-            title_object.active_material = material
 
 
 def input_name(node, name):
@@ -1595,7 +1572,7 @@ def clear_material(material):
 
 
 def connect_material_texture(material, shaders, connect=True):
-    shader, transparent_shader, mix_shader, output_node, transparency_factor, image_node, alpha_image_node, alpha_mix_node = shaders
+    shader, transparent_shader, mix_shader, output_node, transparency_factor, image_node, alpha_image_node, alpha_mix_node, texture_map_node = shaders
     tree = material.node_tree
     if connect:
         tree.links.new(image_node.outputs[0], shader.inputs[0])
@@ -1604,6 +1581,22 @@ def connect_material_texture(material, shaders, connect=True):
             if link.from_node == image_node and link.to_node == shader:
                 tree.links.remove(link)
                 break
+
+
+def connect_texture_coords(material, shaders, mode='UV'):
+    shader, transparent_shader, mix_shader, output_node, transparency_factor, image_node, alpha_image_node, alpha_mix_node, texture_map_node = shaders
+    tree = material.node_tree
+
+    #delete old links
+    for link in reversed(tree.links):
+        if link.from_node == texture_map_node and link.to_node == image_node:
+            tree.links.remove(link)
+
+    #add new link
+    if mode == 'UV':
+        tree.links.new(texture_map_node.outputs['UV'], image_node.inputs[0])
+    else:
+        tree.links.new(texture_map_node.outputs['Window'], image_node.inputs[0])
 
 
 def setup_material(material, use_shadeless, mat_type):
@@ -1616,6 +1609,7 @@ def setup_material(material, use_shadeless, mat_type):
     image_node = None
     alpha_image_node = None
     alpha_mix_node = None
+    texture_map_node = None
     output_node = nodes.new('ShaderNodeOutputMaterial')
     mix_shader = nodes.new('ShaderNodeMixShader')
     transparency_factor = nodes.new('ShaderNodeMath')
@@ -1630,6 +1624,7 @@ def setup_material(material, use_shadeless, mat_type):
         alpha_image_node = nodes.new('ShaderNodeTexImage')
         alpha_mix_node = nodes.new('ShaderNodeMixRGB')
         alpha_mix_node.inputs[0].default_value = 0
+        texture_map_node = nodes.new('ShaderNodeTexCoord')
         tree.links.new(alpha_mix_node.outputs[0], transparency_factor.inputs[0])
         #tree.links.new(image_node.outputs[0], shader.inputs[0])
         tree.links.new(image_node.outputs[1], alpha_mix_node.inputs[1])
@@ -1648,7 +1643,7 @@ def setup_material(material, use_shadeless, mat_type):
     transparency_factor.operation = 'MULTIPLY'
     transparency_factor.use_clamp = True
     mix_shader.inputs[0].default_value = 1
-    return [shader, transparent_shader, mix_shader, output_node, transparency_factor, image_node, alpha_image_node, alpha_mix_node]
+    return [shader, transparent_shader, mix_shader, output_node, transparency_factor, image_node, alpha_image_node, alpha_mix_node, texture_map_node]
 
 
 def get_connected_node(node, socket_name):
@@ -1658,7 +1653,7 @@ def get_connected_node(node, socket_name):
     return None
 
 
-def check_material(material, use_shadeless, mat_type):
+def check_material(material, mat_type):
     #checks if the material node setup is correct for the type
     output_node = get_output_node(material)
     if not output_node:
@@ -1697,10 +1692,23 @@ def check_material(material, use_shadeless, mat_type):
             return None
         if alpha_image_node.type != 'TEX_IMAGE':
             return None
+        texture_map_node = get_connected_node(image_node, 0)
+        if not texture_map_node:
+            return None
+        if texture_map_node.type != 'TEX_COORD':
+            return None
     else:
         image_node = None
         alpha_image_node = None
         alpha_mix_node = None
+        texture_map_node = None
+    return [shader, transparent_shader, mix_shader, output_node, transparency_factor, image_node, alpha_image_node, alpha_mix_node, texture_map_node]
+
+
+def check_shader(material, shaders, use_shadeless):
+    #checks the output shader type and ensures it is correct
+
+    shader, transparent_shader, mix_shader, output_node, transparency_factor, image_node, alpha_image_node, alpha_mix_node, texture_map_node = shaders
     if use_shadeless:
         if shader.type != 'EMISSION':
             material.node_tree.nodes.remove(shader)
@@ -1711,18 +1719,145 @@ def check_material(material, use_shadeless, mat_type):
             material.node_tree.nodes.remove(shader)
             shader = material.node_tree.nodes.new('ShaderNodeBsdfPrincipled')
             material.node_tree.links.new(shader.outputs[0], mix_shader.inputs[2])
-    return [shader, transparent_shader, mix_shader, output_node, transparency_factor, image_node, alpha_image_node, alpha_mix_node]
+    shaders[0] = shader
+    return shaders
 
 
 def get_shaders(material, use_shadeless=False, mat_type=None):
     #given a material, returns the shader node of the correct type, while ensuring it exists and is properly connected
 
-    material_data = check_material(material, use_shadeless, mat_type)
-    if material_data:
-        shader, transparent_shader, mix_shader, output_node, transparency_factor, image_node, alpha_image_node, alpha_mix_node = material_data
+    shaders = check_material(material, mat_type)
+    if not shaders:
+        shaders = setup_material(material, use_shadeless, mat_type)
+    shaders = check_shader(material, shaders, use_shadeless)
+    return shaders
+
+
+def update_material(object_preset, material):
+    shaders = get_shaders(material, use_shadeless=object_preset.use_shadeless, mat_type=object_preset.type)
+    shader = shaders[0]
+    transparency_factor = shaders[4]
+    socket = transparency_factor.inputs[1]
+    socket.default_value = object_preset.alpha
+
+    if shader.type == 'BSDF_PRINCIPLED':
+        socket = input_name(shader, 'Specular')
+        socket.default_value = object_preset.specular_intensity
+        socket = input_name(shader, 'Metallic')
+        socket.default_value = object_preset.metallic
+        socket = input_name(shader, 'Transmission')
+        socket.default_value = object_preset.transmission
+        socket = input_name(shader, 'Base Color')
+        socket.default_value[0] = object_preset.diffuse_color[0]
+        socket.default_value[1] = object_preset.diffuse_color[1]
+        socket.default_value[2] = object_preset.diffuse_color[2]
+        socket = input_name(shader, 'Roughness')
+        socket.default_value = object_preset.roughness
+        socket = input_name(shader, 'IOR')
+        socket.default_value = object_preset.index_of_refraction
+
     else:
-        shader, transparent_shader, mix_shader, output_node, transparency_factor, image_node, alpha_image_node, alpha_mix_node = setup_material(material, use_shadeless, mat_type)
-    return [shader, transparent_shader, mix_shader, output_node, transparency_factor, image_node, alpha_image_node, alpha_mix_node]
+        socket = input_name(shader, 'Color')
+        socket.default_value[0] = object_preset.diffuse_color[0]
+        socket.default_value[1] = object_preset.diffuse_color[1]
+        socket.default_value[2] = object_preset.diffuse_color[2]
+        socket = input_name(shader, 'Strength')
+        socket.default_value = 1
+
+    material.use_screen_refraction = True
+    material.blend_method = 'BLEND'
+    material.show_transparent_back = False
+
+    if object_preset.cast_shadows:
+        material.shadow_method = 'CLIP'
+
+    else:
+        material.shadow_method = 'NONE'
+
+    if object_preset.type == 'IMAGE':
+        #set up image type
+        image_node = shaders[5]
+        alpha_image_node = shaders[6]
+        alpha_mix_node = shaders[7]
+        if object_preset.texture:
+            #image texture is set
+            connect_material_texture(material, shaders, connect=True)
+            if object_preset.window_mapping:
+                map_mode = 'Window'
+            else:
+                map_mode = 'UV'
+            connect_texture_coords(material, shaders, mode=map_mode)
+            path = os.path.abspath(bpy.path.abspath(object_preset.texture))
+            extension = os.path.splitext(path)[1].lower()
+            if extension in bpy.path.extensions_movie:
+                #The file is a known video file type, load it
+                video = True
+            else:
+                video = False
+            if os.path.isfile(path) and (extension in bpy.path.extensions_image or video):
+                #The file is a known file type, load it
+                image = find_load_image(path)
+                image.update()
+                image_node.image = image
+                if video:
+                    #set video defaults
+                    object_preset.frame_length = image.frame_duration
+                    object_preset.frame_offset = 0
+                    image_node.image_user.frame_duration = image.frame_duration
+                    image_node.image_user.frame_start = 1
+                    image_node.image_user.frame_offset = 0
+                    image_node.image_user.use_cyclic = object_preset.loop
+                    image_node.image_user.use_auto_refresh = True
+
+        else:
+            #image texture is not set or has been unset, remove it from material if needed and set plane back to original dimensions
+            connect_material_texture(material, shaders, connect=False)
+            image_node.image = None
+
+        alpha_mix_node.inputs[0].default_value = 0
+
+        if object_preset.alpha_texture:
+            #alpha texture is set
+            path = os.path.abspath(bpy.path.abspath(object_preset.alpha_texture))
+            extension = os.path.splitext(path)[1].lower()
+            if extension in bpy.path.extensions_movie:
+                #The file is a known video file type, load it
+                video = True
+            else:
+                video = False
+            if os.path.isfile(path) and (extension in bpy.path.extensions_image or video):
+                #The file is a known file type, load it
+                image = find_load_image(path)
+                image.update()
+                alpha_image_node.image = image
+                alpha_mix_node.inputs[0].default_value = 1
+                if video:
+                    #set video defaults
+                    object_preset.frame_length = image.frame_duration
+                    object_preset.frame_offset = 0
+                    alpha_image_node.image_user.frame_duration = image.frame_duration
+                    alpha_image_node.image_user.frame_start = 1
+                    alpha_image_node.image_user.frame_offset = 0
+                    alpha_image_node.image_user.use_cyclic = object_preset.loop
+                    alpha_image_node.image_user.use_auto_refresh = True
+        else:
+            #alpha texture is not set or has been unset, remove it from material
+            alpha_image_node.image = None
+    return shaders
+
+
+def set_material(title_object, material):
+    title_object.active_material = material
+    for material_slot in title_object.material_slots:
+        material_slot.link = 'OBJECT'
+    if len(title_object.material_slots) >= 1:
+        title_object.material_slots[0].material = material
+
+
+def get_material(title_object):
+    if len(title_object.material_slots) >= 1:
+        return title_object.material_slots[0].material
+    return None
 
 
 def quicktitle_update(sequence, quicktitle, update_all=False):
@@ -1764,6 +1899,16 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
     else:
         #shadow_lamp = None
         print('Selected Title Scene Is Incomplete: Missing Shadow Lamp')
+
+    #attempt to update the lamp center
+    if quicktitle.lampcenter_internal_name in scene.objects:
+        lampcenter = scene.objects[quicktitle.lampcenter_internal_name]
+        lampcenter.scale[0] = quicktitle.lightscalex
+        lampcenter.scale[1] = quicktitle.lightscaley
+        lampcenter.location = (quicktitle.lightx, quicktitle.lighty, 0)
+        lampcenter.rotation_euler[2] = quicktitle.lightrot/180.0*pi
+    else:
+        print('Selected Title Scene Is Incomplete: missing Lamp Center')
 
     #update individual scene objects
     for object_layer, object_preset in enumerate(quicktitle.objects):
@@ -1818,6 +1963,8 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
 
         #detailed settings need to be updated for this object
         if selected_object or created_object or update_all:
+            material = None
+            shaders = []
             title_object.location = (pos_multiplier * object_preset.x, pos_multiplier * object_preset.y, object_preset.z - z_offset)
             title_object.scale = (scale_multiplier * object_preset.scale * object_preset.width, scale_multiplier * object_preset.scale * object_preset.height, object_preset.scale)
             title_object.rotation_euler = (object_preset.rot_x/180.0*pi, object_preset.rot_y/180.0*pi, -object_preset.rot_z/180.0*pi)
@@ -1825,79 +1972,43 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
             #Material settings
             if object_preset.set_material:
                 #material is set manually
-                if object_preset.material == 'No Preset':
+                if object_preset.set_material_name == 'No Preset':
                     #material is unset, disable manual setting
-                    object_preset.set_material = False
+                    pass
+                    #object_preset.set_material = False
 
                 else:
-                    if object_preset.material in bpy.data.materials:
+                    if object_preset.set_material_name in bpy.data.materials:
                         #material exists
-                        material = bpy.data.materials[object_preset.material]
+                        material = bpy.data.materials[object_preset.set_material_name]
+                        set_material(title_object, material)
+                        material = None
 
                     else:
                         #material doesnt exist, create it
-                        material = bpy.data.materials.new(object_preset.material)
+                        material = bpy.data.materials.new(object_preset.set_material_name)
+                        shaders = update_material(object_preset, material)
 
             if not object_preset.set_material:
                 #material is determined automatically
-                if title_object.active_material:
-                    #title_object has a material set, check if its valid
-                    material = title_object.active_material
-                    if material.users > 1:
-                        #this material is being used by multiple objects, create a new one instead
-                        material = bpy.data.materials.new(object_preset.material)
-                        title_object.active_material = material
+                material = get_material(title_object)
+                if material:
+                    if material.name != object_preset.material:
+                        set_material(title_object, None)
+                        material = None
+                if not material:
+                    for mat in bpy.data.materials:
+                        if mat.name == object_preset.material:
+                            material = mat
+                            break
+                    if not material:
+                        material = bpy.data.materials.new('QuickTitler '+object_preset.type+' Material')
+                        object_preset.material = material.name
+                    set_material(title_object, material)
 
-                    object_preset.material = material.name
+                shaders = update_material(object_preset, material)
 
-                else:
-                    #title_object doesnt have a material, create one
-                    material = bpy.data.materials.new('QuickTitler '+object_preset.type+' Material')
-                    object_preset.material = material.name
-                    title_object.active_material = material
-
-            #set up material
-            shaders = get_shaders(material, use_shadeless=object_preset.use_shadeless, mat_type=object_preset.type)
-            shader = shaders[0]
-            transparency_factor = shaders[4]
-            socket = transparency_factor.inputs[1]
-            socket.default_value = object_preset.alpha
-
-            if shader.type == 'BSDF_PRINCIPLED':
-                socket = input_name(shader, 'Specular')
-                socket.default_value = object_preset.specular_intensity
-                socket = input_name(shader, 'Metallic')
-                socket.default_value = object_preset.metallic
-                socket = input_name(shader, 'Transmission')
-                socket.default_value = object_preset.transmission
-                socket = input_name(shader, 'Base Color')
-                socket.default_value[0] = object_preset.diffuse_color[0]
-                socket.default_value[1] = object_preset.diffuse_color[1]
-                socket.default_value[2] = object_preset.diffuse_color[2]
-                socket = input_name(shader, 'Roughness')
-                socket.default_value = object_preset.roughness
-                socket = input_name(shader, 'IOR')
-                socket.default_value = object_preset.index_of_refraction
-
-            else:
-                socket = input_name(shader, 'Color')
-                socket.default_value[0] = object_preset.diffuse_color[0]
-                socket.default_value[1] = object_preset.diffuse_color[1]
-                socket.default_value[2] = object_preset.diffuse_color[2]
-                socket = input_name(shader, 'Strength')
-                socket.default_value = 1
-
-            material.use_screen_refraction = True
-            material.blend_method = 'BLEND'
-            material.show_transparent_back = False
-
-            if object_preset.cast_shadows:
-                material.shadow_method = 'CLIP'
-
-            else:
-                material.shadow_method = 'NONE'
-
-            setup_object(title_object, object_preset, material, scale_multiplier, shaders)
+            setup_object(title_object, object_preset, scale_multiplier)
 
             set_animations(title_object, object_preset, material, scene, z_offset, pos_multiplier, shaders)
 
@@ -1923,7 +2034,7 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
                     material = bpy.data.materials[outline_object_name]
                 else:
                     material = bpy.data.materials.new(outline_object_name)
-                outline_object.active_material = material
+                set_material(outline_object, material)
 
                 shaders = get_shaders(material, use_shadeless=True)
                 shader = shaders[0]
@@ -1948,28 +2059,13 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
                 outline_object.location = (pos_multiplier * object_preset.x, pos_multiplier * object_preset.y, object_preset.z - z_offset - .001)
                 outline_object.scale = (scale_multiplier * object_preset.scale * object_preset.width, scale_multiplier * object_preset.scale * object_preset.height, object_preset.scale)
                 outline_object.rotation_euler = (object_preset.rot_x / 180.0 * pi, object_preset.rot_y / 180.0 * pi, -object_preset.rot_z / 180.0 * pi)
-                setup_object(outline_object, object_preset, material, scale_multiplier, shaders)
+                setup_object(outline_object, object_preset, scale_multiplier)
                 set_animations(outline_object, object_preset, material, scene, z_offset, pos_multiplier, shaders, parent=title_object)
                 #outline_object.data.offset = object_preset.outline_size / 100
                 outline_object.data.extrude = 0
                 outline_object.data.bevel_depth = object_preset.outline_size / 100
                 outline_object.scale[2] = 0
                 outline_object.data.fill_mode = 'FRONT'
-
-        if selected_object and object_preset.set_material:
-            #search for other objects using same material name and update their settings to match the selected title_object
-            for other_object in quicktitle.objects:
-                if other_object.material == object_preset.material:
-                    other_object.cast_shadows = object_preset.cast_shadows
-                    other_object.use_shadeless = object_preset.use_shadeless
-                    other_object.alpha = object_preset.alpha
-                    other_object.index_of_refraction = object_preset.index_of_refraction
-                    other_object.diffuse_color = object_preset.diffuse_color
-                    other_object.specular_intensity = object_preset.specular_intensity
-                    other_object.metallic = object_preset.metallic
-                    other_object.roughness = object_preset.roughness
-                    other_object.texture = object_preset.texture
-                    other_object.alpha_texture = object_preset.alpha_texture
 
     #update scene and sequence
     scene.name = scenename
@@ -1984,14 +2080,15 @@ def get_fcurve(fcurves, variable, shaders, material=None, on_object=None):
     #find or create and return an fcurve matching the given internal script variable name
     fcurve = None
     value = None
-    transparency_factor = shaders[4]
     if variable == 'Alpha':
-        data_path = 'nodes["'+transparency_factor.name+'"].inputs[1].default_value'
-        if transparency_factor:
-            value = transparency_factor.inputs[1].default_value
-        fcurve = fcurves.find(data_path)
-        if not fcurve:
-            fcurve = fcurves.new(data_path)
+        if shaders:
+            transparency_factor = shaders[4]
+            data_path = 'nodes["'+transparency_factor.name+'"].inputs[1].default_value'
+            if transparency_factor:
+                value = transparency_factor.inputs[1].default_value
+            fcurve = fcurves.find(data_path)
+            if not fcurve:
+                fcurve = fcurves.new(data_path)
     elif variable == 'X Slide':
         data_path = 'location'
         if on_object:
@@ -2278,6 +2375,10 @@ class QuickTitleObject(bpy.types.PropertyGroup):
         default=False,
         description="When unchecked, this object will use a default material, when checked, you may set the material manually.",
         update=quicktitle_autoupdate)
+    set_material_name: bpy.props.StringProperty(
+        name="Object Material",
+        default="No Preset",
+        update=quicktitle_autoupdate)
     material: bpy.props.StringProperty(
         name="Object Material",
         default="No Preset",
@@ -2428,6 +2529,11 @@ class QuickTitleObject(bpy.types.PropertyGroup):
         subtype='COLOR',
         description="Basic color of this object.",
         update=quicktitle_autoupdate)
+    window_mapping: bpy.props.BoolProperty(
+        name="Map Image To View",
+        default=False,
+        description="Activates 'Window' mapping mode for the image, making it the size of the entire camera view regardless of the image size",
+        update=quicktitle_autoupdate)
 
     #Variables specific to the Image type:
     texture: bpy.props.StringProperty(
@@ -2493,13 +2599,15 @@ class QuickTitle(bpy.types.PropertyGroup):
     selected_object: bpy.props.IntProperty(
         name="Selected Object",
         default=0,
-        min=0,
-        update=quicktitle_autoupdate)
+        min=0)
     enable_shadows: bpy.props.BoolProperty(
         name="Shadows",
         default=True,
         description="Enables shadows in this title.",
         update=quicktitle_autoupdate)
+    lampcenter_internal_name: bpy.props.StringProperty(
+        name="Internal Name For The Lamp Center Object",
+        default='')
     shadowlamp_internal_name: bpy.props.StringProperty(
         name="Internal Name For The Shadow Lamp",
         default='')
@@ -2533,6 +2641,30 @@ class QuickTitle(bpy.types.PropertyGroup):
         name="Shadow Lamp Y Position",
         default=0,
         description="Vertical position of the shadow casting lamp.  Values depend on the image aspect ratio, 0.56 will usually be around the top of the screen, 0 at the center, and -0.56 around the bottom.",
+        update=quicktitle_autoupdate)
+    lightx: bpy.props.FloatProperty(
+        name="Lamps X Position",
+        default=0,
+        update=quicktitle_autoupdate)
+    lighty: bpy.props.FloatProperty(
+        name="Lamps Y Position",
+        default=0,
+        update=quicktitle_autoupdate)
+    lightrot: bpy.props.FloatProperty(
+        name="Lamps Rotation",
+        default=0,
+        update=quicktitle_autoupdate)
+    lightscalex: bpy.props.FloatProperty(
+        name="Lamp Position Width",
+        default=1,
+        min=0,
+        max=10,
+        update=quicktitle_autoupdate)
+    lightscaley: bpy.props.FloatProperty(
+        name="Lamp Position Height",
+        default=1,
+        min=0,
+        max=10,
         update=quicktitle_autoupdate)
     length: bpy.props.IntProperty(
         name="Scene Length",
@@ -2727,12 +2859,15 @@ class QUICKTITLING_PT_Panel(bpy.types.Panel):
             row = subarea.row()
             row.label(text='Material:', icon="MATERIAL_DATA")
             row.prop(current_object, 'set_material', text='Set Material')
+            row.operator('quicktitler.new_material', text='New')
 
             if current_object.set_material:
                 row = subarea.row()
-                row.menu('QUICKTITLING_MT_materials_menu', text=current_object.material)
+                row.menu('QUICKTITLING_MT_materials_menu', text=current_object.set_material_name)
 
             else:
+                row = subarea.row()
+                row.label(text=current_object.material)
                 row = subarea.row()
                 split = row.split(factor=.85)
                 subsplit = split.split()
@@ -2752,6 +2887,8 @@ class QUICKTITLING_PT_Panel(bpy.types.Panel):
                     row.prop(current_object, 'alpha', text='Alpha Multiply')
                     row = subarea.row()
                     row.prop(current_object, 'texture', text='Texture', icon="IMAGE_RGB")
+                    row = subarea.row()
+                    row.prop(current_object, 'window_mapping')
 
                     row = subarea.row()
                     row.prop(current_object, 'alpha_texture', text='Alpha Texture', icon="IMAGE_ALPHA")
@@ -2817,19 +2954,32 @@ class QUICKTITLING_PT_Panel(bpy.types.Panel):
         row = outline.row()
         split = row.split(factor=.1)
         split.prop(quicktitle_preset, 'enable_shadows', icon="TRIA_DOWN" if quicktitle_preset.enable_shadows else "TRIA_RIGHT", icon_only=True, emboss=True)
-        split.label(text='Title Shadows', icon="LIGHT")
+        split.label(text='Title Lighting', icon="LIGHT")
 
         if quicktitle_preset.enable_shadows:
-            row = outline.row()
+            suboutline = outline.box()
+            row = suboutline.row(align=True)
+            row.prop(quicktitle_preset, 'lightscalex', text='Lighting Width')
+            row.prop(quicktitle_preset, 'lightscaley', text='Lighting Height')
+
+            row = suboutline.row(align=True)
+            row.prop(quicktitle_preset, 'lightx', text='Lights X Offset')
+            row.prop(quicktitle_preset, 'lighty', text='Lights Y Offset')
+
+            row = suboutline.row()
+            row.prop(quicktitle_preset, 'lightrot', text='Lights Rotation')
+
+            suboutline = outline.box()
+            row = suboutline.row()
             row.prop(quicktitle_preset, 'shadowamount')
 
-            row = outline.row()
-            row.prop(quicktitle_preset, 'shadowsize', text='Distance')
-            row.prop(quicktitle_preset, 'shadowsoft', text='Soft')
+            row = suboutline.row()
+            row.prop(quicktitle_preset, 'shadowsize', text='Shadow Distance')
+            row.prop(quicktitle_preset, 'shadowsoft', text='Shadow Soft')
 
-            row = outline.row(align=True)
-            row.prop(quicktitle_preset, 'shadowx', text='X Offset')
-            row.prop(quicktitle_preset, 'shadowy', text='Y Offset')
+            row = suboutline.row(align=True)
+            row.prop(quicktitle_preset, 'shadowx', text='Shadow X Offset')
+            row.prop(quicktitle_preset, 'shadowy', text='Shadow Y Offset')
 
 
 class QuickTitlingSavePreset(bpy.types.Operator):
@@ -3147,6 +3297,20 @@ class QuickTitlingAnimationMenu(bpy.types.Menu):
                 layout.operator('quicktitler.add_animation', text=animation['name'], icon=quicktitle_animation_icon(animation['variable'])).index = index
 
 
+class QuickTitlingNewMaterial(bpy.types.Operator):
+    #Makes a new default material for the selected object
+    bl_idname = 'quicktitler.new_material'
+    bl_label = 'New Material'
+    bl_description = "Makes a new default material"
+
+    def execute(self, context):
+        scene = context.scene
+        object_preset = get_current_object()
+        if object_preset:
+            object_preset.material = 'No Preset'
+        return {"FINISHED"}
+
+
 class QuickTitlingPresetDelete(bpy.types.Operator):
     #Operator to delete a QuickTitler preset.  Preset index must be specified
     bl_idname = 'quicktitler.preset_delete'
@@ -3246,6 +3410,16 @@ class QuickTitlingPresetExport(bpy.types.Operator, ExportHelper):
             Tree.SubElement(root, 'shadowx').text = str(preset.shadowx)
         if preset.shadowy != get_default('shadowy', class_type='Title'):
             Tree.SubElement(root, 'shadowy').text = str(preset.shadowy)
+        if preset.lightscalex != get_default('lightscalex', class_type='Title'):
+            Tree.SubElement(root, 'lightscalex').text = str(preset.lightscalex)
+        if preset.lightscaley != get_default('lightscaley', class_type='Title'):
+            Tree.SubElement(root, 'lightscaley').text = str(preset.lightscaley)
+        if preset.lightx != get_default('lightx', class_type='Title'):
+            Tree.SubElement(root, 'lightx').text = str(preset.lightx)
+        if preset.lighty != get_default('lighty', class_type='Title'):
+            Tree.SubElement(root, 'lighty').text = str(preset.lighty)
+        if preset.lightrot != get_default('lightrot', class_type='Title'):
+            Tree.SubElement(root, 'lightrot').text = str(preset.lightrot)
         for title_object in preset.objects:
             objects = Tree.SubElement(root, 'objects')
             Tree.SubElement(objects, 'name').text = title_object.name
@@ -3318,6 +3492,8 @@ class QuickTitlingPresetExport(bpy.types.Operator, ExportHelper):
             if title_object.outline_diffuse_color != get_default('outline_diffuse_color'):
                 outline_color = str(round(title_object.outline_diffuse_color[0] * 255))+', '+str(round(title_object.outline_diffuse_color[1] * 255))+', '+str(round(title_object.outline_diffuse_color[2] * 255))
                 Tree.SubElement(objects, 'outline_diffuse_color').text = outline_color
+            if title_object.window_mapping != get_default('window_mapping'):
+                Tree.SubElement(objects, 'window_mapping').text = str(title_object.window_mapping)
             if title_object.texture != get_default('texture'):
                 Tree.SubElement(objects, 'texture').text = title_object.texture
             if title_object.alpha_texture != get_default('alpha_texture'):
@@ -3641,7 +3817,7 @@ class QuickTitlingChangeMaterial(bpy.types.Operator):
         if current_object:
             if self.material == 'No Preset':
                 current_object.set_material = False
-            current_object.material = self.material
+            current_object.set_material_name = self.material
 
         return {'FINISHED'}
 
@@ -4155,7 +4331,7 @@ class QuickTitlingSelect(bpy.types.Operator):
             for index, object_preset in enumerate(title_object_presets):
                 if object_preset.internal_name == title_object.name:
                     scene.quicktitler.current_quicktitle.selected_object = index
-                    quicktitle_autoupdate()
+                    #quicktitle_autoupdate()
                     break
         return {'FINISHED'}
 
@@ -4297,7 +4473,8 @@ classes = [QuickTitlingGrab, QuickTitleAnimation, QuickTitleObject, QuickTitle, 
            QuickTitlingPresetMenu, QuickTitlingPresetSelect, QuickTitlingPresetLoad, QuickTitlingLoadFont,
            QuickTitlingFontMenu, QuickTitlingChangeFont, QuickTitlingMaterialMenu, QuickTitlingChangeMaterial,
            QuickTitlingCreate, QuickTitleSettings, QuickTitlingRotate, QuickTitlingScale, QuickTitlingSelect,
-           QuickTitlingAddObject, QuickTitlingDeleteMenu, QuickTitlingPresetSelectAdd, QuickTitlingPresetMenuAdd]
+           QuickTitlingAddObject, QuickTitlingDeleteMenu, QuickTitlingPresetSelectAdd, QuickTitlingPresetMenuAdd,
+           QuickTitlingNewMaterial]
 
 
 def register():
