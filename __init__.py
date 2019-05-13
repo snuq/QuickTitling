@@ -17,10 +17,6 @@
 # ##### END GPL LICENSE BLOCK #####
 
 
-"""
-Todo: Circle object border position is not correct
-"""
-
 import bpy
 import blf
 import mathutils
@@ -636,11 +632,17 @@ def update_bounds(title_object, title_object_preset, title_scene, scale_multipli
     title_object_preset.bbtop = bounds[3]
 
 
-def generate_matrix_world(ob):
+def generate_matrix_world(ob, ob_preset):
     scale_matrix = mathutils.Matrix.Scale(ob.scale[0], 4, (1, 0, 0)) @ mathutils.Matrix.Scale(ob.scale[1], 4, (0, 1, 0)) @ mathutils.Matrix.Scale(ob.scale[2], 4, (0, 0, 1))
     rotation_matrix = mathutils.Matrix.Rotation(ob.rotation_euler[0], 4, 'X') @ mathutils.Matrix.Rotation(ob.rotation_euler[1], 4, 'Y') @ mathutils.Matrix.Rotation(ob.rotation_euler[2], 4, 'Z')
     rotation_matrix.invert()
-    matrix = mathutils.Matrix.Translation(ob.location) @ scale_matrix @ rotation_matrix
+    if ob_preset.type == 'CIRCLE':
+        #position is incorrect for circles... why??
+        loc_mult = 2.83
+        location_matrix = mathutils.Matrix.Translation((ob.location[0] * loc_mult, ob.location[1] * loc_mult, ob.location[2] * loc_mult))
+    else:
+        location_matrix = mathutils.Matrix.Translation(ob.location)
+    matrix = location_matrix @ scale_matrix @ rotation_matrix
     return matrix
 
 
@@ -657,7 +659,7 @@ def camera_view_bounds_2d(scene, camera, title_object, title_object_preset, came
     xs = []
     ys = []
     #matrix = title_object.matrix_world
-    matrix = generate_matrix_world(title_object)
+    matrix = generate_matrix_world(title_object, title_object_preset)
 
     for vert in bbox:
         if title_object.type != 'FONT':
