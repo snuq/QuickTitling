@@ -17,6 +17,10 @@
 # ##### END GPL LICENSE BLOCK #####
 
 
+"""
+Todo: Circle object border position is not correct
+"""
+
 import bpy
 import blf
 import mathutils
@@ -1966,7 +1970,7 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
             material = None
             shaders = []
             title_object.location = (pos_multiplier * object_preset.x, pos_multiplier * object_preset.y, object_preset.z - z_offset)
-            title_object.scale = (scale_multiplier * object_preset.scale * object_preset.width, scale_multiplier * object_preset.scale * object_preset.height, object_preset.scale)
+            title_object.scale = (scale_multiplier * object_preset.scale * object_preset.width, scale_multiplier * object_preset.scale * object_preset.height, scale_multiplier * object_preset.scale)
             title_object.rotation_euler = (object_preset.rot_x/180.0*pi, object_preset.rot_y/180.0*pi, -object_preset.rot_z/180.0*pi)
 
             #Material settings
