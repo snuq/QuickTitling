@@ -516,7 +516,7 @@ def object_at_location(scene, x, y):
             #title_object.data.resolution_u = old_resolution_u
             #title_object.data.bevel_resolution = old_bevel_resolution
     direction = (mathutils.Vector((x, y, 0)) - camera.location).normalized()
-    scene.update()
+    scene.update_tag()
     data = scene.ray_cast(scene.view_layers[0], camera.location, direction)
     if data[0]:
         match_object = data[4]
@@ -530,7 +530,7 @@ def object_at_location(scene, x, y):
         scene.collection.objects.unlink(ob)
         bpy.data.objects.remove(ob)
         bpy.data.meshes.remove(mesh)
-    scene.update()
+    scene.update_tag()
     return match_object
 
 
@@ -1127,7 +1127,7 @@ def quicktitle_create(quicktitle=False):
     title_scene = bpy.context.scene
     title_scene.frame_start = 1
     title_scene.frame_end = quicktitle.length
-    title_scene.render.alpha_mode = 'TRANSPARENT'
+    title_scene.render.film_transparent = True
     title_scene.render.image_settings.file_format = 'PNG'
     title_scene.render.image_settings.color_mode = 'RGBA'
 
@@ -1535,7 +1535,8 @@ def setup_object(title_object, object_preset, scale_multiplier):
 
     if object_preset.type == 'TEXT':
         #set up the text settings
-        text_formatted = object_preset.text.encode().decode('unicode_escape')
+        #text_formatted = object_preset.text.encode().decode('unicode_escape')
+        text_formatted = object_preset.text.encode().decode('unicode_escape').encode('latin1').decode('utf-8')
         title_object.data.body = text_formatted
         title_object.data.align_x = object_preset.align
         title_object.data.shear = object_preset.shear
@@ -2077,7 +2078,7 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
     scene.name = scenename
     sequence.name = scenename
     bpy.context.window.scene = oldscene
-    scene.update()
+    scene.update_tag()
     bpy.ops.sequencer.reload(adjust_length=True)
     bpy.ops.sequencer.refresh_all()
 
