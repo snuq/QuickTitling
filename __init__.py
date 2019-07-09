@@ -1543,7 +1543,8 @@ def setup_object(title_object, object_preset, material, scale_multiplier):
 
     if object_preset.type == 'TEXT':
         #set up the text settings
-        text_formatted = object_preset.text.encode().decode('unicode_escape')
+        #text_formatted = object_preset.text.encode().decode('unicode_escape')
+        text_formatted = object_preset.text.encode().decode('unicode_escape').encode('latin1').decode('utf-8')
         title_object.data.body = text_formatted
         title_object.data.align_x = object_preset.align
         title_object.data.shear = object_preset.shear
