@@ -1,6 +1,7 @@
 # QuickTitling Addon For Blender
 
 This addon will create and edit simple scenes for title overlays.  
+This is the final Blender 2.79 version.
 
 Watch the demo video showing some features:  
 [![Demo Video](https://img.youtube.com/vi/d3RPO53RBBw/0.jpg)](https://www.youtube.com/watch?v=d3RPO53RBBw)
