@@ -492,6 +492,8 @@ def find_load_image(path, load=True):
 
 def object_at_location(scene, x, y):
     #Casts a ray from the camera to the given coordinates and returns the first object in that direction, or None
+    oldscene = bpy.context.window.scene
+    bpy.context.window.scene = scene  #Since blender doesnt want to cast the ray properly while in another scene... bah.
     camera = scene.camera
     #since blender doesnt detect curve objects... go through and make low-poly copies of all curves, then delete them. bah.
     title_copies = []
@@ -502,10 +504,11 @@ def object_at_location(scene, x, y):
             rotation = title_object.rotation_euler
             old_resolution_u = title_object.data.resolution_u
             old_bevel_resolution = title_object.data.bevel_resolution
-            #title_object.data.resolution_u = 2
-            #title_object.data.bevel_resolution = 0
+            title_object.data.resolution_u = 2
+            title_object.data.bevel_resolution = 0
 
-            mesh = title_object.to_mesh(bpy.context.depsgraph, True)
+            #mesh = title_object.to_mesh(preserve_all_data_layers=True, depsgraph=bpy.context.view_layer.depsgraph)
+            mesh = bpy.data.meshes.new_from_object(title_object, preserve_all_data_layers=True, depsgraph=bpy.context.view_layer.depsgraph)
             ob = bpy.data.objects.new(mesh.name+' Raycast', mesh)
             scene.collection.objects.link(ob)
             ob.scale = scale
@@ -513,10 +516,10 @@ def object_at_location(scene, x, y):
             ob.rotation_euler = rotation
             title_copies.append([mesh, ob, title_object])
 
-            #title_object.data.resolution_u = old_resolution_u
-            #title_object.data.bevel_resolution = old_bevel_resolution
+            title_object.data.resolution_u = old_resolution_u
+            title_object.data.bevel_resolution = old_bevel_resolution
     direction = (mathutils.Vector((x, y, 0)) - camera.location).normalized()
-    scene.update_tag()
+    bpy.context.view_layer.depsgraph.update()
     data = scene.ray_cast(scene.view_layers[0], camera.location, direction)
     if data[0]:
         match_object = data[4]
@@ -530,7 +533,8 @@ def object_at_location(scene, x, y):
         scene.collection.objects.unlink(ob)
         bpy.data.objects.remove(ob)
         bpy.data.meshes.remove(mesh)
-    scene.update_tag()
+    bpy.context.view_layer.depsgraph.update()
+    bpy.context.window.scene = oldscene
     return match_object
 
 
@@ -1912,7 +1916,7 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
         lampcenter.scale[0] = quicktitle.lightscalex
         lampcenter.scale[1] = quicktitle.lightscaley
         lampcenter.location = (quicktitle.lightx, quicktitle.lighty, 0)
-        lampcenter.rotation_euler[2] = quicktitle.lightrot/180.0*pi
+        lampcenter.rotation_euler[2] = -quicktitle.lightrot/180.0*pi
     else:
         print('Selected Title Scene Is Incomplete: missing Lamp Center')
 
