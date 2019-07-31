@@ -1,6 +1,5 @@
 <preset>
   <name>Lower Third - Two Tone Gradient</name>
-  <description>For this title to look correct, you must reload the alpha texture of the IMAGE.</description>
   <shadowsize>1.249000072479248</shadowsize>
   <shadowamount>0.0</shadowamount>
   <objects>
@@ -93,7 +92,7 @@
     <specular_color>255, 255, 255</specular_color>
     <wrap_width>0.8999999761581421</wrap_width>
     <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
-    <alpha_texture>whitetoblackup.jpg</alpha_texture>
+    <alpha_texture>Textures/whitetoblackup.jpg</alpha_texture>
     <animations>
       <variable>Y Slide</variable>
       <in_length>30</in_length>
