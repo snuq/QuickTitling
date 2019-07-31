@@ -1169,7 +1169,7 @@ def quicktitle_create(quicktitle=False):
     camera.data.lens = 39.2
 
     #Basic lamps setup
-    lamp_energy = 0.5
+    lamp_energy = 50
     bpy.ops.object.light_add(location=(-1.1, -.6, .5))
     lamp1 = bpy.context.active_object
     lamp1.data.energy = lamp_energy
@@ -1535,7 +1535,6 @@ def setup_object(title_object, object_preset, scale_multiplier):
 
     if object_preset.type == 'TEXT':
         #set up the text settings
-        #text_formatted = object_preset.text.encode().decode('unicode_escape')
         text_formatted = object_preset.text.encode().decode('unicode_escape').encode('latin1').decode('utf-8')
         title_object.data.body = text_formatted
         title_object.data.align_x = object_preset.align
@@ -1892,7 +1891,7 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
         shadow_lamp_inverse = scene.objects[quicktitle.shadowlamp_inverse_internal_name]
         softshadow = quicktitle.shadowsoft * 5
         shadow_lamp.data.shadow_buffer_soft = softshadow
-        shadow_multiplier = 1.2
+        shadow_multiplier = 120
         shadow_lamp.data.energy = quicktitle.shadowamount * shadow_multiplier
         shadow_lamp_inverse.data.energy = -(quicktitle.shadowamount * shadow_multiplier)
         shadow_lamp.data.shadow_soft_size = .1
