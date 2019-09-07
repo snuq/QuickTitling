@@ -2007,13 +2007,9 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
                         set_material(title_object, None)
                         material = None
                 if not material:
-                    for mat in bpy.data.materials:
-                        if mat.name == object_preset.material:
-                            material = mat
-                            break
-                    if not material:
-                        material = bpy.data.materials.new('QuickTitler '+object_preset.type+' Material')
-                        object_preset.material = material.name
+                    name = 'QuickTitler '+object_preset.type+' Material'
+                    material = bpy.data.materials.new(name)
+                    object_preset.material = material.name
                     set_material(title_object, material)
 
                 shaders = update_material(object_preset, material)
