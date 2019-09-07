@@ -19,7 +19,7 @@ Or support me by hiring Creative Life Productions if you have a need for the ser
 
 
 ## Installation
-* Download the release or master zip file to a location you can find easily.  
+* Download the release or master zip file to a location you can find easily.  (Use Github's "Clone or Download" link, and choose to download the .zip).
 * Open Blender, and from the 'File' menu, select 'User Preferences'.
 * In this new window, click on the "Add-ons" tab at the top.
 * Click the 'Install Add-on from File...' button at the bottom of this window.
