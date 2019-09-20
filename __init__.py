@@ -4432,38 +4432,40 @@ def add_to_value(value, character):
 
 
 def add_keymap():
-    remove_keymap()
     global keymap
-    keymapitems = keymap.keymap_items
-    for keymapitem in keymapitems:
-        #Iterate through keymaps and delete old shortcuts
-        if keymapitem.type in ['G', 'R', 'S', 'LEFTMOUSE', 'A', 'X', 'DEL', 'L', 'PAGE_UP', 'PAGE_DOWN']:
-            keymapitems.remove(keymapitem)
-    keymapitems.new('quicktitle.grab', 'G', 'PRESS')
-    keymapitems.new('quicktitle.rotate', 'R', 'PRESS')
-    keymapitems.new('quicktitle.scale', 'S', 'PRESS')
-    keymapitems.new('quicktitle.select', 'LEFTMOUSE', 'PRESS')
-    add_menu = keymapitems.new('wm.call_menu', 'A', 'PRESS', shift=True)
-    add_menu.properties.name = 'QUICKTITLING_MT_add_object_menu'
-    delete_menu = keymapitems.new('wm.call_menu', 'X', 'PRESS')
-    delete_menu.properties.name = 'QUICKTITLING_MT_delete_menu'
-    delete_menu2 = keymapitems.new('wm.call_menu', 'DEL', 'PRESS')
-    delete_menu2.properties.name = 'QUICKTITLING_MT_delete_menu'
-    grab_lamp = keymapitems.new('quicktitle.grab', 'L', 'PRESS')
-    grab_lamp.properties.lamp = True
-    current_up = keymapitems.new('quicktitler.object_up', 'PAGE_UP', 'PRESS')
-    current_up.properties.current = True
-    current_down = keymapitems.new('quicktitler.object_down', 'PAGE_DOWN', 'PRESS')
-    current_down.properties.current = True
+    if keymap is not None:
+        remove_keymap()
+        keymapitems = keymap.keymap_items
+        for keymapitem in keymapitems:
+            #Iterate through keymaps and delete old shortcuts
+            if keymapitem.type in ['G', 'R', 'S', 'LEFTMOUSE', 'A', 'X', 'DEL', 'L', 'PAGE_UP', 'PAGE_DOWN']:
+                keymapitems.remove(keymapitem)
+        keymapitems.new('quicktitle.grab', 'G', 'PRESS')
+        keymapitems.new('quicktitle.rotate', 'R', 'PRESS')
+        keymapitems.new('quicktitle.scale', 'S', 'PRESS')
+        keymapitems.new('quicktitle.select', 'LEFTMOUSE', 'PRESS')
+        add_menu = keymapitems.new('wm.call_menu', 'A', 'PRESS', shift=True)
+        add_menu.properties.name = 'QUICKTITLING_MT_add_object_menu'
+        delete_menu = keymapitems.new('wm.call_menu', 'X', 'PRESS')
+        delete_menu.properties.name = 'QUICKTITLING_MT_delete_menu'
+        delete_menu2 = keymapitems.new('wm.call_menu', 'DEL', 'PRESS')
+        delete_menu2.properties.name = 'QUICKTITLING_MT_delete_menu'
+        grab_lamp = keymapitems.new('quicktitle.grab', 'L', 'PRESS')
+        grab_lamp.properties.lamp = True
+        current_up = keymapitems.new('quicktitler.object_up', 'PAGE_UP', 'PRESS')
+        current_up.properties.current = True
+        current_down = keymapitems.new('quicktitler.object_down', 'PAGE_DOWN', 'PRESS')
+        current_down.properties.current = True
 
 
 def remove_keymap():
     global keymap
-    keymapitems = keymap.keymap_items
-    for keymapitem in keymapitems:
-        #Iterate through keymaps and delete old shortcuts
-        if keymapitem.type in ['G', 'R', 'S', 'LEFTMOUSE', 'A', 'X', 'DEL', 'L', 'PAGE_UP', 'PAGE_DOWN']:
-            keymapitems.remove(keymapitem)
+    if keymap is not None:
+        keymapitems = keymap.keymap_items
+        for keymapitem in keymapitems:
+            #Iterate through keymaps and delete old shortcuts
+            if keymapitem.type in ['G', 'R', 'S', 'LEFTMOUSE', 'A', 'X', 'DEL', 'L', 'PAGE_UP', 'PAGE_DOWN']:
+                keymapitems.remove(keymapitem)
 
 
 def draw_preset_add_menu(self, context):
@@ -4493,12 +4495,13 @@ def register():
 
     global keymap
     #Register shortcuts
-    keymaps = bpy.context.window_manager.keyconfigs.addon.keymaps
-    keymap = keymaps.new(name='SequencerPreview', space_type='SEQUENCE_EDITOR', region_type='WINDOW')
+    if bpy.context.window_manager.keyconfigs.addon:
+        keymaps = bpy.context.window_manager.keyconfigs.addon.keymaps
+        keymap = keymaps.new(name='SequencerPreview', space_type='SEQUENCE_EDITOR', region_type='WINDOW')
 
-    second_keymap = keymaps.new(name='Sequencer', space_type='SEQUENCE_EDITOR', region_type='WINDOW')
-    add_menu = second_keymap.keymap_items.new('wm.call_menu', 'T', 'PRESS', shift=True)
-    add_menu.properties.name = 'QUICKTITLING_MT_preset_menu_add'
+        second_keymap = keymaps.new(name='Sequencer', space_type='SEQUENCE_EDITOR', region_type='WINDOW')
+        add_menu = second_keymap.keymap_items.new('wm.call_menu', 'T', 'PRESS', shift=True)
+        add_menu.properties.name = 'QUICKTITLING_MT_preset_menu_add'
     bpy.types.SEQUENCER_MT_add.append(draw_preset_add_menu)
     #add_keymap()
 
