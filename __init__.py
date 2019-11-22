@@ -1137,6 +1137,7 @@ def quicktitle_create(quicktitle=False):
 
     #setup eevee
     title_scene.render.engine = 'BLENDER_EEVEE'
+    title_scene.eevee.use_soft_shadows = True
     title_scene.eevee.use_ssr = True
     title_scene.eevee.use_ssr_refraction = True
     title_scene.eevee.shadow_cube_size = '1024'
@@ -1214,11 +1215,8 @@ def quicktitle_create(quicktitle=False):
     shadow_lamp.data.shadow_soft_size = 0
     shadow_lamp.data.falloff_type = 'CONSTANT'
     shadow_lamp.data.use_shadow = True
-    shadow_lamp.data.shadow_buffer_soft = 10
     shadow_lamp.data.shadow_buffer_bias = 0.1
-    shadow_lamp.data.shadow_buffer_exp = 10
     shadow_lamp.data.shadow_buffer_samples = 4
-    shadow_lamp.data.shadow_buffer_clip_end = 4
     shadow_lamp.data.shadow_buffer_clip_start = 0.01
     shadow_lamp.data.spot_size = 2.6
     shadow_lamp.data.use_square = True
@@ -1893,13 +1891,12 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
     if quicktitle.shadowlamp_internal_name in scene.objects and quicktitle.shadowlamp_inverse_internal_name in scene.objects:
         shadow_lamp = scene.objects[quicktitle.shadowlamp_internal_name]
         shadow_lamp_inverse = scene.objects[quicktitle.shadowlamp_inverse_internal_name]
-        softshadow = quicktitle.shadowsoft * 5
-        shadow_lamp.data.shadow_buffer_soft = softshadow
+        softshadow = quicktitle.shadowsoft * .25
         shadow_multiplier = 120
         shadow_lamp.data.energy = quicktitle.shadowamount * shadow_multiplier
         shadow_lamp_inverse.data.energy = -(quicktitle.shadowamount * shadow_multiplier)
-        shadow_lamp.data.shadow_soft_size = .1
-        shadow_lamp_inverse.data.shadow_soft_size = .1
+        shadow_lamp.data.shadow_soft_size = softshadow
+        shadow_lamp_inverse.data.shadow_soft_size = softshadow
         shadow_lamp.location = (quicktitle.shadowx, quicktitle.shadowy, quicktitle.shadowsize)
         shadow_lamp_inverse.location = (quicktitle.shadowx, quicktitle.shadowy, quicktitle.shadowsize)
         if quicktitle.shadowamount > 0:
