@@ -1142,6 +1142,7 @@ def quicktitle_create(quicktitle=False):
     title_scene.eevee.use_ssr_refraction = True
     title_scene.eevee.shadow_cube_size = '1024'
     title_scene.eevee.shadow_cascade_size = '512'
+    title_scene.eevee.taa_render_samples = 32
 
     copy_title_preset(quicktitle, title_scene.quicktitler.current_quicktitle)
     quicktitle_preset = title_scene.quicktitler.current_quicktitle
