@@ -1,0 +1,13 @@
+<preset>
+  <name>Full Screen - Single Image</name>
+  <objects>
+    <name>Image</name>
+    <type>IMAGE</type>
+    <cast_shadows>False</cast_shadows>
+    <material>QuickTitler IMAGE Material</material>
+    <use_shadeless>True</use_shadeless>
+    <diffuse_color>255, 255, 255</diffuse_color>
+    <specular_intensity>0.0</specular_intensity>
+    <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
+  </objects>
+</preset>
