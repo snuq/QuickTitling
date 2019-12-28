@@ -597,9 +597,11 @@ def quicktitling_overlay():
                 except:
                     title_object = None
                 if title_object:
+                    #Ensures that the title scene's frame is set to the viewed frame in the vse, needed for clicking title objects.  Needs to be put here to give blender a chance to update the scene before a click.
                     new_frame = bpy.context.scene.frame_current - quicktitle_sequence.frame_start
                     if scene.frame_current != new_frame:
                         scene.frame_set(new_frame)
+
                     region = area.regions[2]
                     view = region.view2d
                     min_x = title_object_preset.bbleft
