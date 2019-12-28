@@ -478,6 +478,8 @@ overlay_info = ''
 
 keymap = None
 
+current_bounds = {}
+
 
 def find_load_image(path, load=True):
     abs_path = bpy.path.abspath(path)
@@ -598,7 +600,8 @@ def quicktitling_overlay():
                     title_object = None
                 if title_object:
                     new_frame = bpy.context.scene.frame_current - quicktitle_sequence.frame_start
-                    scene.frame_set(new_frame)
+                    if scene.frame_current != new_frame:
+                        scene.frame_set(new_frame)
                     region = area.regions[2]
                     view = region.view2d
                     min_x = title_object_preset.bbleft
