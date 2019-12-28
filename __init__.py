@@ -478,8 +478,6 @@ overlay_info = ''
 
 keymap = None
 
-current_bounds = {}
-
 
 def find_load_image(path, load=True):
     abs_path = bpy.path.abspath(path)
