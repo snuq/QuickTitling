@@ -479,6 +479,11 @@ overlay_info = ''
 keymap = None
 
 
+def deselect_sequencer(context):
+    for sequence in context.scene.sequence_editor.sequences_all:
+        sequence.select = False
+
+
 def find_load_image(path, load=True):
     abs_path = bpy.path.abspath(path)
     for image in bpy.data.images:
@@ -3685,7 +3690,7 @@ class QuickTitlingPresetSelectAdd(bpy.types.Operator):
 
     def execute(self, context):
         preset_type, name = self.preset.split(',', 1)
-        bpy.ops.sequencer.select_all(action='DESELECT')
+        deselect_sequencer(context)
         if preset_type == 'custom':
             bpy.ops.quicktitler.preset_select(preset=name)
             bpy.ops.quicktitler.create(action='create')
