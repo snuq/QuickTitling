@@ -33,8 +33,8 @@ bl_info = {
     "name": "VSE Quick Titling",
     "description": "Enables easy creation of simple title scenes in the VSE",
     "author": "Hudson Barkley (Snu)",
-    "version": (0, 6, 1),
-    "blender": (2, 81, 0),
+    "version": (0, 6, 2),
+    "blender": (2, 83, 0),
     "location": "Sequencer Panels",
     "wiki_url": "https://github.com/snuq/QuickTitling",
     "category": "Sequencer"
@@ -574,8 +574,8 @@ def add_overlay(self=None, context=None):
     global overlays
     if not overlays:
         overlays = bpy.types.SpaceSequenceEditor.draw_handler_add(quicktitling_overlay, (), 'PREVIEW', 'POST_PIXEL')
-        quicktitling_overlay()
         add_keymap()
+        quicktitling_overlay()
 
 
 def quicktitling_overlay():
@@ -606,8 +606,9 @@ def quicktitling_overlay():
                     new_frame = bpy.context.scene.frame_current - quicktitle_sequence.frame_start
                     if scene.frame_current != new_frame:
                         scene.frame_set(new_frame)
-
-                    region = area.regions[2]
+                    for region in area.regions:
+                        if region.type == 'PREVIEW':
+                            break
                     view = region.view2d
                     min_x = title_object_preset.bbleft
                     max_x = title_object_preset.bbright
@@ -980,7 +981,7 @@ def current_quicktitle(sequence=None):
     #Function to return the current QuickTitle preset depending on what is selected in the sequencer
     if not sequence:
         sequence = titling_scene_selected()
-    if sequence:
+    if sequence and sequence.scene:
         scene = sequence.scene
     else:
         scene = find_titling_scene()
@@ -1981,6 +1982,12 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
         if selected_object or created_object or update_all:
             material = None
             shaders = []
+            if object_preset.visible:
+                title_object.hide_viewport = False
+                title_object.hide_render = False
+            else:
+                title_object.hide_viewport = True
+                title_object.hide_render = True
             title_object.location = (pos_multiplier * object_preset.x, pos_multiplier * object_preset.y, object_preset.z - z_offset)
             title_object.scale = (scale_multiplier * object_preset.scale * object_preset.width, scale_multiplier * object_preset.scale * object_preset.height, scale_multiplier * object_preset.scale)
             title_object.rotation_euler = (object_preset.rot_x/180.0*pi, object_preset.rot_y/180.0*pi, -object_preset.rot_z/180.0*pi)
@@ -2068,6 +2075,12 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
                     material.shadow_method = 'NONE'
 
                 #adjust object
+                if object_preset.visible:
+                    outline_object.hide_viewport = False
+                    outline_object.hide_render = False
+                else:
+                    outline_object.hide_viewport = True
+                    outline_object.hide_render = True
                 outline_object.location = (pos_multiplier * object_preset.x, pos_multiplier * object_preset.y, object_preset.z - z_offset - .001)
                 outline_object.scale = (scale_multiplier * object_preset.scale * object_preset.width, scale_multiplier * object_preset.scale * object_preset.height, object_preset.scale)
                 outline_object.rotation_euler = (object_preset.rot_x / 180.0 * pi, object_preset.rot_y / 180.0 * pi, -object_preset.rot_z / 180.0 * pi)
@@ -2227,11 +2240,11 @@ def quicktitle_animation_icon(animation_type):
     elif animation_type == "Z Slide":
         return "EMPTY_ARROWS"
     elif animation_type == "X Rotate":
-        return "NDOF_TURN"
+        return "ORIENTATION_GIMBAL"
     elif animation_type == "Y Rotate":
-        return "NDOF_TURN"
+        return "ORIENTATION_GIMBAL"
     elif animation_type == "Z Rotate":
-        return "NDOF_TURN"
+        return "ORIENTATION_GIMBAL"
     elif animation_type == "Width":
         return "FULLSCREEN_ENTER"
     elif animation_type == "Height":
@@ -2317,6 +2330,11 @@ class QuickTitleObject(bpy.types.PropertyGroup):
     #Preset for objects stored in a title scene
 
     #Basic variables for all object types:
+    visible: bpy.props.BoolProperty(
+        name="Visible",
+        description="Hide this object in view and renders",
+        default=True,
+        update=quicktitle_autoupdate)
     name: bpy.props.StringProperty(
         name="Object Name",
         description="Name to identify this object.")
@@ -2737,6 +2755,8 @@ class QUICKTITLING_PT_Panel(bpy.types.Panel):
             row.operator('quicktitler.replace_image', text='Render To Image')
             row = box.row()
             row.operator('quicktitler.create', text='Update Title').action = 'update_all'
+            row = box.row()
+            row.operator('quicktitler.create', text='Duplicate Current Title').action = 'create'
 
         row = box.row()
         row.prop(context.scene.quicktitler, 'autoupdate')
@@ -2802,8 +2822,9 @@ class QUICKTITLING_PT_Panel(bpy.types.Panel):
             outline = bottom.box()
 
             row = outline.row()
-            row.prop(current_object, 'name', text='Object Name', icon=quicktitle_object_icon(current_object.type))
-
+            split = row.split(factor=0.9)
+            split.prop(current_object, 'name', text='Object Name', icon=quicktitle_object_icon(current_object.type))
+            split.prop(current_object, 'visible', text='')
             if current_object.type == 'TEXT':
                 subarea = outline.box()
 
@@ -4449,7 +4470,7 @@ def add_keymap():
         keymapitems.new('quicktitle.grab', 'G', 'PRESS')
         keymapitems.new('quicktitle.rotate', 'R', 'PRESS')
         keymapitems.new('quicktitle.scale', 'S', 'PRESS')
-        keymapitems.new('quicktitle.select', 'LEFTMOUSE', 'PRESS')
+        keymapitems.new('quicktitle.select', 'LEFTMOUSE', 'PRESS', ctrl=True) #For some reason, blender 2.83 wont let me use a plain left click...
         add_menu = keymapitems.new('wm.call_menu', 'A', 'PRESS', shift=True)
         add_menu.properties.name = 'QUICKTITLING_MT_add_object_menu'
         delete_menu = keymapitems.new('wm.call_menu', 'X', 'PRESS')
