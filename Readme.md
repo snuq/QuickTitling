@@ -120,7 +120,7 @@ The bottom section is an editor for the currently selected preset, or title.
    Use the arrows on the right to change the object order.  
    Click the 'X' button next to an object to delete it.  
    Click on an object to select it, and edit it in the settings below.  
-      
+
 * Add Buttons
 
    Use these buttons to add new objects of the basic types.  
@@ -139,6 +139,10 @@ Some settings and features will only be available for some object types.
 * Object Name
 
    Used to identify the object in the list.  
+
+* Visible Checkbox
+
+  Uncheck to disable this object in both the 3d view and in renders.
 
 * Text (Only For Text Objects)
 
@@ -405,18 +409,12 @@ Each title is lit by 4 front lights, and one shadow casting lamp.
    Use this to change the direction and angle of the shadows.  
    Setting this too high will result in the shadows disappearing.  
 
-* High Quality Shadows
-
-   Enable high quality raytraced shadows.  
-   These are much more accurate than the default shadows, but will GREATLY increase render times.  
-   Note that these will not be seen in the opengl previews of the title scene, only in final renders.  
-
 
 ## Editing Titles In The Sequencer Preview
 
 If a title is selected in the sequencer, and while the mouse is over the preview window, the title can be edited using various shortcuts.  
 
-* Left-Click on title elements to select them  
+* Ctrl-Left-Click on title elements to select them  
 
 * Press 'G' to enter grab/move mode for the selected element.  You can constrain movement to the three axis by pressing the x, y and z keys after entering move mode.  When moving on a single axis, you can type in exact movement values.  
 
@@ -495,3 +493,9 @@ If you wish to maintain the ability to edit the title using QuickTitling:
    * Fix for non-latin characters in strings.
    * Added window-mapped textures.
    * Added more lighting options.
+
+### 0.6.2
+   * Bug fixes for blender 2.83
+   * Added hide/show checkbox for title objects
+   * Added ability to duplicate current title
+   * Selecting objects is now accomplished with ctrl-click in the viewport (2.83 had issues with plain clicks...)
