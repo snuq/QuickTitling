@@ -33,8 +33,8 @@ bl_info = {
     "name": "VSE Quick Titling",
     "description": "Enables easy creation of simple title scenes in the VSE",
     "author": "Hudson Barkley (Snu)",
-    "version": (0, 6, 2),
-    "blender": (2, 83, 0),
+    "version": (0, 6, 3),
+    "blender": (2, 92, 0),
     "location": "Sequencer Panels",
     "wiki_url": "https://github.com/snuq/QuickTitling",
     "category": "Sequencer"
@@ -525,7 +525,7 @@ def object_at_location(scene, x, y):
             title_object.data.bevel_resolution = old_bevel_resolution
     direction = (mathutils.Vector((x, y, 0)) - camera.location).normalized()
     bpy.context.view_layer.depsgraph.update()
-    data = scene.ray_cast(scene.view_layers[0], camera.location, direction)
+    data = scene.ray_cast(scene.view_layers[0].depsgraph, camera.location, direction)
     if data[0]:
         match_object = data[4]
     else:
@@ -4470,7 +4470,8 @@ def add_keymap():
         keymapitems.new('quicktitle.grab', 'G', 'PRESS')
         keymapitems.new('quicktitle.rotate', 'R', 'PRESS')
         keymapitems.new('quicktitle.scale', 'S', 'PRESS')
-        keymapitems.new('quicktitle.select', 'LEFTMOUSE', 'PRESS', ctrl=True) #For some reason, blender 2.83 wont let me use a plain left click...
+        keymapitems.new('quicktitle.select', 'RIGHTMOUSE', 'PRESS')
+        keymapitems.new('quicktitle.select', 'LEFTMOUSE', 'PRESS', ctrl=True)
         add_menu = keymapitems.new('wm.call_menu', 'A', 'PRESS', shift=True)
         add_menu.properties.name = 'QUICKTITLING_MT_add_object_menu'
         delete_menu = keymapitems.new('wm.call_menu', 'X', 'PRESS')

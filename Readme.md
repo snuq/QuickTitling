@@ -1,4 +1,4 @@
-# QuickTitling Addon For Blender 2.81
+# QuickTitling Addon For Blender 2.92
 
 This addon will create and edit simple scenes for title overlays.  
 
@@ -444,58 +444,3 @@ If you wish to maintain the ability to edit the title using QuickTitling:
 
 * If you wish to edit an object, it is recommended to rename it, this will prevent QuickTitling from finding the object.  After you rename it, delete it from the object list or it will be re-created on the next update.  
 
-
-
-## Changelog
-### 0.1
-   * First stand-alone version, just separated from VSE Quick Functions, no changes
-### 0.2
-   * Updated interface - made it look better, and its now easier to tell when a scene is being edited
-   * When a title scene is edited, changes now happen in realtime
-   * Added word-wrapping
-   * The values in the interface are now a bit more sane - bevel is multiplied by 100, X location of 1 is the edge of the screen
-   * Added shadow offset option
-   * Added specular material options
-   * Added ability to use ray traced shadows
-### 0.5
-   * Implemented adding multiple objects of 4 basic types: image, box, circle, and text
-   * Implemented presets
-   * Implemented saving/loading presets
-   * Reworked interface
-   * Added animation abilities and presets
-   * Implemented new way of handling materials
-   * Implemented saving preset preview images
-### 0.5.1
-   * Fixed bug not checking vertices for curve objects properly, oops
-   * Fixed bug where Blender 2.78 changed the variable name for text 'align' to 'align_x'
-### 0.6
-   * Changed interface and workflow, should make a lot more sense now
-   * Built-in titles are now shown in preset menu, with preview images
-   * Newly added objects are named
-   * Circles are now actually circles
-   * Now keeps track of if a title is edited and displays this
-   * Added video settings (loop, frame offset, length), only shown if the loaded texture is a video
-   * Added outline options for all but image type, uses a beveled copy of the object to create an outline
-   * Added animation oscillations and animation presets for these
-   * Added duplicate object button
-   * Word wrapping behaves better now, changing the text scale does not change the wrapping size
-   * Exported presets are cleaner now - default variables are not saved and xml files have line returns and indenting
-   * Updated old presets and added new ones
-   * Added overlays in preview windows to show selected title objects
-   * Added grab, rotate and scale shortcuts (G, R, S in preview area) for selected object. You can also constrain on an axis, and type in values
-   * Added click to selected title elements! Unfortunately, for some reason, I can't make this right click... doesn't work, so had to do left...
-   * Added page up/page down shortcuts to change the current object layer
-   * Added Shift-T shortcut in sequencer to pop up the title preset menu and add a new title quickly
-### 0.6.1
-   * Ported to blender 2.8.
-   * Replaced internal render engine with eevee.
-   * Many internal changes due to API differences.
-   * Fix for non-latin characters in strings.
-   * Added window-mapped textures.
-   * Added more lighting options.
-
-### 0.6.2
-   * Bug fixes for blender 2.83
-   * Added hide/show checkbox for title objects
-   * Added ability to duplicate current title
-   * Selecting objects is now accomplished with ctrl-click in the viewport (2.83 had issues with plain clicks...)
