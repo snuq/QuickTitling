@@ -1,0 +1,163 @@
+<preset>
+  <name>Lower Third - Two Tone 4</name>
+  <length>150</length>
+  <shadowsize>2.0</shadowsize>
+  <shadowamount>1.0</shadowamount>
+  <shadowsoft>1.18</shadowsoft>
+  <shadowx>0.2</shadowx>
+  <shadowy>0.21</shadowy>
+  <objects>
+    <name>Middle Line</name>
+    <type>BOX</type>
+    <y>-0.41</y>
+    <width>1.09</width>
+    <height>0.003</height>
+    <cast_shadows>False</cast_shadows>
+    <material>QuickTitler BOX Material.003</material>
+    <diffuse_color>255, 255, 255</diffuse_color>
+    <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
+    <animations>
+      <variable>X Slide</variable>
+      <in_amount>-2.5</in_amount>
+      <out_amount>-2.5</out_amount>
+    </animations>
+  </objects>
+  <objects>
+    <name>Description</name>
+    <type>TEXT</type>
+    <y>-0.48</y>
+    <scale>0.77</scale>
+    <material>QuickTitler TEXT Material.003</material>
+    <use_shadeless>True</use_shadeless>
+    <diffuse_color>0, 0, 0</diffuse_color>
+    <text>Bottom Text</text>
+    <align>LEFT</align>
+    <outline_size>0.5</outline_size>
+    <outline_alpha>0.75</outline_alpha>
+    <outline_diffuse_color>255, 255, 255</outline_diffuse_color>
+    <animations>
+      <variable>X Slide</variable>
+      <in_amount>-2.5</in_amount>
+      <out_amount>-2.5</out_amount>
+    </animations>
+  </objects>
+  <objects>
+    <name>Bottom Shine</name>
+    <type>BOX</type>
+    <y>-0.46</y>
+    <width>0.2</width>
+    <height>0.05</height>
+    <shear>-0.5</shear>
+    <cast_shadows>False</cast_shadows>
+    <material>QuickTitler BOX Material.006</material>
+    <alpha>0.5</alpha>
+    <diffuse_color>74, 91, 122</diffuse_color>
+    <specular_intensity>1.0</specular_intensity>
+    <roughness>1.0</roughness>
+    <outline_size>10.0</outline_size>
+    <outline_diffuse_color>1, 1, 1</outline_diffuse_color>
+    <animations>
+      <variable>X Slide</variable>
+      <in_length>0</in_length>
+      <out_length>0</out_length>
+      <in_offset>-2</in_offset>
+      <out_offset>2</out_offset>
+      <cycle_type>TANGENT</cycle_type>
+      <cycle_x_scale>1.8</cycle_x_scale>
+      <cycle_y_scale>100.0</cycle_y_scale>
+      <cycle_offset>1.0</cycle_offset>
+    </animations>
+  </objects>
+  <objects>
+    <name>Bottom BG</name>
+    <type>BOX</type>
+    <y>-0.46</y>
+    <width>1.2</width>
+    <height>0.05</height>
+    <shear>-0.1</shear>
+    <cast_shadows>False</cast_shadows>
+    <material>QuickTitler BOX Material</material>
+    <diffuse_color>52, 60, 112</diffuse_color>
+    <specular_intensity>1.0</specular_intensity>
+    <roughness>1.0</roughness>
+    <bevel>0.25</bevel>
+    <outline_size>10.0</outline_size>
+    <outline_diffuse_color>1, 1, 1</outline_diffuse_color>
+    <animations>
+      <variable>X Slide</variable>
+      <in_amount>-2.5</in_amount>
+      <out_amount>-2.5</out_amount>
+    </animations>
+  </objects>
+  <objects>
+    <name>Name</name>
+    <type>TEXT</type>
+    <y>-0.39</y>
+    <scale>0.91</scale>
+    <material>QuickTitler TEXT Material</material>
+    <use_shadeless>True</use_shadeless>
+    <diffuse_color>0, 0, 0</diffuse_color>
+    <text>Top Text</text>
+    <align>LEFT</align>
+    <outline_size>0.5</outline_size>
+    <outline_alpha>0.75</outline_alpha>
+    <outline_diffuse_color>255, 255, 255</outline_diffuse_color>
+    <animations>
+      <variable>Alpha</variable>
+      <in_length>1</in_length>
+      <out_length>1</out_length>
+      <in_offset>7</in_offset>
+      <out_offset>-7</out_offset>
+      <in_amount>0.0</in_amount>
+      <out_amount>0.0</out_amount>
+    </animations>
+    <animations>
+      <variable>Y Slide</variable>
+      <in_offset>7</in_offset>
+      <out_offset>-7</out_offset>
+      <in_amount>-0.1</in_amount>
+      <out_amount>-0.1</out_amount>
+    </animations>
+  </objects>
+  <objects>
+    <name>Shadow Spacer</name>
+    <type>BOX</type>
+    <x>-2.0</x>
+    <scale>0.1</scale>
+    <material>QuickTitler BOX Material.007</material>
+    <diffuse_color>255, 255, 255</diffuse_color>
+    <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
+  </objects>
+  <objects>
+    <name>Top BG</name>
+    <type>BOX</type>
+    <x>-1.3</x>
+    <y>-0.36</y>
+    <height>0.05</height>
+    <shear>-0.1</shear>
+    <cast_shadows>False</cast_shadows>
+    <material>QuickTitler BOX Material.002</material>
+    <diffuse_color>114, 114, 114</diffuse_color>
+    <metallic>0.3</metallic>
+    <roughness>0.75</roughness>
+    <bevel>0.15</bevel>
+    <outline_size>0.5</outline_size>
+    <outline_diffuse_color>255, 255, 255</outline_diffuse_color>
+    <animations>
+      <variable>Y Slide</variable>
+      <in_offset>7</in_offset>
+      <out_offset>-7</out_offset>
+      <in_amount>-0.1</in_amount>
+      <out_amount>-0.1</out_amount>
+    </animations>
+    <animations>
+      <variable>Alpha</variable>
+      <in_length>1</in_length>
+      <out_length>1</out_length>
+      <in_offset>7</in_offset>
+      <out_offset>-7</out_offset>
+      <in_amount>0.0</in_amount>
+      <out_amount>0.0</out_amount>
+    </animations>
+  </objects>
+</preset>
