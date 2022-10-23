@@ -33,8 +33,8 @@ bl_info = {
     "name": "VSE Quick Titling",
     "description": "Enables easy creation of simple title scenes in the VSE",
     "author": "Hudson Barkley (Snu)",
-    "version": (0, 6, 3),
-    "blender": (2, 92, 0),
+    "version": (0, 6, 4),
+    "blender": (3, 3, 2),
     "location": "Sequencer Panels",
     "wiki_url": "https://github.com/snuq/QuickTitling",
     "category": "Sequencer"
@@ -605,7 +605,7 @@ def quicktitling_overlay():
                     #Ensures that the title scene's frame is set to the viewed frame in the vse, needed for clicking title objects.  Needs to be put here to give blender a chance to update the scene before a click.
                     new_frame = bpy.context.scene.frame_current - quicktitle_sequence.frame_start
                     if scene.frame_current != new_frame:
-                        scene.frame_set(new_frame)
+                        scene.frame_set(int(round(new_frame)))
                     for region in area.regions:
                         if region.type == 'PREVIEW':
                             break
@@ -1139,7 +1139,7 @@ def quicktitle_create(quicktitle=False):
     bpy.ops.scene.new(type='EMPTY')
     title_scene = bpy.context.scene
     title_scene.frame_start = 1
-    title_scene.frame_end = quicktitle.length
+    title_scene.frame_end = int(quicktitle.length)
     title_scene.render.film_transparent = True
     title_scene.render.image_settings.file_format = 'PNG'
     title_scene.render.image_settings.color_mode = 'RGBA'
@@ -1887,7 +1887,7 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
 
     #Update scene length, if changed, update all objects
     if scene.frame_end != quicktitle.length:
-        scene.frame_end = quicktitle.length
+        scene.frame_end = int(quicktitle.length)
         update_all = True
 
     #Fix sequence length if needed
@@ -3070,7 +3070,7 @@ class QuickTitlingReplaceWithImage(bpy.types.Operator, ExportHelper):
             scene = quicktitle_sequence.scene
             scene.render.filepath = imagepath
             oldscene = bpy.context.scene
-            scene.frame_current = scene.frame_end / 2
+            scene.frame_current = int(round(scene.frame_end / 2))
             bpy.context.window.scene = scene
             bpy.ops.render.render(write_still=True)
             bpy.context.window.scene = oldscene
@@ -3408,7 +3408,7 @@ class QuickTitlingPresetExport(bpy.types.Operator, ExportHelper):
             scene.render.image_settings.color_mode = 'RGB'
 
             oldscene = bpy.context.scene
-            scene.frame_current = scene.frame_end / 2
+            scene.frame_current = int(round(scene.frame_end / 2))
             bpy.context.window.scene = scene
             bpy.ops.render.render(write_still=True)
             bpy.context.window.scene = oldscene
