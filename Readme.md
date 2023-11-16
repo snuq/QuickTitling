@@ -1,4 +1,4 @@
-# QuickTitling Addon For Blender 2.92
+# QuickTitling Addon For Blender 4.0
 
 This addon will create and edit simple scenes for title overlays.  
 
