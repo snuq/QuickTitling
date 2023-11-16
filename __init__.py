@@ -33,8 +33,8 @@ bl_info = {
     "name": "VSE Quick Titling",
     "description": "Enables easy creation of simple title scenes in the VSE",
     "author": "Hudson Barkley (Snu)",
-    "version": (0, 6, 4),
-    "blender": (3, 3, 2),
+    "version": (0, 6, 5),
+    "blender": (4, 0, 0),
     "location": "Sequencer Panels",
     "wiki_url": "https://github.com/snuq/QuickTitling",
     "category": "Sequencer"
@@ -546,7 +546,7 @@ def object_at_location(scene, x, y):
 def draw_line(sx, sy, ex, ey, width, color=(1.0, 1.0, 1.0, 1.0)):
     del width
     coords = [(sx, sy), (ex, ey)]
-    shader = gpu.shader.from_builtin('2D_UNIFORM_COLOR')
+    shader = gpu.shader.from_builtin('UNIFORM_COLOR')
     batch = batch_for_shader(shader, 'LINES', {'pos': coords})
     shader.bind()
     shader.uniform_float('color', color)
@@ -557,13 +557,13 @@ def draw_text(x, y, size, text, color=(1.0, 1.0, 1.0, 1.0)):
     font_id = 0
     blf.color(font_id, *color)
     blf.position(font_id, x, y, 0)
-    blf.size(font_id, size, 72)
+    blf.size(font_id, size)
     blf.draw(font_id, text)
 
 
 def draw_box(left, bottom, right, top, color=(1.0, 1.0, 0.0, 1.0)):
     coords = [(left, bottom), (left, top), (left, top), (right, top), (right, top), (right, bottom), (right, bottom), (left, bottom)]
-    shader = gpu.shader.from_builtin('2D_UNIFORM_COLOR')
+    shader = gpu.shader.from_builtin('UNIFORM_COLOR')
     batch = batch_for_shader(shader, 'LINES', {'pos': coords})
     shader.bind()
     shader.uniform_float('color', color)
@@ -1223,10 +1223,8 @@ def quicktitle_create(quicktitle=False):
     #shadow_lamp.parent = lampcenter
     shadow_lamp.data.specular_factor = 0
     shadow_lamp.data.shadow_soft_size = 0
-    shadow_lamp.data.falloff_type = 'CONSTANT'
     shadow_lamp.data.use_shadow = True
     shadow_lamp.data.shadow_buffer_bias = 0.1
-    shadow_lamp.data.shadow_buffer_samples = 4
     shadow_lamp.data.shadow_buffer_clip_start = 0.01
     shadow_lamp.data.spot_size = 2.6
     shadow_lamp.data.use_square = True
@@ -1247,7 +1245,6 @@ def quicktitle_create(quicktitle=False):
     #shadow_lamp.parent = lampcenter
     shadow_lamp.data.specular_factor = 0
     shadow_lamp.data.shadow_soft_size = 0
-    shadow_lamp.data.falloff_type = 'CONSTANT'
     shadow_lamp.data.use_shadow = False
     shadow_lamp.data.spot_size = 2.6
     shadow_lamp.data.use_square = True
@@ -1759,11 +1756,11 @@ def update_material(object_preset, material):
     socket.default_value = object_preset.alpha
 
     if shader.type == 'BSDF_PRINCIPLED':
-        socket = input_name(shader, 'Specular')
+        socket = input_name(shader, 'Specular IOR Level')
         socket.default_value = object_preset.specular_intensity
         socket = input_name(shader, 'Metallic')
         socket.default_value = object_preset.metallic
-        socket = input_name(shader, 'Transmission')
+        socket = input_name(shader, 'Transmission Weight')
         socket.default_value = object_preset.transmission
         socket = input_name(shader, 'Base Color')
         socket.default_value[0] = object_preset.diffuse_color[0]
