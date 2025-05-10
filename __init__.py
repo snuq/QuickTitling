@@ -33,8 +33,8 @@ bl_info = {
     "name": "VSE Quick Titling",
     "description": "Enables easy creation of simple title scenes in the VSE",
     "author": "Hudson Barkley (Snu)",
-    "version": (0, 6, 5),
-    "blender": (4, 0, 0),
+    "version": (0, 6, 6),
+    "blender": (4, 4, 0),
     "location": "Sequencer Panels",
     "wiki_url": "https://github.com/snuq/QuickTitling",
     "category": "Sequencer"
@@ -477,6 +477,296 @@ overlays = None
 overlay_info = ''
 
 keymap = None
+
+
+class ShadersHelper:
+    material = None
+    use_shadeless = False
+    mat_type = None
+    shader = None
+    output_node = None
+    mix_shader = None
+    transparency_factor = None
+    transparent_shader = None
+    light_path_factor = None
+    image_node = None
+    alpha_image_node = None
+    alpha_mix_node = None
+    texture_map_node = None
+
+    def disconnect_node(self, connect_from, connect_to):
+        if not connect_from:
+            return
+        links = self.material.node_tree.links
+        for link in reversed(links):
+            if link.from_node == connect_from and link.to_node == connect_to:
+                links.remove(link)
+
+    def connect_socket(self, from_socket, to_socket):
+        links = self.material.node_tree.links
+        links.new(from_socket, to_socket)
+
+    def ensure_socket_connected(self, from_socket, to_socket):
+        if not self.node_is_connected(from_socket, to_socket):
+            self.connect_socket(from_socket, to_socket)
+
+    def add_node(self, node_type):
+        return self.material.node_tree.nodes.new(node_type)
+
+    def set_node_input(self, node, input_name, value):
+        node.inputs[input_name].default_value = value
+
+    def find_node_type(self, node_type):
+        for check_node in self.material.node_tree.nodes:
+            if check_node.type == node_type:
+                return check_node
+        return None
+
+    def clear_material(self):
+        for node in self.material.node_tree.nodes:
+            self.material.node_tree.nodes.remove(node)
+
+    def get_output_node(self):
+        #for a material, returns the output node, while ensuring that such node exists
+        output_node = None
+        for check_node in self.material.node_tree.nodes:
+            #find the output node
+            if check_node.type == 'OUTPUT_MATERIAL':
+                output_node = check_node
+                break
+        return output_node
+
+    def get_connected_node(self, node, socket_name):
+        try:
+            socket = node.inputs[socket_name]
+            return socket.links[0].from_node
+        except:
+            return None
+
+    def node_is_connected(self, from_socket, to_socket):
+        for link in to_socket.links:
+            if link.from_socket == from_socket:
+                return True
+        return False
+
+    def check_shaders(self):
+        if not self.output_node:
+            return None
+        if not self.mix_shader:
+            return None
+        if self.mix_shader.type != 'MIX_SHADER':
+            return None
+        if not self.light_path_factor:
+            return None
+        if self.light_path_factor.type != 'MATH':
+            return None
+        if not self.transparency_factor:
+            return None
+        if self.transparency_factor.type != 'MATH':
+            return None
+        if not self.transparent_shader:
+            return None
+        if self.transparent_shader.type != 'BSDF_TRANSPARENT':
+            return None
+        if not self.shader:
+            return None
+        if self.mat_type == 'IMAGE':
+            if not self.alpha_mix_node:
+                return None
+            if self.alpha_mix_node.type != 'MIX_RGB':
+                return None
+            if not self.image_node:
+                return None
+            if self.image_node.type != 'TEX_IMAGE':
+                return None
+            if not self.alpha_image_node:
+                return None
+            if self.alpha_image_node.type != 'TEX_IMAGE':
+                return None
+            if not self.texture_map_node:
+                return None
+            if self.texture_map_node.type != 'TEX_COORD':
+                return None
+        return True
+
+    def check_shader(self):
+        # checks the output shader type and ensures it is correct
+
+        if self.use_shadeless:
+            if self.shader.type != 'EMISSION':
+                self.material.node_tree.nodes.remove(self.shader)
+                self.shader = self.material.node_tree.nodes.new('ShaderNodeEmission')
+                self.material.node_tree.links.new(self.shader.outputs[0], self.mix_shader.inputs[2])
+        else:
+            if self.shader.type != 'BSDF_PRINCIPLED':
+                self.material.node_tree.nodes.remove(self.shader)
+                self.shader = self.material.node_tree.nodes.new('ShaderNodeBsdfPrincipled')
+                self.material.node_tree.links.new(self.shader.outputs[0], self.mix_shader.inputs[2])
+
+    def setup_material(self):
+        #re/creates a material
+        self.clear_material()
+
+        #create nodes
+        self.output_node = self.add_node('ShaderNodeOutputMaterial')
+        self.mix_shader = self.add_node('ShaderNodeMixShader')
+        self.transparency_factor = self.add_node('ShaderNodeMath')
+        self.transparent_shader = self.add_node('ShaderNodeBsdfTransparent')
+        self.light_path_factor = self.add_node('ShaderNodeMath')
+        if self.use_shadeless:
+            self.shader = self.add_node('ShaderNodeEmission')
+        else:
+            self.shader = self.add_node('ShaderNodeBsdfPrincipled')
+        if self.mat_type == 'IMAGE':
+            #setup image material nodes
+            self.image_node = self.add_node('ShaderNodeTexImage')
+            self.alpha_image_node = self.add_node('ShaderNodeTexImage')
+            self.alpha_mix_node = self.add_node('ShaderNodeMixRGB')
+            self.alpha_mix_node.inputs[0].default_value = 0
+            self.texture_map_node = self.add_node('ShaderNodeTexCoord')
+            self.connect_socket(self.alpha_mix_node.outputs[0], self.transparency_factor.inputs[0])
+            #self.connect_socket(self.image_node.outputs[0], self.shader.inputs[0])
+            self.connect_socket(self.image_node.outputs[1], self.alpha_mix_node.inputs[1])
+            self.connect_socket(self.alpha_image_node.outputs[0], self.alpha_mix_node.inputs[2])
+        else:
+            self.image_node = None
+            self.alpha_image_node = None
+            self.alpha_mix_node = None
+            self.texture_map_node = None
+
+        #connect nodes
+        self.connect_socket(self.mix_shader.outputs[0], self.output_node.inputs['Surface'])
+        self.connect_socket(self.transparent_shader.outputs[0], self.mix_shader.inputs[1])
+        self.connect_socket(self.shader.outputs[0], self.mix_shader.inputs[2])
+        self.connect_socket(self.light_path_factor.outputs[0], self.mix_shader.inputs[0])
+        self.connect_socket(self.transparency_factor.outputs[0], self.light_path_factor.inputs[0])
+
+        #set up basic values on nodes
+        self.transparent_shader.inputs[0].default_value[3] = 0
+        self.transparency_factor.inputs[0].default_value = 1
+        self.transparency_factor.inputs[1].default_value = 1
+        self.transparency_factor.operation = 'MULTIPLY'
+        self.transparency_factor.use_clamp = True
+        self.light_path_factor.operation = 'MULTIPLY'
+        self.light_path_factor.use_clamp = True
+        self.light_path_factor.inputs[1].default_value = 1
+        self.mix_shader.inputs[0].default_value = 1
+
+    def load_from_material(self, material, use_shadeless, mat_type):
+        self.use_shadeless = use_shadeless
+        self.mat_type = mat_type
+        self.material = material
+        self.material.use_nodes = True
+        self.output_node = self.get_output_node()
+        self.mix_shader = self.get_connected_node(self.output_node, 'Surface')
+        self.light_path_factor = self.get_connected_node(self.mix_shader, 0)
+        self.transparency_factor = self.get_connected_node(self.light_path_factor, 0)
+        self.transparent_shader = self.get_connected_node(self.mix_shader, 1)
+        self.shader = self.get_connected_node(self.mix_shader, 2)
+        if self.mat_type == 'IMAGE':
+            self.alpha_mix_node = self.get_connected_node(self.transparency_factor, 0)
+            self.image_node = self.get_connected_node(self.alpha_mix_node, 1)
+            self.alpha_image_node = self.get_connected_node(self.alpha_mix_node, 2)
+            self.texture_map_node = self.get_connected_node(self.image_node, 0)
+        else:
+            self.alpha_mix_node = None
+            self.image_node = None
+            self.alpha_image_node = None
+            self.texture_map_node = None
+        if not self.check_shaders():
+            self.setup_material()
+        self.check_shader()
+
+    def update_shader(self, preset):
+        self.set_node_input(self.transparency_factor, 1, preset.alpha)
+
+        if self.shader.type == 'BSDF_PRINCIPLED':
+            self.set_node_input(self.shader, 'Specular IOR Level', preset.specular_intensity)
+            self.set_node_input(self.shader, 'Metallic', preset.metallic)
+            self.set_node_input(self.shader, 'Transmission Weight', preset.transmission)
+            self.shader.inputs['Base Color'].default_value[:3] = preset.diffuse_color
+            self.set_node_input(self.shader, 'Roughness', preset.roughness)
+            self.set_node_input(self.shader, 'IOR', preset.index_of_refraction)
+
+        else:
+            self.shader.inputs['Color'].default_value[:3] = preset.diffuse_color
+            self.set_node_input(self.shader, 'Strength', 1)
+
+    def update_shadowcasting(self, cast_shadows):
+        light_path_node = self.find_node_type('LIGHT_PATH')
+        if cast_shadows:
+            if not light_path_node:
+                light_path_node = self.material.node_tree.nodes.new('ShaderNodeLightPath')
+            self.ensure_socket_connected(light_path_node.outputs['Is Camera Ray'], self.light_path_factor.inputs[1])
+        else:
+            self.disconnect_node(light_path_node, self.light_path_factor)
+
+    def update_image(self, preset):
+        if preset.texture:
+            #image texture is set
+            self.connect_socket(self.image_node.outputs[0], self.shader.inputs[0])
+            if preset.window_mapping:
+                map_mode = 'Window'
+            else:
+                map_mode = 'UV'
+            self.disconnect_node(self.texture_map_node, self.image_node)
+            self.connect_socket(self.texture_map_node.outputs[map_mode], self.image_node.inputs[0])
+            path = os.path.abspath(bpy.path.abspath(preset.texture))
+            extension = os.path.splitext(path)[1].lower()
+            if extension in bpy.path.extensions_movie:
+                #The file is a known video file type, load it
+                video = True
+            else:
+                video = False
+            if os.path.isfile(path) and (extension in bpy.path.extensions_image or video):
+                #The file is a known file type, load it
+                image = find_load_image(path)
+                image.update()
+                self.image_node.image = image
+                if video:
+                    #set video defaults
+                    preset.frame_length = image.frame_duration
+                    preset.frame_offset = 0
+                    self.image_node.image_user.frame_duration = image.frame_duration
+                    self.image_node.image_user.frame_start = 1
+                    self.image_node.image_user.frame_offset = 0
+                    self.image_node.image_user.use_cyclic = preset.loop
+                    self.image_node.image_user.use_auto_refresh = True
+
+        else:
+            #image texture is not set or has been unset, remove it from material if needed and set plane back to original dimensions
+            self.disconnect_node(self.image_node, self.shader)
+            self.image_node.image = None
+
+        self.alpha_mix_node.inputs[0].default_value = 0
+
+        if preset.alpha_texture:
+            #alpha texture is set
+            path = os.path.abspath(bpy.path.abspath(preset.alpha_texture))
+            extension = os.path.splitext(path)[1].lower()
+            if extension in bpy.path.extensions_movie:
+                #The file is a known video file type, load it
+                video = True
+            else:
+                video = False
+            if os.path.isfile(path) and (extension in bpy.path.extensions_image or video):
+                #The file is a known file type, load it
+                image = find_load_image(path)
+                image.update()
+                self.alpha_image_node.image = image
+                self.alpha_mix_node.inputs[0].default_value = 1
+                if video:
+                    #set video defaults
+                    preset.frame_length = image.frame_duration
+                    preset.frame_offset = 0
+                    self.alpha_image_node.image_user.frame_duration = image.frame_duration
+                    self.alpha_image_node.image_user.frame_start = 1
+                    self.alpha_image_node.image_user.frame_offset = 0
+                    self.alpha_image_node.image_user.use_cyclic = preset.loop
+                    self.alpha_image_node.image_user.use_auto_refresh = True
+        else:
+            #alpha texture is not set or has been unset, remove it from material
+            self.alpha_image_node.image = None
 
 
 def deselect_sequencer(context):
@@ -1145,12 +1435,11 @@ def quicktitle_create(quicktitle=False):
     title_scene.render.image_settings.color_mode = 'RGBA'
 
     #setup eevee
-    title_scene.render.engine = 'BLENDER_EEVEE'
-    title_scene.eevee.use_soft_shadows = True
-    title_scene.eevee.use_ssr = True
-    title_scene.eevee.use_ssr_refraction = True
-    title_scene.eevee.shadow_cube_size = '1024'
-    title_scene.eevee.shadow_cascade_size = '512'
+    title_scene.render.engine = 'BLENDER_EEVEE_NEXT'
+    title_scene.eevee.use_shadows = True
+    title_scene.eevee.use_raytracing = True
+    title_scene.eevee.shadow_ray_count = 4
+    title_scene.eevee.shadow_step_count = 4
     title_scene.eevee.taa_render_samples = 32
 
     copy_title_preset(quicktitle, title_scene.quicktitler.current_quicktitle)
@@ -1224,10 +1513,7 @@ def quicktitle_create(quicktitle=False):
     shadow_lamp.data.specular_factor = 0
     shadow_lamp.data.shadow_soft_size = 0
     shadow_lamp.data.use_shadow = True
-    shadow_lamp.data.shadow_buffer_bias = 0.1
-    shadow_lamp.data.shadow_buffer_clip_start = 0.01
     shadow_lamp.data.spot_size = 2.6
-    shadow_lamp.data.use_square = True
 
     bpy.ops.object.light_add(type='SPOT', location=(0, 0, 1))
     shadow_lamp = bpy.context.active_object
@@ -1247,7 +1533,6 @@ def quicktitle_create(quicktitle=False):
     shadow_lamp.data.shadow_soft_size = 0
     shadow_lamp.data.use_shadow = False
     shadow_lamp.data.spot_size = 2.6
-    shadow_lamp.data.use_square = True
 
     #Add scene to sequencer
     bpy.context.window.scene = scene
@@ -1333,7 +1618,7 @@ def set_animations(title_object, object_preset, material, scene, z_offset, pos_m
     for animation in object_preset.animations:
         animation_types.append(animation.variable)
     if material:
-        transparency_factor = shaders[4]
+        transparency_factor = shaders.transparency_factor
         if material.node_tree.animation_data:
             if material.node_tree.animation_data.action:
                 if material.node_tree.animation_data.action.fcurves:
@@ -1451,7 +1736,7 @@ def set_animations(title_object, object_preset, material, scene, z_offset, pos_m
                     modifier.scale = x_scale * 10
                     modifier.strength = y_scale
                     modifier.offset = offset
-                if cycle_type == 'SINE':
+                elif cycle_type == 'SINE':
                     modifier = fcurve.modifiers.new(type='FNGENERATOR')
                     modifier.function_type = 'SIN'
                     modifier.use_additive = True
@@ -1461,7 +1746,7 @@ def set_animations(title_object, object_preset, material, scene, z_offset, pos_m
                     else:
                         modifier.phase_multiplier = 0
                     modifier.phase_offset = -offset
-                if cycle_type == 'TANGENT':
+                elif cycle_type == 'TANGENT':
                     modifier = fcurve.modifiers.new(type='FNGENERATOR')
                     modifier.function_type = 'TAN'
                     modifier.use_additive = True
@@ -1471,25 +1756,32 @@ def set_animations(title_object, object_preset, material, scene, z_offset, pos_m
                     else:
                         modifier.phase_multiplier = 0
                     modifier.phase_offset = -offset
-                modifier.use_restricted_range = True
-                if animation_preset.animate_in:
-                    modifier.frame_start = start_frame + animation_preset.in_offset
-                    modifier.blend_in = animation_preset.in_length
                 else:
-                    modifier.frame_start = start_frame
-                    modifier.blend_in = 0
-                if animation_preset.animate_out:
-                    modifier.frame_end = end_frame + animation_preset.out_offset
-                    modifier.blend_out = animation_preset.out_length
-                else:
-                    modifier.frame_end = end_frame
-                    modifier.blend_out = 0
+                    modifier = None
+                if modifier:
+                    modifier.use_restricted_range = True
+                    if animation_preset.animate_in:
+                        modifier.frame_start = start_frame + animation_preset.in_offset
+                        modifier.blend_in = animation_preset.in_length
+                    else:
+                        modifier.frame_start = start_frame
+                        modifier.blend_in = 0
+                    if animation_preset.animate_out:
+                        modifier.frame_end = end_frame + animation_preset.out_offset
+                        modifier.blend_out = animation_preset.out_length
+                    else:
+                        modifier.frame_end = end_frame
+                        modifier.blend_out = 0
             fcurve.update()
+        if not animation.action_slot:
+            try:
+                animation.action_slot = action.slots[0]
+            except:
+                pass
 
 
 def setup_object(title_object, object_preset, scale_multiplier):
     #settings for different title_object types
-    #shaders = [shader, transparent_shader, mix_shader, output_node, transparency_factor, image_node, alpha_image_node, alpha_mix_node, texture_map_node]
     shear = object_preset.shear
     if object_preset.type == 'IMAGE':
         image = None
@@ -1562,302 +1854,25 @@ def setup_object(title_object, object_preset, scale_multiplier):
             title_object.data.text_boxes[0].x = 0
 
 
-def input_name(node, name):
-    for socket in node.inputs:
-        if socket.name == name:
-            return socket
-    return None
-
-
-def get_output_node(material):
-    #for a material, returns the socket for the material output node, while ensuring that such node exists
-    material.use_nodes = True
-    output_node = None
-    for check_node in material.node_tree.nodes:
-        #find the output node
-        if check_node.type == 'OUTPUT_MATERIAL':
-            output_node = check_node
-            break
-    return output_node
-
-
-def clear_material(material):
-    for node in material.node_tree.nodes:
-        material.node_tree.nodes.remove(node)
-
-
-def connect_material_texture(material, shaders, connect=True):
-    shader, transparent_shader, mix_shader, output_node, transparency_factor, image_node, alpha_image_node, alpha_mix_node, texture_map_node = shaders
-    tree = material.node_tree
-    if connect:
-        tree.links.new(image_node.outputs[0], shader.inputs[0])
-    else:
-        for link in tree.links:
-            if link.from_node == image_node and link.to_node == shader:
-                tree.links.remove(link)
-                break
-
-
-def connect_texture_coords(material, shaders, mode='UV'):
-    shader, transparent_shader, mix_shader, output_node, transparency_factor, image_node, alpha_image_node, alpha_mix_node, texture_map_node = shaders
-    tree = material.node_tree
-
-    #delete old links
-    for link in reversed(tree.links):
-        if link.from_node == texture_map_node and link.to_node == image_node:
-            tree.links.remove(link)
-
-    #add new link
-    if mode == 'UV':
-        tree.links.new(texture_map_node.outputs['UV'], image_node.inputs[0])
-    else:
-        tree.links.new(texture_map_node.outputs['Window'], image_node.inputs[0])
-
-
-def setup_material(material, use_shadeless, mat_type):
-    #recreates a material
-    clear_material(material)
-    tree = material.node_tree
-    nodes = tree.nodes
-
-    #create nodes
-    image_node = None
-    alpha_image_node = None
-    alpha_mix_node = None
-    texture_map_node = None
-    output_node = nodes.new('ShaderNodeOutputMaterial')
-    mix_shader = nodes.new('ShaderNodeMixShader')
-    transparency_factor = nodes.new('ShaderNodeMath')
-    transparent_shader = nodes.new('ShaderNodeBsdfTransparent')
-    if use_shadeless:
-        shader = nodes.new('ShaderNodeEmission')
-    else:
-        shader = nodes.new('ShaderNodeBsdfPrincipled')
-    if mat_type == 'IMAGE':
-        #setup image material nodes
-        image_node = nodes.new('ShaderNodeTexImage')
-        alpha_image_node = nodes.new('ShaderNodeTexImage')
-        alpha_mix_node = nodes.new('ShaderNodeMixRGB')
-        alpha_mix_node.inputs[0].default_value = 0
-        texture_map_node = nodes.new('ShaderNodeTexCoord')
-        tree.links.new(alpha_mix_node.outputs[0], transparency_factor.inputs[0])
-        #tree.links.new(image_node.outputs[0], shader.inputs[0])
-        tree.links.new(image_node.outputs[1], alpha_mix_node.inputs[1])
-        tree.links.new(alpha_image_node.outputs[0], alpha_mix_node.inputs[2])
-
-    #connect nodes
-    tree.links.new(mix_shader.outputs[0], output_node.inputs['Surface'])
-    tree.links.new(transparent_shader.outputs[0], mix_shader.inputs[1])
-    tree.links.new(shader.outputs[0], mix_shader.inputs[2])
-    tree.links.new(transparency_factor.outputs[0], mix_shader.inputs[0])
-
-    #set up basic values on nodes
-    transparent_shader.inputs[0].default_value[3] = 0
-    transparency_factor.inputs[0].default_value = 1
-    transparency_factor.inputs[1].default_value = 1
-    transparency_factor.operation = 'MULTIPLY'
-    transparency_factor.use_clamp = True
-    mix_shader.inputs[0].default_value = 1
-    return [shader, transparent_shader, mix_shader, output_node, transparency_factor, image_node, alpha_image_node, alpha_mix_node, texture_map_node]
-
-
-def get_connected_node(node, socket_name):
-    socket = node.inputs[socket_name]
-    if len(socket.links) > 0:
-        return socket.links[0].from_node
-    return None
-
-
-def check_material(material, mat_type):
-    #checks if the material node setup is correct for the type
-    output_node = get_output_node(material)
-    if not output_node:
-        return None
-    mix_shader = get_connected_node(output_node, 'Surface')
-    if not mix_shader:
-        return None
-    if mix_shader.type != 'MIX_SHADER':
-        return None
-    transparency_factor = get_connected_node(mix_shader, 0)
-    if not transparency_factor:
-        return None
-    if transparency_factor.type != 'MATH':
-        return None
-    transparent_shader = get_connected_node(mix_shader, 1)
-    if not transparent_shader:
-        return None
-    if transparent_shader.type != 'BSDF_TRANSPARENT':
-        return None
-    shader = get_connected_node(mix_shader, 2)
-    if not shader:
-        return None
-    if mat_type == 'IMAGE':
-        alpha_mix_node = get_connected_node(transparency_factor, 0)
-        if not alpha_mix_node:
-            return None
-        if alpha_mix_node.type != 'MIX_RGB':
-            return None
-        image_node = get_connected_node(alpha_mix_node, 1)
-        if not image_node:
-            return None
-        if image_node.type != 'TEX_IMAGE':
-            return None
-        alpha_image_node = get_connected_node(alpha_mix_node, 2)
-        if not alpha_image_node:
-            return None
-        if alpha_image_node.type != 'TEX_IMAGE':
-            return None
-        texture_map_node = get_connected_node(image_node, 0)
-        if not texture_map_node:
-            return None
-        if texture_map_node.type != 'TEX_COORD':
-            return None
-    else:
-        image_node = None
-        alpha_image_node = None
-        alpha_mix_node = None
-        texture_map_node = None
-    return [shader, transparent_shader, mix_shader, output_node, transparency_factor, image_node, alpha_image_node, alpha_mix_node, texture_map_node]
-
-
-def check_shader(material, shaders, use_shadeless):
-    #checks the output shader type and ensures it is correct
-
-    shader, transparent_shader, mix_shader, output_node, transparency_factor, image_node, alpha_image_node, alpha_mix_node, texture_map_node = shaders
-    if use_shadeless:
-        if shader.type != 'EMISSION':
-            material.node_tree.nodes.remove(shader)
-            shader = material.node_tree.nodes.new('ShaderNodeEmission')
-            material.node_tree.links.new(shader.outputs[0], mix_shader.inputs[2])
-    else:
-        if shader.type != 'BSDF_PRINCIPLED':
-            material.node_tree.nodes.remove(shader)
-            shader = material.node_tree.nodes.new('ShaderNodeBsdfPrincipled')
-            material.node_tree.links.new(shader.outputs[0], mix_shader.inputs[2])
-    shaders[0] = shader
-    return shaders
-
-
 def get_shaders(material, use_shadeless=False, mat_type=None):
     #given a material, returns the shader node of the correct type, while ensuring it exists and is properly connected
-
-    shaders = check_material(material, mat_type)
-    if not shaders:
-        shaders = setup_material(material, use_shadeless, mat_type)
-    shaders = check_shader(material, shaders, use_shadeless)
+    shaders = ShadersHelper()
+    shaders.load_from_material(material, use_shadeless, mat_type)
     return shaders
 
 
 def update_material(object_preset, material):
-    shaders = get_shaders(material, use_shadeless=object_preset.use_shadeless, mat_type=object_preset.type)
-    shader = shaders[0]
-    transparency_factor = shaders[4]
-    socket = transparency_factor.inputs[1]
-    socket.default_value = object_preset.alpha
-
-    if shader.type == 'BSDF_PRINCIPLED':
-        socket = input_name(shader, 'Specular IOR Level')
-        socket.default_value = object_preset.specular_intensity
-        socket = input_name(shader, 'Metallic')
-        socket.default_value = object_preset.metallic
-        socket = input_name(shader, 'Transmission Weight')
-        socket.default_value = object_preset.transmission
-        socket = input_name(shader, 'Base Color')
-        socket.default_value[0] = object_preset.diffuse_color[0]
-        socket.default_value[1] = object_preset.diffuse_color[1]
-        socket.default_value[2] = object_preset.diffuse_color[2]
-        socket = input_name(shader, 'Roughness')
-        socket.default_value = object_preset.roughness
-        socket = input_name(shader, 'IOR')
-        socket.default_value = object_preset.index_of_refraction
-
-    else:
-        socket = input_name(shader, 'Color')
-        socket.default_value[0] = object_preset.diffuse_color[0]
-        socket.default_value[1] = object_preset.diffuse_color[1]
-        socket.default_value[2] = object_preset.diffuse_color[2]
-        socket = input_name(shader, 'Strength')
-        socket.default_value = 1
-
     material.use_screen_refraction = True
     material.blend_method = 'BLEND'
     material.show_transparent_back = False
-
-    if object_preset.cast_shadows:
-        material.shadow_method = 'CLIP'
-
-    else:
-        material.shadow_method = 'NONE'
-
+    material.diffuse_color = [object_preset.diffuse_color[0], object_preset.diffuse_color[1], object_preset.diffuse_color[2], object_preset.alpha]
+    material.roughness = object_preset.roughness
+    material.metallic = object_preset.metallic
+    shaders = get_shaders(material, use_shadeless=object_preset.use_shadeless, mat_type=object_preset.type)
+    shaders.update_shader(object_preset)
+    shaders.update_shadowcasting(object_preset.cast_shadows)
     if object_preset.type == 'IMAGE':
-        #set up image type
-        image_node = shaders[5]
-        alpha_image_node = shaders[6]
-        alpha_mix_node = shaders[7]
-        if object_preset.texture:
-            #image texture is set
-            connect_material_texture(material, shaders, connect=True)
-            if object_preset.window_mapping:
-                map_mode = 'Window'
-            else:
-                map_mode = 'UV'
-            connect_texture_coords(material, shaders, mode=map_mode)
-            path = os.path.abspath(bpy.path.abspath(object_preset.texture))
-            extension = os.path.splitext(path)[1].lower()
-            if extension in bpy.path.extensions_movie:
-                #The file is a known video file type, load it
-                video = True
-            else:
-                video = False
-            if os.path.isfile(path) and (extension in bpy.path.extensions_image or video):
-                #The file is a known file type, load it
-                image = find_load_image(path)
-                image.update()
-                image_node.image = image
-                if video:
-                    #set video defaults
-                    object_preset.frame_length = image.frame_duration
-                    object_preset.frame_offset = 0
-                    image_node.image_user.frame_duration = image.frame_duration
-                    image_node.image_user.frame_start = 1
-                    image_node.image_user.frame_offset = 0
-                    image_node.image_user.use_cyclic = object_preset.loop
-                    image_node.image_user.use_auto_refresh = True
-
-        else:
-            #image texture is not set or has been unset, remove it from material if needed and set plane back to original dimensions
-            connect_material_texture(material, shaders, connect=False)
-            image_node.image = None
-
-        alpha_mix_node.inputs[0].default_value = 0
-
-        if object_preset.alpha_texture:
-            #alpha texture is set
-            path = os.path.abspath(bpy.path.abspath(object_preset.alpha_texture))
-            extension = os.path.splitext(path)[1].lower()
-            if extension in bpy.path.extensions_movie:
-                #The file is a known video file type, load it
-                video = True
-            else:
-                video = False
-            if os.path.isfile(path) and (extension in bpy.path.extensions_image or video):
-                #The file is a known file type, load it
-                image = find_load_image(path)
-                image.update()
-                alpha_image_node.image = image
-                alpha_mix_node.inputs[0].default_value = 1
-                if video:
-                    #set video defaults
-                    object_preset.frame_length = image.frame_duration
-                    object_preset.frame_offset = 0
-                    alpha_image_node.image_user.frame_duration = image.frame_duration
-                    alpha_image_node.image_user.frame_start = 1
-                    alpha_image_node.image_user.frame_offset = 0
-                    alpha_image_node.image_user.use_cyclic = object_preset.loop
-                    alpha_image_node.image_user.use_auto_refresh = True
-        else:
-            #alpha texture is not set or has been unset, remove it from material
-            alpha_image_node.image = None
+        shaders.update_image(object_preset)
     return shaders
 
 
@@ -1963,7 +1978,6 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
 
             object_preset.internal_name = title_object.name
             created_object = True
-
         else:
             created_object = False
 
@@ -1978,7 +1992,7 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
         #detailed settings need to be updated for this object
         if selected_object or created_object or update_all:
             material = None
-            shaders = []
+            shaders = None
             if object_preset.visible:
                 title_object.hide_viewport = False
                 title_object.hide_render = False
@@ -2051,25 +2065,13 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
                 else:
                     material = bpy.data.materials.new(outline_object_name)
                 set_material(outline_object, material)
-
-                shaders = get_shaders(material, use_shadeless=True)
-                shader = shaders[0]
-                transparency_factor = shaders[4]
-                socket = transparency_factor.inputs[1]
-                socket.default_value = object_preset.outline_alpha
-
-                socket = input_name(shader, 'Color')
-                socket.default_value[0] = object_preset.outline_diffuse_color[0]
-                socket.default_value[1] = object_preset.outline_diffuse_color[1]
-                socket.default_value[2] = object_preset.outline_diffuse_color[2]
-                socket = input_name(shader, 'Strength')
-                socket.default_value = 1
-
                 material.blend_method = 'BLEND'
-                if object_preset.cast_shadows:
-                    material.shadow_method = 'CLIP'
-                else:
-                    material.shadow_method = 'NONE'
+                material.diffuse_color = [object_preset.outline_diffuse_color[0], object_preset.outline_diffuse_color[1], object_preset.outline_diffuse_color[2], object_preset.outline_alpha]
+                shaders = get_shaders(material, use_shadeless=True)
+                shaders.transparency_factor.inputs[1].default_value = object_preset.outline_alpha
+                shaders.shader.inputs['Color'].default_value[:3] = object_preset.outline_diffuse_color
+                shaders.shader.inputs['Strength'].default_value = 1
+                shaders.update_shadowcasting(object_preset.cast_shadows)
 
                 #adjust object
                 if object_preset.visible:
@@ -2099,12 +2101,12 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
 
 
 def get_fcurve(fcurves, variable, shaders, material=None, on_object=None):
-    #find or create and return an fcurve matching the given internal script variable name
+    #find or create and return a fcurve matching the given internal script variable name
     fcurve = None
     value = None
     if variable == 'Alpha':
         if shaders:
-            transparency_factor = shaders[4]
+            transparency_factor = shaders.transparency_factor
             data_path = 'nodes["'+transparency_factor.name+'"].inputs[1].default_value'
             if transparency_factor:
                 value = transparency_factor.inputs[1].default_value
