@@ -694,7 +694,7 @@ class ShadersHelper:
 
     def update_shadowcasting(self, cast_shadows):
         light_path_node = self.find_node_type('LIGHT_PATH')
-        if cast_shadows:
+        if not cast_shadows:
             if not light_path_node:
                 light_path_node = self.material.node_tree.nodes.new('ShaderNodeLightPath')
             self.ensure_socket_connected(light_path_node.outputs['Is Camera Ray'], self.light_path_factor.inputs[1])
