@@ -1,4 +1,4 @@
-# QuickTitling Addon For Blender 4.0
+# QuickTitling Addon For Blender 4.4
 
 This addon will create and edit simple scenes for title overlays.  
 
@@ -414,7 +414,7 @@ Each title is lit by 4 front lights, and one shadow casting lamp.
 
 If a title is selected in the sequencer, and while the mouse is over the preview window, the title can be edited using various shortcuts.  
 
-* Ctrl-Left-Click on title elements to select them  
+* Right-Click on title elements to select them  
 
 * Press 'G' to enter grab/move mode for the selected element.  You can constrain movement to the three axis by pressing the x, y and z keys after entering move mode.  When moving on a single axis, you can type in exact movement values.  
 
