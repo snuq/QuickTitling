@@ -33,7 +33,7 @@ bl_info = {
     "name": "VSE Quick Titling",
     "description": "Enables easy creation of simple title scenes in the VSE",
     "author": "Hudson Barkley (Snu)",
-    "version": (0, 6, 6),
+    "version": (0, 6, 7),
     "blender": (4, 4, 0),
     "location": "Sequencer Panels",
     "wiki_url": "https://github.com/snuq/QuickTitling",
@@ -1261,7 +1261,7 @@ def titling_scene_selected():
         if active_sequence and active_sequence.select:
             if active_sequence.type == 'SCENE':
                 #this is a scene strip
-                if 'QuickTitle:' in active_sequence.name:
+                if 'QuickTitle' in active_sequence.name or active_sequence.name.startswith('QT:'):
                     #strip is named properly
                     return active_sequence
     return None

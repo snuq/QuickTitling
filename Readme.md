@@ -34,6 +34,8 @@ When a created QuickTitle is selected, the settings can be adjusted and will be 
 
 Select a title in the VSE to edit it, or select no titles to edit new presets, or create new titles.  
 
+Titles are identified by the string "QuickTitle" at any point in the sequence name, or a sequence name starting with "QT:".
+
 Titles can be edited from the sequencer preview window, or from the QuickTitling panel
 
 You can add a new title from a built-in or custom preset directly in the sequencer by pressing 'Shift-T' and selecting a preset. This will overwrite the current selected preset, and create a new title at the cursor location.  
