@@ -34,7 +34,7 @@ bl_info = {
     "description": "Enables easy creation of simple title scenes in the VSE",
     "author": "Hudson Barkley (Snu)",
     "version": (0, 6, 7),
-    "blender": (4, 4, 0),
+    "blender": (5, 0, 0),
     "location": "Sequencer Panels",
     "wiki_url": "https://github.com/snuq/QuickTitling",
     "category": "Sequencer"
@@ -770,8 +770,15 @@ class ShadersHelper:
 
 
 def deselect_sequencer(context):
-    for sequence in context.scene.sequence_editor.sequences_all:
+    for sequence in context.scene.sequence_editor.strips_all:
         sequence.select = False
+
+
+def get_action_fcurves(action):
+    #no longer can just do action.fcurves in Blender 5... now need this insanity
+    if not action.layers:
+        return None
+    return action.layers[0].strips[0].channelbag(action.slots[0]).fcurves
 
 
 def find_load_image(path, load=True):
@@ -864,7 +871,6 @@ def add_overlay(self=None, context=None):
     global overlays
     if not overlays:
         overlays = bpy.types.SpaceSequenceEditor.draw_handler_add(quicktitling_overlay, (), 'PREVIEW', 'POST_PIXEL')
-        add_keymap()
         quicktitling_overlay()
 
 
@@ -876,7 +882,6 @@ def quicktitling_overlay():
         if overlays:
             bpy.types.SpaceSequenceEditor.draw_handler_remove(overlays, 'PREVIEW')
             overlays = None
-            remove_keymap()
     else:
         frame = bpy.context.scene.frame_current
         if frame >= quicktitle_sequence.frame_final_start and frame <= quicktitle_sequence.frame_final_end:
@@ -1435,7 +1440,10 @@ def quicktitle_create(quicktitle=False):
     title_scene.render.image_settings.color_mode = 'RGBA'
 
     #setup eevee
-    title_scene.render.engine = 'BLENDER_EEVEE_NEXT'
+    try:
+        title_scene.render.engine = 'BLENDER_EEVEE_NEXT'
+    except:
+        title_scene.render.engine = 'BLENDER_EEVEE'
     title_scene.eevee.use_shadows = True
     title_scene.eevee.use_raytracing = True
     title_scene.eevee.shadow_ray_count = 4
@@ -1621,16 +1629,16 @@ def set_animations(title_object, object_preset, material, scene, z_offset, pos_m
         transparency_factor = shaders.transparency_factor
         if material.node_tree.animation_data:
             if material.node_tree.animation_data.action:
-                if material.node_tree.animation_data.action.fcurves:
-                    fcurves = material.node_tree.animation_data.action.fcurves
+                fcurves = get_action_fcurves(material.node_tree.animation_data.action)
+                if fcurves:
                     for curve in fcurves:
                         if curve.data_path == 'nodes["'+transparency_factor.name+'"].inputs[1].default_value':
                             if 'Alpha' not in animation_types:
                                 fcurves.remove(curve)
     if title_object.animation_data:
         if title_object.animation_data.action:
-            if title_object.animation_data.action.fcurves:
-                fcurves = title_object.animation_data.action.fcurves
+            fcurves = get_action_fcurves(title_object.animation_data.action)
+            if fcurves:
                 for curve in fcurves:
                     if curve.data_path == 'location':
                         if curve.array_index == 0:
@@ -1684,12 +1692,16 @@ def set_animations(title_object, object_preset, material, scene, z_offset, pos_m
             animation.action = action
         else:
             action = animation.action
-        fcurves = action.fcurves
+        if not animation.action_slot:
+            try:
+                animation.action_slot = action.slots[0]
+            except:
+                pass
 
         in_amount = animation_preset.in_amount
         out_amount = animation_preset.out_amount
         variable = animation_preset.variable
-        fcurve, value = get_fcurve(fcurves, variable, shaders, material=material, on_object=title_object if not parent else parent)
+        fcurve, value = get_fcurve(action, variable, shaders, material=material, data_object=title_object, on_object=title_object if not parent else parent)
         offsetvalue = value
         scalevalue = 1
         if 'Rotate' in variable:
@@ -1773,11 +1785,6 @@ def set_animations(title_object, object_preset, material, scene, z_offset, pos_m
                         modifier.frame_end = end_frame
                         modifier.blend_out = 0
             fcurve.update()
-        if not animation.action_slot:
-            try:
-                animation.action_slot = action.slots[0]
-            except:
-                pass
 
 
 def setup_object(title_object, object_preset, scale_multiplier):
@@ -2100,109 +2107,63 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
     bpy.ops.sequencer.refresh_all()
 
 
-def get_fcurve(fcurves, variable, shaders, material=None, on_object=None):
+def get_fcurve(action, variable, shaders, material=None, data_object=None, on_object=None):
     #find or create and return a fcurve matching the given internal script variable name
     fcurve = None
     value = None
     if variable == 'Alpha':
         if shaders:
             transparency_factor = shaders.transparency_factor
+            datablock = material.node_tree
             data_path = 'nodes["'+transparency_factor.name+'"].inputs[1].default_value'
             if transparency_factor:
                 value = transparency_factor.inputs[1].default_value
-            fcurve = fcurves.find(data_path)
-            if not fcurve:
-                fcurve = fcurves.new(data_path)
+            fcurve = action.fcurve_ensure_for_datablock(datablock, data_path)
     elif variable == 'X Slide':
         data_path = 'location'
         if on_object:
             value = on_object.location[0]
-        for curve in fcurves:
-            if curve.data_path == data_path and curve.array_index == 0:
-                fcurve = curve
-                break
-        if not fcurve:
-            fcurve = fcurves.new(data_path, index=0)
+        fcurve = action.fcurve_ensure_for_datablock(data_object, data_path, index=0)
     elif variable == 'Y Slide':
         data_path = 'location'
         if on_object:
             value = on_object.location[1]
-        for curve in fcurves:
-            if curve.data_path == data_path and curve.array_index == 1:
-                fcurve = curve
-                break
-        if not fcurve:
-            fcurve = fcurves.new(data_path, index=1)
+        fcurve = action.fcurve_ensure_for_datablock(data_object, data_path, index=1)
     elif variable == 'Z Slide':
         data_path = 'location'
         if on_object:
             value = on_object.location[2]
-        for curve in fcurves:
-            if curve.data_path == data_path and curve.array_index == 2:
-                fcurve = curve
-                break
-        if not fcurve:
-            fcurve = fcurves.new(data_path, index=2)
+        fcurve = action.fcurve_ensure_for_datablock(data_object, data_path, index=2)
     elif variable == 'X Rotate':
         data_path = 'rotation_euler'
         if on_object:
             value = on_object.rotation_euler[0]
-        for curve in fcurves:
-            if curve.data_path == data_path and curve.array_index == 0:
-                fcurve = curve
-                break
-        if not fcurve:
-            fcurve = fcurves.new(data_path, index=0)
+        fcurve = action.fcurve_ensure_for_datablock(data_object, data_path, index=0)
     elif variable == 'Y Rotate':
         data_path = 'rotation_euler'
         if on_object:
             value = on_object.rotation_euler[1]
-        for curve in fcurves:
-            if curve.data_path == data_path and curve.array_index == 1:
-                fcurve = curve
-                break
-        if not fcurve:
-            fcurve = fcurves.new(data_path, index=1)
+        fcurve = action.fcurve_ensure_for_datablock(data_object, data_path, index=1)
     elif variable == 'Z Rotate':
         data_path = 'rotation_euler'
         if on_object:
             value = on_object.rotation_euler[2]
-        for curve in fcurves:
-            if curve.data_path == data_path and curve.array_index == 2:
-                fcurve = curve
-                break
-        if not fcurve:
-            fcurve = fcurves.new(data_path, index=2)
+        fcurve = action.fcurve_ensure_for_datablock(data_object, data_path, index=2)
     elif variable == 'Width':
         data_path = 'scale'
         if on_object:
             value = on_object.scale[0]
-        for curve in fcurves:
-            if curve.data_path == data_path and curve.array_index == 0:
-                fcurve = curve
-                break
-        if not fcurve:
-            fcurve = fcurves.new(data_path, index=0)
+        fcurve = action.fcurve_ensure_for_datablock(data_object, data_path, index=0)
     elif variable == 'Height':
         data_path = 'scale'
         if on_object:
             value = on_object.scale[1]
-        for curve in fcurves:
-            if curve.data_path == data_path and curve.array_index == 1:
-                fcurve = curve
-                break
-        if not fcurve:
-            fcurve = fcurves.new(data_path, index=1)
+        fcurve = action.fcurve_ensure_for_datablock(data_object, data_path, index=1)
     elif variable == 'Depth':
         data_path = 'scale'
         if on_object:
             value = on_object.scale[2]
-        for curve in fcurves:
-            if curve.data_path == data_path and curve.array_index == 2:
-                fcurve = curve
-                break
-        if not fcurve:
-            fcurve = fcurves.new(data_path, index=2)
+        fcurve = action.fcurve_ensure_for_datablock(data_object, data_path, index=2)
     return [fcurve, value]
 
 
@@ -4057,6 +4018,7 @@ class QuickTitlingGrab(bpy.types.Operator):
             scale = width / region.width
             self.mouse_scale = 1000 / scale
             context.window_manager.modal_handler_add(self)
+            add_overlay()
             return {'RUNNING_MODAL'}
         else:
             if len(self.preset.objects) > self.preset.selected_object:
@@ -4073,6 +4035,7 @@ class QuickTitlingGrab(bpy.types.Operator):
                     scale = width / region.width
                     self.mouse_scale = 1000 / scale
                     context.window_manager.modal_handler_add(self)
+                    add_overlay()
                     return {'RUNNING_MODAL'}
 
         return {'CANCELLED'}
@@ -4205,6 +4168,7 @@ class QuickTitlingRotate(bpy.types.Operator):
                 self.title_object = self.scene.objects[object_name]
                 self.mouse_scale = 2
                 context.window_manager.modal_handler_add(self)
+                add_overlay()
                 return {'RUNNING_MODAL'}
 
         return {'CANCELLED'}
@@ -4330,6 +4294,7 @@ class QuickTitlingScale(bpy.types.Operator):
                 self.title_object = self.scene.objects[object_name]
                 self.mouse_scale = 40
                 context.window_manager.modal_handler_add(self)
+                add_overlay()
                 return {'RUNNING_MODAL'}
 
         return {'CANCELLED'}
@@ -4349,6 +4314,7 @@ class QuickTitlingSelect(bpy.types.Operator):
         return False
 
     def invoke(self, context, event):
+        add_overlay()
         quicktitle_sequence = titling_scene_selected()
         scene = quicktitle_sequence.scene
         render_x = scene.render.resolution_x
@@ -4423,6 +4389,29 @@ class QuickTitlingDeleteMenu(bpy.types.Menu):
         layout.operator('quicktitler.delete_object', text='Delete Selected').index = to_delete
 
 
+class QuickTitlingTool(bpy.types.WorkSpaceTool):
+    bl_space_type = 'SEQUENCE_EDITOR'
+    bl_context_mode = 'PREVIEW'  #Also could be SEQUENCER or SEQUENCER_PREVIEW
+    bl_idname = 'qicktitling.editor'
+    bl_label = 'QuickTitling Edit'
+    bl_description = "Enables editing functionality on a QuickTitle Scene"
+    bl_icon = "ops.generic.select"
+    bl_widget = None
+    bl_keymap = (
+        ("quicktitle.select", {"type": 'RIGHTMOUSE', "value": 'PRESS'}, None),
+        ("quicktitle.select", {"type": 'LEFTMOUSE', "value": 'PRESS'}, None),
+        ("quicktitle.grab", {"type": "G", "value": "PRESS"}, None),
+        ("quicktitle.rotate", {"type": "R", "value": "PRESS"}, None),
+        ("quicktitle.scale", {"type": "S", "value": "PRESS"}, None),
+        ("wm.call_menu", {"type": "A", "value": "PRESS", "shift": True}, {'properties': [('name', 'QUICKTITLING_MT_add_object_menu')]}),
+        ("wm.call_menu", {"type": "X", "value": "PRESS"}, {'properties': [('name', 'QUICKTITLING_MT_delete_menu')]}),
+        ("wm.call_menu", {"type": "DEL", "value": "PRESS"}, {'properties': [('name', 'QUICKTITLING_MT_delete_menu')]}),
+        ("quicktitle.grab", {"type": "L", "value": "PRESS"}, {'properties': [('lamp', True)]}),
+        ("quicktitler.object_up", {"type": "PAGE_UP", "value": "PRESS"}, {'properties': [('current', True)]}),
+        ("quicktitler.object_down", {"type": "PAGE_DOWN", "value": "PRESS"}, {'properties': [('current', True)]}),
+    )
+
+
 def add_to_value(value, character):
     if character in ['ZERO', 'NUMPAD_0']:
         value = value + '0'
@@ -4455,44 +4444,6 @@ def add_to_value(value, character):
     if character == 'BACK_SPACE':
         value = value[:-1]
     return value
-
-
-def add_keymap():
-    global keymap
-    if keymap is not None:
-        remove_keymap()
-        keymapitems = keymap.keymap_items
-        for keymapitem in keymapitems:
-            #Iterate through keymaps and delete old shortcuts
-            if keymapitem.type in ['G', 'R', 'S', 'LEFTMOUSE', 'A', 'X', 'DEL', 'L', 'PAGE_UP', 'PAGE_DOWN']:
-                keymapitems.remove(keymapitem)
-        keymapitems.new('quicktitle.grab', 'G', 'PRESS')
-        keymapitems.new('quicktitle.rotate', 'R', 'PRESS')
-        keymapitems.new('quicktitle.scale', 'S', 'PRESS')
-        keymapitems.new('quicktitle.select', 'RIGHTMOUSE', 'PRESS')
-        keymapitems.new('quicktitle.select', 'LEFTMOUSE', 'PRESS', ctrl=True)
-        add_menu = keymapitems.new('wm.call_menu', 'A', 'PRESS', shift=True)
-        add_menu.properties.name = 'QUICKTITLING_MT_add_object_menu'
-        delete_menu = keymapitems.new('wm.call_menu', 'X', 'PRESS')
-        delete_menu.properties.name = 'QUICKTITLING_MT_delete_menu'
-        delete_menu2 = keymapitems.new('wm.call_menu', 'DEL', 'PRESS')
-        delete_menu2.properties.name = 'QUICKTITLING_MT_delete_menu'
-        grab_lamp = keymapitems.new('quicktitle.grab', 'L', 'PRESS')
-        grab_lamp.properties.lamp = True
-        current_up = keymapitems.new('quicktitler.object_up', 'PAGE_UP', 'PRESS')
-        current_up.properties.current = True
-        current_down = keymapitems.new('quicktitler.object_down', 'PAGE_DOWN', 'PRESS')
-        current_down.properties.current = True
-
-
-def remove_keymap():
-    global keymap
-    if keymap is not None:
-        keymapitems = keymap.keymap_items
-        for keymapitem in keymapitems:
-            #Iterate through keymaps and delete old shortcuts
-            if keymapitem.type in ['G', 'R', 'S', 'LEFTMOUSE', 'A', 'X', 'DEL', 'L', 'PAGE_UP', 'PAGE_DOWN']:
-                keymapitems.remove(keymapitem)
 
 
 def draw_preset_add_menu(self, context):
@@ -4530,7 +4481,7 @@ def register():
         add_menu = second_keymap.keymap_items.new('wm.call_menu', 'T', 'PRESS', shift=True)
         add_menu.properties.name = 'QUICKTITLING_MT_preset_menu_add'
     bpy.types.SEQUENCER_MT_add.append(draw_preset_add_menu)
-    #add_keymap()
+    bpy.utils.register_tool(QuickTitlingTool, separator=True)
 
 
 def unregister():
@@ -4538,7 +4489,6 @@ def unregister():
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
     #keymap = bpy.context.window_manager.keyconfigs.addon.keymaps['SequencerPreview']
-    remove_keymap()
 
 
 if __name__ == "__main__":
