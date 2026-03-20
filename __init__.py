@@ -33,8 +33,8 @@ bl_info = {
     "name": "VSE Quick Titling",
     "description": "Enables easy creation of simple title scenes in the VSE",
     "author": "Hudson Barkley (Snu)",
-    "version": (0, 6, 7),
-    "blender": (5, 0, 0),
+    "version": (0, 6, 8),
+    "blender": (5, 1, 0),
     "location": "Sequencer Panels",
     "wiki_url": "https://github.com/snuq/QuickTitling",
     "category": "Sequencer"
@@ -884,7 +884,7 @@ def quicktitling_overlay():
             overlays = None
     else:
         frame = bpy.context.scene.frame_current
-        if frame >= quicktitle_sequence.frame_final_start and frame <= quicktitle_sequence.frame_final_end:
+        if frame >= quicktitle_sequence.left_handle and frame <= quicktitle_sequence.right_handle:
             area = bpy.context.area
             space = area.spaces[0]
             if space.display_mode == 'IMAGE':
@@ -898,7 +898,7 @@ def quicktitling_overlay():
                     title_object = None
                 if title_object:
                     #Ensures that the title scene's frame is set to the viewed frame in the vse, needed for clicking title objects.  Needs to be put here to give blender a chance to update the scene before a click.
-                    new_frame = bpy.context.scene.frame_current - quicktitle_sequence.frame_start
+                    new_frame = bpy.context.scene.frame_current - quicktitle_sequence.content_start
                     if scene.frame_current != new_frame:
                         scene.frame_set(int(round(new_frame)))
                     for region in area.regions:
@@ -1910,11 +1910,11 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
         update_all = True
 
     #Fix sequence length if needed
-    if sequence.frame_offset_start != 0:
-        sequence.frame_start = sequence.frame_start + sequence.frame_offset_start
-        sequence.frame_offset_start = 0
-    if sequence.frame_offset_end != 0:
-        sequence.frame_offset_end = 0
+    if sequence.left_handle_offset != 0:
+        sequence.content_start = sequence.content_start + sequence.left_handle_offset
+        sequence.left_handle_offset = 0
+    if sequence.right_handle_offset != 0:
+        sequence.right_handle_offset = 0
 
     #attempt to find and update the shadow lamp
     if quicktitle.shadowlamp_internal_name in scene.objects and quicktitle.shadowlamp_inverse_internal_name in scene.objects:
@@ -3037,8 +3037,8 @@ class QuickTitlingReplaceWithImage(bpy.types.Operator, ExportHelper):
             self.report({'INFO'}, "Rendered QuickTitle as: "+imagepath)
 
             #load the image into the sequencer
-            start_frame = quicktitle_sequence.frame_final_start
-            end_frame = quicktitle_sequence.frame_final_start + quicktitle_sequence.frame_final_duration - 1
+            start_frame = quicktitle_sequence.left_handle
+            end_frame = quicktitle_sequence.left_handle + quicktitle_sequence.duration - 1
             quicktitle_sequence.mute = True
             path, file = os.path.split(imagepath)
             bpy.ops.sequencer.image_strip_add(directory=path, files=[{'name': file}], frame_start=start_frame, frame_end=end_frame)
@@ -3062,7 +3062,7 @@ class QuickTitlingObjectMoveUp(bpy.types.Operator):
         if self.current:
             quicktitle_sequence = titling_scene_selected()
             frame = bpy.context.scene.frame_current
-            if not quicktitle_sequence or not (frame >= quicktitle_sequence.frame_final_start and frame <= quicktitle_sequence.frame_final_end):
+            if not quicktitle_sequence or not (frame >= quicktitle_sequence.left_handle and frame <= quicktitle_sequence.right_handle):
                 return {'CANCELLED'}
             self.index = quicktitle.selected_object
         if self.index > 0:
@@ -3091,7 +3091,7 @@ class QuickTitlingObjectMoveDown(bpy.types.Operator):
         if self.current:
             quicktitle_sequence = titling_scene_selected()
             frame = bpy.context.scene.frame_current
-            if not quicktitle_sequence or not (frame >= quicktitle_sequence.frame_final_start and frame <= quicktitle_sequence.frame_final_end):
+            if not quicktitle_sequence or not (frame >= quicktitle_sequence.left_handle and frame <= quicktitle_sequence.right_handle):
                 return {'CANCELLED'}
             self.index = quicktitle.selected_object
         if self.index+1 < len(objects):
@@ -3888,7 +3888,7 @@ class QuickTitlingGrab(bpy.types.Operator):
         quicktitle_sequence = titling_scene_selected()
         if quicktitle_sequence:
             frame = bpy.context.scene.frame_current
-            if frame >= quicktitle_sequence.frame_final_start and frame <= quicktitle_sequence.frame_final_end:
+            if frame >= quicktitle_sequence.left_handle and frame <= quicktitle_sequence.right_handle:
                 return True
         return False
 
@@ -4065,7 +4065,7 @@ class QuickTitlingRotate(bpy.types.Operator):
         quicktitle_sequence = titling_scene_selected()
         if quicktitle_sequence:
             frame = bpy.context.scene.frame_current
-            if frame >= quicktitle_sequence.frame_final_start and frame <= quicktitle_sequence.frame_final_end:
+            if frame >= quicktitle_sequence.left_handle and frame <= quicktitle_sequence.right_handle:
                 return True
         return False
 
@@ -4199,7 +4199,7 @@ class QuickTitlingScale(bpy.types.Operator):
         quicktitle_sequence = titling_scene_selected()
         if quicktitle_sequence:
             frame = bpy.context.scene.frame_current
-            if frame >= quicktitle_sequence.frame_final_start and frame <= quicktitle_sequence.frame_final_end:
+            if frame >= quicktitle_sequence.left_handle and frame <= quicktitle_sequence.right_handle:
                 return True
         return False
 
@@ -4309,7 +4309,7 @@ class QuickTitlingSelect(bpy.types.Operator):
         quicktitle_sequence = titling_scene_selected()
         if quicktitle_sequence:
             frame = bpy.context.scene.frame_current
-            if frame >= quicktitle_sequence.frame_final_start and frame <= quicktitle_sequence.frame_final_end:
+            if frame >= quicktitle_sequence.left_handle and frame <= quicktitle_sequence.right_handle:
                 return True
         return False
 
@@ -4343,7 +4343,7 @@ class QuickTitlingAddObject(bpy.types.Menu):
         quicktitle_sequence = titling_scene_selected()
         if quicktitle_sequence:
             frame = bpy.context.scene.frame_current
-            if frame >= quicktitle_sequence.frame_final_start and frame <= quicktitle_sequence.frame_final_end:
+            if frame >= quicktitle_sequence.left_handle and frame <= quicktitle_sequence.right_handle:
                 return True
         return False
 
@@ -4375,7 +4375,7 @@ class QuickTitlingDeleteMenu(bpy.types.Menu):
         quicktitle_sequence = titling_scene_selected()
         if quicktitle_sequence:
             frame = bpy.context.scene.frame_current
-            if frame >= quicktitle_sequence.frame_final_start and frame <= quicktitle_sequence.frame_final_end:
+            if frame >= quicktitle_sequence.left_handle and frame <= quicktitle_sequence.right_handle:
                 preset = quicktitle_sequence.scene.quicktitler.current_quicktitle
                 if len(preset.objects) > preset.selected_object:
                     return True
