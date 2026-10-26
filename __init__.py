@@ -725,11 +725,12 @@ class ShadersHelper:
                 self.image_node.image = image
                 if video:
                     #set video defaults
+                    if preset.frame_length == -1 or preset.frame_offset == -1:
+                        preset.frame_offset = 0
                     preset.frame_length = image.frame_duration
-                    preset.frame_offset = 0
                     self.image_node.image_user.frame_duration = image.frame_duration
                     self.image_node.image_user.frame_start = 1
-                    self.image_node.image_user.frame_offset = 0
+                    self.image_node.image_user.frame_offset = preset.frame_offset
                     self.image_node.image_user.use_cyclic = preset.loop
                     self.image_node.image_user.use_auto_refresh = True
 
@@ -1272,6 +1273,17 @@ def titling_scene_selected():
     return None
 
 
+def convertable_strip_selected():
+    sequence_editor = bpy.context.scene.sequence_editor
+    if hasattr(sequence_editor, 'active_strip'):
+        #there is an active strip
+        active_sequence = sequence_editor.active_strip
+        if active_sequence and active_sequence.select:
+            if active_sequence.type in ['MOVIE', 'IMAGE']:
+                return active_sequence
+    return None
+
+
 def current_quicktitle(sequence=None):
     #Function to return the current QuickTitle preset depending on what is selected in the sequencer
     if not sequence:
@@ -1424,11 +1436,14 @@ def iscorrecttype(title_object, object_type):
     return False
 
 
-def quicktitle_create(quicktitle=False):
+def quicktitle_create(quicktitle=False, frame=None):
     #Function to create QuickTitle scenes and sequences
     scene = bpy.context.scene
     if not quicktitle:
         quicktitle = scene.quicktitler.current_quicktitle
+
+    if frame is None:
+        frame = scene.frame_current
 
     #Basic scene setup
     bpy.ops.scene.new(type='EMPTY')
@@ -1439,6 +1454,7 @@ def quicktitle_create(quicktitle=False):
     title_scene.render.image_settings.media_type = 'IMAGE'
     title_scene.render.image_settings.file_format = 'PNG'
     title_scene.render.image_settings.color_mode = 'RGBA'
+    title_scene.render.resolution_percentage = 100
 
     #setup eevee
     try:
@@ -1545,7 +1561,7 @@ def quicktitle_create(quicktitle=False):
 
     #Add scene to sequencer
     bpy.context.window.scene = scene
-    bpy.ops.sequencer.scene_strip_add(move_strips=False, frame_start=scene.frame_current, scene=title_scene.name)
+    bpy.ops.sequencer.scene_strip_add(move_strips=False, frame_start=frame, scene=title_scene.name)
     sequence = bpy.context.scene.sequence_editor.active_strip
     sequence.name = name
     sequence.blend_type = 'ALPHA_OVER'
@@ -2708,6 +2724,10 @@ class QUICKTITLING_PT_Panel(bpy.types.Panel):
             row.operator('quicktitler.preset_import', text='Import Preset')
             row = box.row()
             row.operator('quicktitler.create', text='Create New Title').action = 'create'
+            convertable_strip = convertable_strip_selected()
+            if convertable_strip:
+                row = box.row()
+                row.operator('quicktitler.create', text='Convert Active Strip To Title').action = 'convert_strip'
         else:
             add_overlay()
             #title is selected, only show copy preset back to main button
@@ -3835,6 +3855,35 @@ class QuickTitlingCreate(bpy.types.Operator):
             quicktitle_create(quicktitle)
 
         sequence = bpy.context.scene.sequence_editor.active_strip
+        if self.action == 'convert_strip':
+            if sequence.type not in ['MOVIE', 'IMAGE']:
+                return {'CANCELLED'}
+            bpy.ops.sequencer.select_all(action='DESELECT')
+            bpy.ops.quicktitler.preset_load(preset='Default')
+            quicktitle = current_quicktitle()
+            quicktitle.length = sequence.duration
+            quicktitle.name = sequence.name
+            strip_object = quicktitle.objects.add()
+            strip_object.name = sequence.name
+            strip_object.type = 'IMAGE'
+            strip_object.roughness = 1
+            strip_object.use_shadeless = True
+            strip_object.loop = False
+            strip_object.texture = sequence.filepath
+            if sequence.type == 'MOVIE':
+                strip_object.frame_offset = int(sequence.left_handle_offset)
+                strip_object.frame_length = int(sequence.content_duration)
+            elif sequence.type == 'IMAGE':
+                pass
+            quicktitle_create(quicktitle, frame=sequence.left_handle)
+            original_sequence = sequence
+            sequence = bpy.context.scene.sequence_editor.active_strip
+            bpy.context.scene.sequence_editor.active_strip = original_sequence
+            bpy.ops.sequencer.strip_modifier_copy()
+            bpy.context.scene.sequence_editor.active_strip = sequence
+            original_sequence.select = False
+            original_sequence.mute = True
+
         if self.action == 'update_all':
             update_all = True
         else:
