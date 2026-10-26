@@ -1545,7 +1545,7 @@ def quicktitle_create(quicktitle=False):
 
     #Add scene to sequencer
     bpy.context.window.scene = scene
-    bpy.ops.sequencer.scene_strip_add(frame_start=scene.frame_current, scene=title_scene.name)
+    bpy.ops.sequencer.scene_strip_add(move_strips=False, frame_start=scene.frame_current, scene=title_scene.name)
     sequence = bpy.context.scene.sequence_editor.active_strip
     sequence.name = name
     sequence.blend_type = 'ALPHA_OVER'
