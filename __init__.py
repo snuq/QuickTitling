@@ -33,8 +33,8 @@ bl_info = {
     "name": "VSE Quick Titling",
     "description": "Enables easy creation of simple title scenes in the VSE",
     "author": "Hudson Barkley (Snu)",
-    "version": (0, 6, 8),
-    "blender": (5, 1, 0),
+    "version": (0, 6, 9),
+    "blender": (5, 2, 0),
     "location": "Sequencer Panels",
     "wiki_url": "https://github.com/snuq/QuickTitling",
     "category": "Sequencer"
@@ -1436,6 +1436,7 @@ def quicktitle_create(quicktitle=False):
     title_scene.frame_start = 1
     title_scene.frame_end = int(quicktitle.length)
     title_scene.render.film_transparent = True
+    title_scene.render.image_settings.media_type = 'IMAGE'
     title_scene.render.image_settings.file_format = 'PNG'
     title_scene.render.image_settings.color_mode = 'RGBA'
 
