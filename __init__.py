@@ -2741,6 +2741,9 @@ class QUICKTITLING_PT_Panel(bpy.types.Panel):
 
         row = box.row()
         row.prop(context.scene.quicktitler, 'autoupdate')
+        row = box.row()
+        row.prop(context.scene.quicktitler, 'animation_in_length')
+        row.prop(context.scene.quicktitler, 'animation_out_length')
         row = layout.row()
         row.separator()
 
@@ -3267,8 +3270,14 @@ class QuickTitlingAnimationAdd(bpy.types.Operator):
         animation.variable = animation_preset['variable']
         animation.animate_in = animation_preset['animate_in']
         animation.animate_out = animation_preset['animate_out']
-        animation.in_length = animation_preset['in_length']
-        animation.out_length = animation_preset['out_length']
+        if animation_preset['in_length'] > 0 and context.scene.quicktitler.animation_in_length > 0:
+            animation.in_length = context.scene.quicktitler.animation_in_length
+        else:
+            animation.in_length = animation_preset['in_length']
+        if animation_preset['out_length'] > 0 and context.scene.quicktitler.animation_out_length > 0:
+            animation.out_length = context.scene.quicktitler.animation_out_length
+        else:
+            animation.out_length = animation_preset['out_length']
         animation.in_offset = animation_preset['in_offset']
         animation.out_offset = animation_preset['out_offset']
         animation.in_amount = animation_preset['in_amount']
@@ -3912,6 +3921,16 @@ class QuickTitleSettings(bpy.types.PropertyGroup):
         default=False)
     current_quicktitle: bpy.props.PointerProperty(type=QuickTitle)
     quicktitles: bpy.props.CollectionProperty(type=QuickTitle)
+    animation_in_length: bpy.props.IntProperty(
+        name="Animation In Length",
+        default=15,
+        min=0,
+        description="Default in animation length for newly added animations.")
+    animation_out_length: bpy.props.IntProperty(
+        name="Animation Out Length",
+        default=15,
+        min=0,
+        description="Default out animation length for newly added animations.")
 
 
 class QuickTitlingGrab(bpy.types.Operator):
