@@ -1,4 +1,4 @@
-# QuickTitling Addon For Blender 5.0
+# QuickTitling Addon For Blender 5.2
 
 This addon will create and edit simple scenes for title overlays.  
 
