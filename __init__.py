@@ -1014,6 +1014,8 @@ def set_default(preset):
     preset.enable_shadows = get_default('enable_shadows', class_type='Title')
     preset.shadowlamp_internal_name = ""
     preset.lampcenter_internal_name = ""
+    preset.light_point_brightness = get_default('light_point_brightness', class_type='Title')
+    preset.light_sun_brightness = get_default('light_sun_brightness', class_type='Title')
     preset.shadowsize = get_default('shadowsize', class_type='Title')
     preset.shadowamount = get_default('shadowamount', class_type='Title')
     preset.shadowsoft = get_default('shadowsoft', class_type='Title')
@@ -1083,6 +1085,8 @@ def load_quicktitle(filepath, preset):
     preset.shadowsoft = abs(float(root.findtext('shadowsoft', default=str(get_default('shadowsoft', class_type='Title')))))
     preset.shadowx = float(root.findtext('shadowx', default=str(get_default('shadowx', class_type='Title'))))
     preset.shadowy = float(root.findtext('shadowy', default=str(get_default('shadowy', class_type='Title'))))
+    preset.light_point_brightness = float(root.findtext('light_point_brightness', default=str(get_default('light_point_brightness', class_type='Title'))))
+    preset.light_sun_brightness = float(root.findtext('light_sun_brightness', default=str(get_default('light_sun_brightness', class_type='Title'))))
     preset.lightscalex = float(root.findtext('lightscalex', default=str(get_default('lightscalex', class_type='Title'))))
     preset.lightscaley = float(root.findtext('lightscaley', default=str(get_default('lightscaley', class_type='Title'))))
     preset.lightx = float(root.findtext('lightx', default=str(get_default('lightx', class_type='Title'))))
@@ -1370,6 +1374,8 @@ def copy_title_preset(old_title, title):
     title.shadowsoft = old_title.shadowsoft
     title.shadowx = old_title.shadowx
     title.shadowy = old_title.shadowy
+    title.light_point_brightness = old_title.light_point_brightness
+    title.light_sun_brightness = old_title.light_sun_brightness
     title.lightscalex = old_title.lightscalex
     title.lightscaley = old_title.lightscaley
     title.lightx = old_title.lightx
@@ -1504,21 +1510,34 @@ def quicktitle_create(quicktitle=False, frame=None):
     lamp1.data.energy = lamp_energy
     lamp1.data.use_shadow = False
     lamp1.parent = lampcenter
+    quicktitle_preset.light_point_1_internal_name = lamp1.name
     bpy.ops.object.light_add(location=(1.1, -.6, .5))
     lamp2 = bpy.context.active_object
     lamp2.data.energy = lamp_energy
     lamp2.data.use_shadow = False
     lamp2.parent = lampcenter
+    quicktitle_preset.light_point_2_internal_name = lamp2.name
     bpy.ops.object.light_add(location=(-1.1, .6, .5))
     lamp3 = bpy.context.active_object
     lamp3.data.energy = lamp_energy
     lamp3.data.use_shadow = False
     lamp3.parent = lampcenter
+    quicktitle_preset.light_point_3_internal_name = lamp3.name
     bpy.ops.object.light_add(location=(1.1, .6, .5))
     lamp4 = bpy.context.active_object
     lamp4.data.energy = lamp_energy
     lamp4.data.use_shadow = False
     lamp4.parent = lampcenter
+    quicktitle_preset.light_point_4_internal_name = lamp4.name
+    bpy.ops.object.light_add(location=(0, 0, -1), type='SUN')
+    sun_lamp = bpy.context.active_object
+    sun_lamp.data.energy = 0
+    sun_lamp.data.angle = 1  #in radians, about 57 degrees
+    sun_lamp.data.use_shadow = False
+    bpy.ops.object.constraint_add(type='DAMPED_TRACK')
+    sun_lamp.constraints[0].target = lampcenter
+    sun_lamp.constraints[0].track_axis = 'TRACK_Z'
+    quicktitle_preset.light_sun_internal_name = sun_lamp.name
 
     #Shadow lamp setup
     bpy.ops.object.light_add(type='SPOT', location=(0, 0, 1))
@@ -1961,7 +1980,36 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
         lampcenter.location = (quicktitle.lightx, quicktitle.lighty, 0)
         lampcenter.rotation_euler[2] = -quicktitle.lightrot/180.0*pi
     else:
-        print('Selected Title Scene Is Incomplete: missing Lamp Center')
+        print('Selected Title Scene Is Incomplete: Missing Lamp Center')
+
+    #attempt to update lamp brightnesses
+    point_brightness = 50
+    if quicktitle.light_point_1_internal_name in scene.objects:
+        pointlamp1 = scene.objects[quicktitle.light_point_1_internal_name]
+        pointlamp1.data.energy = quicktitle.light_point_brightness * point_brightness
+    else:
+        print('Selected Title Scene Is Incomplete: Missing Point Lamp 1')
+    if quicktitle.light_point_2_internal_name in scene.objects:
+        pointlamp2 = scene.objects[quicktitle.light_point_2_internal_name]
+        pointlamp2.data.energy = quicktitle.light_point_brightness * point_brightness
+    else:
+        print('Selected Title Scene Is Incomplete: Missing Point Lamp 2')
+    if quicktitle.light_point_3_internal_name in scene.objects:
+        pointlamp3 = scene.objects[quicktitle.light_point_3_internal_name]
+        pointlamp3.data.energy = quicktitle.light_point_brightness * point_brightness
+    else:
+        print('Selected Title Scene Is Incomplete: Missing Point Lamp 3')
+    if quicktitle.light_point_4_internal_name in scene.objects:
+        pointlamp4 = scene.objects[quicktitle.light_point_4_internal_name]
+        pointlamp4.data.energy = quicktitle.light_point_brightness * point_brightness
+    else:
+        print('Selected Title Scene Is Incomplete: Missing Point Lamp 4')
+    if quicktitle.light_sun_internal_name in scene.objects:
+        sun_lamp = scene.objects[quicktitle.light_sun_internal_name]
+        sun_lamp.data.energy = quicktitle.light_sun_brightness * 3.1
+        sun_lamp.data.angle = quicktitle.lightscalex
+    else:
+        print('Selected Title Scene Is Incomplete: Missing Sun Lamp')
 
     #update individual scene objects
     for object_layer, object_preset in enumerate(quicktitle.objects):
@@ -2649,6 +2697,35 @@ class QuickTitle(bpy.types.PropertyGroup):
         default=0,
         description="Vertical position of the shadow casting lamp.  Values depend on the image aspect ratio, 0.56 will usually be around the top of the screen, 0 at the center, and -0.56 around the bottom.",
         update=quicktitle_autoupdate)
+    light_point_1_internal_name: bpy.props.StringProperty(
+        name="Internal Name For Point Lamp 1",
+        default='')
+    light_point_2_internal_name: bpy.props.StringProperty(
+        name="Internal Name For Point Lamp 2",
+        default='')
+    light_point_3_internal_name: bpy.props.StringProperty(
+        name="Internal Name For Point Lamp 3",
+        default='')
+    light_point_4_internal_name: bpy.props.StringProperty(
+        name="Internal Name For Point Lamp 4",
+        default='')
+    light_sun_internal_name: bpy.props.StringProperty(
+        name="Internal Name For The Sun Lamp",
+        default='')
+    light_point_brightness: bpy.props.FloatProperty(
+        name="Point Lamps Brightness",
+        default=1,
+        min=0,
+        max=10,
+        description="Controls the brightness of the four point lights at the corners of the scene.  0 is no point lights, 1 is average brightness.",
+        update=quicktitle_autoupdate)
+    light_sun_brightness: bpy.props.FloatProperty(
+        name="Sun Lamp Brightness",
+        default=0,
+        min=0,
+        max=4,
+        description="Controls the brightness of the single sun lamp that evenly lights the whole scene.  0 is no sun lamp, 1 is average brightness.",
+        update=quicktitle_autoupdate)
     lightx: bpy.props.FloatProperty(
         name="Lamps X Position",
         default=0,
@@ -2976,15 +3053,19 @@ class QUICKTITLING_PT_Panel(bpy.types.Panel):
         if quicktitle_preset.enable_shadows:
             suboutline = outline.box()
             row = suboutline.row(align=True)
-            row.prop(quicktitle_preset, 'lightscalex', text='Lighting Width')
-            row.prop(quicktitle_preset, 'lightscaley', text='Lighting Height')
+            row.prop(quicktitle_preset, 'light_point_brightness', text='Point Bright')
+            row.prop(quicktitle_preset, 'light_sun_brightness', text='Sun Bright')
 
             row = suboutline.row(align=True)
-            row.prop(quicktitle_preset, 'lightx', text='Lights X Offset')
-            row.prop(quicktitle_preset, 'lighty', text='Lights Y Offset')
+            row.prop(quicktitle_preset, 'lightscalex', text='Width')
+            row.prop(quicktitle_preset, 'lightscaley', text='Height')
+
+            row = suboutline.row(align=True)
+            row.prop(quicktitle_preset, 'lightx', text='X Pos')
+            row.prop(quicktitle_preset, 'lighty', text='Y Pos')
 
             row = suboutline.row()
-            row.prop(quicktitle_preset, 'lightrot', text='Lights Rotation')
+            row.prop(quicktitle_preset, 'lightrot', text='Rotation')
 
             suboutline = outline.box()
             row = suboutline.row()
@@ -2995,8 +3076,8 @@ class QUICKTITLING_PT_Panel(bpy.types.Panel):
             row.prop(quicktitle_preset, 'shadowsoft', text='Shadow Soft')
 
             row = suboutline.row(align=True)
-            row.prop(quicktitle_preset, 'shadowx', text='Shadow X Offset')
-            row.prop(quicktitle_preset, 'shadowy', text='Shadow Y Offset')
+            row.prop(quicktitle_preset, 'shadowx', text='Shadow X')
+            row.prop(quicktitle_preset, 'shadowy', text='Shadow Y')
 
 
 class QuickTitlingSavePreset(bpy.types.Operator):
@@ -3433,6 +3514,10 @@ class QuickTitlingPresetExport(bpy.types.Operator, ExportHelper):
             Tree.SubElement(root, 'shadowx').text = str(preset.shadowx)
         if preset.shadowy != get_default('shadowy', class_type='Title'):
             Tree.SubElement(root, 'shadowy').text = str(preset.shadowy)
+        if preset.light_point_brightness != get_default('light_point_brightness', class_type='Title'):
+            Tree.SubElement(root, 'light_point_brightness').text = str(preset.light_point_brightness)
+        if preset.light_sun_brightness != get_default('light_sun_brightness', class_type='Title'):
+            Tree.SubElement(root, 'light_sun_brightness').text = str(preset.light_sun_brightness)
         if preset.lightscalex != get_default('lightscalex', class_type='Title'):
             Tree.SubElement(root, 'lightscalex').text = str(preset.lightscalex)
         if preset.lightscaley != get_default('lightscaley', class_type='Title'):
@@ -3872,11 +3957,13 @@ class QuickTitlingCreate(bpy.types.Operator):
             quicktitle = current_quicktitle()
             quicktitle.length = sequence.duration
             quicktitle.name = sequence.name
+            quicktitle.light_point_brightness = 0
+            quicktitle.light_sun_brightness = 1
             strip_object = quicktitle.objects.add()
             strip_object.name = sequence.name
             strip_object.type = 'IMAGE'
             strip_object.roughness = 1
-            strip_object.use_shadeless = True
+            #strip_object.use_shadeless = True
             strip_object.loop = False
             strip_object.texture = sequence.filepath
             if sequence.type == 'MOVIE':
