@@ -2780,7 +2780,7 @@ class QUICKTITLING_UL_AnimationListItem(bpy.types.UIList):
 
 
 class QUICKTITLING_PT_Panel(bpy.types.Panel):
-    #Panel for QuickTitling settings and operators
+    #Panel for general QuickTitling settings and operators
     bl_label = "Quick Titling"
     bl_space_type = 'SEQUENCE_EDITOR'
     bl_region_type = 'UI'
@@ -2790,294 +2790,378 @@ class QUICKTITLING_PT_Panel(bpy.types.Panel):
         layout = self.layout
         quicktitle_sequence = titling_scene_selected()
         quicktitle_preset = current_quicktitle(quicktitle_sequence)
-        box = layout.box()
         if not quicktitle_sequence:
             #no title selected, display preset manager
             current_edited = context.scene.quicktitler.current_edited
-            row = box.row()
+            row = layout.row()
             row.label(text="Select Preset:")
             row.menu('QUICKTITLING_MT_preset_menu', text=quicktitle_preset.name)
-            row = box.row()
+            row = layout.row()
             row.operator('quicktitler.preset_import', text='Import Preset')
-            row = box.row()
+            row = layout.row()
             row.operator('quicktitler.create', text='Create New Title').action = 'create'
             convertable_strip = convertable_strip_selected()
             if convertable_strip:
-                row = box.row()
+                row = layout.row()
                 row.operator('quicktitler.create', text='Convert Active Strip To Title').action = 'convert_strip'
         else:
             add_overlay()
             #title is selected, only show copy preset back to main button
             current_edited = quicktitle_sequence.scene.quicktitler.current_edited
-            row = box.row()
+            row = layout.row()
             row.operator('quicktitler.replace_image', text='Render To Image')
-            row = box.row()
+            row = layout.row()
             row.operator('quicktitler.create', text='Update Title').action = 'update_all'
-            row = box.row()
+            row = layout.row()
             row.operator('quicktitler.create', text='Duplicate Current Title').action = 'create'
 
-        row = box.row()
+        row = layout.row()
+        row = layout.row()
         row.prop(context.scene.quicktitler, 'autoupdate')
-        row = box.row()
+        row = layout.row()
         row.prop(context.scene.quicktitler, 'animation_in_length')
         row.prop(context.scene.quicktitler, 'animation_out_length')
-        row = layout.row()
-        row.separator()
 
-        bottom = layout.box()
-        row = bottom.row()
+
+class QUICKTITLING_PT_TitlePanel(bpy.types.Panel):
+    #Panel for QuickTitling title settings
+    bl_label = "Title Settings"
+    bl_space_type = "SEQUENCE_EDITOR"
+    bl_region_type = "UI"
+    bl_category = "QuickTitling"
+
+    def draw(self, context):
+        layout = self.layout
+        quicktitle_sequence = titling_scene_selected()
+        quicktitle_preset = current_quicktitle(quicktitle_sequence)
+
+        if not quicktitle_sequence:
+            current_edited = context.scene.quicktitler.current_edited
+        else:
+            current_edited = quicktitle_sequence.scene.quicktitler.current_edited
+
+        row = layout.row()
         modified = " (Modified)" if current_edited else ""
         if not quicktitle_sequence:
             row.label(text="Edit This Preset:"+modified)
-            row = bottom.row()
+            row = layout.row()
             split = row.split()
             split.operator('quicktitler.save_preset')
             split.enabled = current_edited
             row.operator('quicktitler.preset_export', text='Export')
-
         else:
             row.label(text="Edit Selected Title:"+modified)
-            row = bottom.row()
+            row = layout.row()
             split = row.split()
             split.operator('quicktitler.save_preset')
             split.enabled = current_edited
             row.operator('quicktitler.preset_export', text='Export')
 
-        row = bottom.row()
+        row = layout.row()
         row.prop(quicktitle_preset, 'name')
 
-        row = bottom.row()
+        row = layout.row()
         row.prop(quicktitle_preset, 'description')
 
-        row = bottom.row()
+        row = layout.row()
         row.prop(quicktitle_preset, 'length')
         row.prop(quicktitle_preset, 'z_scale')
 
-        row = bottom.row()
+        row = layout.row()
         row.label(text="Objects:")
-        preset_objects = quicktitle_preset.objects
-        current_object_index = quicktitle_preset.selected_object
-        if len(preset_objects) >= current_object_index + 1:
-            current_object = preset_objects[current_object_index]
-        else:
-            current_object = None
-
-        row = bottom.row()
+        row = layout.row()
         row.template_list("QUICKTITLING_UL_ObjectListItem", "", quicktitle_preset, 'objects', quicktitle_preset, 'selected_object', rows=2)
         col = row.column(align=True)
         col.operator("quicktitler.object_up", text="", icon="TRIA_UP").index = quicktitle_preset.selected_object
         col.operator("quicktitler.object_down", text="", icon="TRIA_DOWN").index = quicktitle_preset.selected_object
 
-        row = bottom.row(align=True)
+        row = layout.row(align=True)
         row.label(text="Add:")
         row.operator('quicktitler.add_object', text='Text', icon=quicktitle_object_icon('TEXT')).type = 'TEXT'
         row.operator('quicktitler.add_object', text='Image', icon=quicktitle_object_icon('IMAGE')).type = 'IMAGE'
         row.operator('quicktitler.add_object', text='Box', icon=quicktitle_object_icon('BOX')).type = 'BOX'
         row.operator('quicktitler.add_object', text='Circle', icon=quicktitle_object_icon('CIRCLE')).type = 'CIRCLE'
+        row = layout.row()
+        row.operator('quicktitler.add_object', text='Duplicate Selected').type = 'DUPLICATE'
 
-        if current_object:
-            row = bottom.row()
-            row.operator('quicktitler.add_object', text='Duplicate Selected').type = 'DUPLICATE'
 
-            # Object settings
-            outline = bottom.box()
+class QUICKTITLING_PT_ObjectPanel(bpy.types.Panel):
+    #Panel for QuickTitling object settings
+    bl_label = "Object Settings"
+    bl_space_type = "SEQUENCE_EDITOR"
+    bl_region_type = "UI"
+    bl_category = "QuickTitling"
 
-            row = outline.row()
-            split = row.split(factor=0.9)
-            split.prop(current_object, 'name', text='Object Name', icon=quicktitle_object_icon(current_object.type))
-            split.prop(current_object, 'visible', text='')
-            if current_object.type == 'TEXT':
-                subarea = outline.box()
+    current_object = None
 
-                row = subarea.row()
-                row.prop(current_object, 'text')
+    @classmethod
+    def poll(cls, context):
+        quicktitle_sequence = titling_scene_selected()
+        quicktitle_preset = current_quicktitle(quicktitle_sequence)
 
-                row = subarea.row()
-                split = row.split(factor=0.9, align=True)
-                split.menu('QUICKTITLING_MT_fonts_menu', text=current_object.font)
-                split.operator('quicktitler.load_font', text='+')
+        preset_objects = quicktitle_preset.objects
+        current_object_index = quicktitle_preset.selected_object
+        if len(preset_objects) >= current_object_index + 1:
+            cls.current_object = preset_objects[current_object_index]
+            return True
+        else:
+            cls.current_object = None
+            return False
 
-                row = subarea.row()
-                row.prop(current_object, 'word_wrap', text='Wrapping')
-                row.prop(current_object, 'wrap_width', text='Width')
 
-                row = subarea.row()
-                row.prop(current_object, 'align', expand=True)
-
-            row = outline.row(align=True)
-            split = row.split(factor=.15, align=True)
-            split.label(text='Pos:')
-            split.prop(current_object, 'x', text='X')
-            split.prop(current_object, 'y', text='Y')
-            split.prop(current_object, 'z', text='Z')
-
-            row = outline.row(align=True)
-            split = row.split(factor=.15, align=True)
-            split.label(text='Rot:')
-            split.prop(current_object, 'rot_x', text='X')
-            split.prop(current_object, 'rot_y', text='Y')
-            split.prop(current_object, 'rot_z', text='Z')
-
-            row = outline.row()
-            row.prop(current_object, 'shear', text='Shearing')
-            row.prop(current_object, 'scale', text='Scale')
-
-            row = outline.row(align=True)
-            row.prop(current_object, 'width', text='Width')
-            row.prop(current_object, 'height', text='Height')
-
-            if current_object.type == 'TEXT' or current_object.type == 'BOX' or current_object.type == 'CIRCLE':
-                subarea = outline.box()
-
-                row = subarea.row()
-                row.label(text='Thickness', icon="MESH_CUBE")
-                row.prop(current_object, 'extrude', text='Amount')
-
-                row = subarea.row(align=True)
-                row.prop(current_object, 'bevel', text='Bevel')
-                row.prop(current_object, 'bevel_resolution', text='Resolution')
-
-                subarea = outline.box()
-                row = subarea.row()
-                row.label(text="Outline", icon="MOD_SKIN")
-                row.prop(current_object, 'outline', text="Enable")
-                row = subarea.row()
-                split = row.split(factor=.85)
-                subsplit = split.split()
-                subsplit.prop(current_object, 'outline_size', text='Size')
-                subsplit.prop(current_object, 'outline_alpha', text='Alpha')
-                split.prop(current_object, 'outline_diffuse_color', text="")
-
-            subarea = outline.box()
+    def draw(self, context):
+        layout = self.layout
+        row = layout.row()
+        current_object = self.current_object
+        split = row.split(factor=0.9)
+        split.prop(current_object, 'name', text='Name', icon=quicktitle_object_icon(current_object.type))
+        split.prop(current_object, 'visible', text='')
+        if current_object.type == 'TEXT':
+            subarea = layout.box()
 
             row = subarea.row()
-            row.label(text='Material:', icon="MATERIAL_DATA")
-            row.prop(current_object, 'set_material', text='Set Material')
-            row.operator('quicktitler.new_material', text='New')
+            row.prop(current_object, 'text')
 
-            if current_object.set_material:
-                row = subarea.row()
-                row.menu('QUICKTITLING_MT_materials_menu', text=current_object.set_material_name)
+            row = subarea.row()
+            split = row.split(factor=0.9, align=True)
+            split.menu('QUICKTITLING_MT_fonts_menu', text=current_object.font)
+            split.operator('quicktitler.load_font', text='+')
 
+            row = subarea.row()
+            row.prop(current_object, 'word_wrap', text='Wrapping')
+            row.prop(current_object, 'wrap_width', text='Width')
+
+            row = subarea.row()
+            row.prop(current_object, 'align', expand=True)
+
+        row = layout.row(align=True)
+        split = row.split(factor=.15, align=True)
+        split.label(text='Pos:')
+        split.prop(current_object, 'x', text='X')
+        split.prop(current_object, 'y', text='Y')
+        split.prop(current_object, 'z', text='Z')
+
+        row = layout.row(align=True)
+        split = row.split(factor=.15, align=True)
+        split.label(text='Rot:')
+        split.prop(current_object, 'rot_x', text='X')
+        split.prop(current_object, 'rot_y', text='Y')
+        split.prop(current_object, 'rot_z', text='Z')
+
+        row = layout.row()
+        row.prop(current_object, 'shear', text='Shearing')
+        row.prop(current_object, 'scale', text='Scale')
+
+        row = layout.row(align=True)
+        row.prop(current_object, 'width', text='Width')
+        row.prop(current_object, 'height', text='Height')
+
+        if current_object.type == 'TEXT' or current_object.type == 'BOX' or current_object.type == 'CIRCLE':
+            subarea = layout.box()
+
+            row = subarea.row()
+            row.label(text='Thickness', icon="MESH_CUBE")
+            row.prop(current_object, 'extrude', text='Amount')
+
+            row = subarea.row(align=True)
+            row.prop(current_object, 'bevel', text='Bevel')
+            row.prop(current_object, 'bevel_resolution', text='Resolution')
+
+            subarea = layout.box()
+            row = subarea.row()
+            row.label(text="Outline", icon="MOD_SKIN")
+            row.prop(current_object, 'outline', text="Enable")
+            row = subarea.row()
+            split = row.split(factor=.85)
+            subsplit = split.split()
+            subsplit.prop(current_object, 'outline_size', text='Size')
+            subsplit.prop(current_object, 'outline_alpha', text='Alpha')
+            split.prop(current_object, 'outline_diffuse_color', text="")
+
+class QUICKTITLING_PT_ObjectMaterialPanel(bpy.types.Panel):
+    #Panel for QuickTitling object material settings
+    bl_label = "Object Material Settings"
+    bl_space_type = "SEQUENCE_EDITOR"
+    bl_region_type = "UI"
+    bl_category = "QuickTitling"
+
+    current_object = None
+
+    @classmethod
+    def poll(cls, context):
+        quicktitle_sequence = titling_scene_selected()
+        quicktitle_preset = current_quicktitle(quicktitle_sequence)
+
+        preset_objects = quicktitle_preset.objects
+        current_object_index = quicktitle_preset.selected_object
+        if len(preset_objects) >= current_object_index + 1:
+            cls.current_object = preset_objects[current_object_index]
+            return True
+        else:
+            cls.current_object = None
+            return False
+
+    def draw(self, context):
+        layout = self.layout
+        current_object = self.current_object
+
+        row = layout.row()
+        row.label(text='Material:', icon="MATERIAL_DATA")
+        row.prop(current_object, 'set_material', text='Set Material')
+        row.operator('quicktitler.new_material', text='New')
+
+        if current_object.set_material:
+            row = layout.row()
+            row.menu('QUICKTITLING_MT_materials_menu', text=current_object.set_material_name)
+
+        else:
+            row = layout.row()
+            row.label(text=current_object.material)
+            row = layout.row()
+            split = row.split(factor=.85)
+            subsplit = split.split()
+            subsplit.prop(current_object, 'use_shadeless', text='Use No Shading')
+            subsplit.prop(current_object, 'cast_shadows', text='Cast Shadows')
+            split.prop(current_object, 'diffuse_color', text='')
+            if not current_object.use_shadeless:
+                row = layout.row()
+                row.prop(current_object, 'metallic', text="Metallic")
+
+                row = layout.row(align=True)
+                row.prop(current_object, 'specular_intensity', text="Specular")
+                row.prop(current_object, 'roughness', text="Roughness")
+
+            if current_object.type == 'IMAGE':
+                row = layout.row()
+                row.prop(current_object, 'alpha', text='Alpha Multiply')
+                row = layout.row()
+                row.prop(current_object, 'texture', text='Texture', icon="IMAGE_RGB")
+                row = layout.row()
+                row.prop(current_object, 'window_mapping')
+
+                row = layout.row()
+                row.prop(current_object, 'alpha_texture', text='Alpha Texture', icon="IMAGE_ALPHA")
+                texture_extension = os.path.splitext(current_object.texture)[1].lower()
+                alpha_extension = os.path.splitext(current_object.alpha_texture)[1].lower()
+                if texture_extension in bpy.path.extensions_movie or alpha_extension in bpy.path.extensions_movie:
+                    row = layout.row()
+                    row.prop(current_object, 'loop')
+                    row = layout.row()
+                    row.prop(current_object, 'frame_offset')
+                    row.prop(current_object, 'frame_length')
             else:
-                row = subarea.row()
-                row.label(text=current_object.material)
-                row = subarea.row()
-                split = row.split(factor=.85)
-                subsplit = split.split()
-                subsplit.prop(current_object, 'use_shadeless', text='Use No Shading')
-                subsplit.prop(current_object, 'cast_shadows', text='Cast Shadows')
-                split.prop(current_object, 'diffuse_color', text='')
+                row = layout.row(align=True)
+                row.prop(current_object, 'alpha', text='Alpha')
                 if not current_object.use_shadeless:
-                    row = subarea.row()
-                    row.prop(current_object, 'metallic', text="Metallic")
+                    row = layout.row(align=True)
+                    row.prop(current_object, 'transmission', text='Transmission')
+                    row.prop(current_object, 'index_of_refraction', text='IOR')
 
-                    row = subarea.row(align=True)
-                    row.prop(current_object, 'specular_intensity', text="Specular")
-                    row.prop(current_object, 'roughness', text="Roughness")
 
-                if current_object.type == 'IMAGE':
-                    row = subarea.row()
-                    row.prop(current_object, 'alpha', text='Alpha Multiply')
-                    row = subarea.row()
-                    row.prop(current_object, 'texture', text='Texture', icon="IMAGE_RGB")
-                    row = subarea.row()
-                    row.prop(current_object, 'window_mapping')
+class QUICKTITLING_PT_ObjectAnimationPanel(bpy.types.Panel):
+    #Panel for QuickTitling object animation settings
+    bl_label = "Object Animation Settings"
+    bl_space_type = "SEQUENCE_EDITOR"
+    bl_region_type = "UI"
+    bl_category = "QuickTitling"
 
-                    row = subarea.row()
-                    row.prop(current_object, 'alpha_texture', text='Alpha Texture', icon="IMAGE_ALPHA")
-                    texture_extension = os.path.splitext(current_object.texture)[1].lower()
-                    alpha_extension = os.path.splitext(current_object.alpha_texture)[1].lower()
-                    if texture_extension in bpy.path.extensions_movie or alpha_extension in bpy.path.extensions_movie:
-                        row = subarea.row()
-                        row.prop(current_object, 'loop')
-                        row = subarea.row()
-                        row.prop(current_object, 'frame_offset')
-                        row.prop(current_object, 'frame_length')
-                else:
-                    row = subarea.row(align=True)
-                    row.prop(current_object, 'alpha', text='Alpha')
-                    if not current_object.use_shadeless:
-                        row = subarea.row(align=True)
-                        row.prop(current_object, 'transmission', text='Transmission')
-                        row.prop(current_object, 'index_of_refraction', text='IOR')
+    current_object = None
 
-            subarea = outline.box()
+    @classmethod
+    def poll(cls, context):
+        quicktitle_sequence = titling_scene_selected()
+        quicktitle_preset = current_quicktitle(quicktitle_sequence)
 
-            row = subarea.row()
-            row.menu('QUICKTITLING_MT_animations_menu', text='Add Animation', icon="ANIM_DATA")
+        preset_objects = quicktitle_preset.objects
+        current_object_index = quicktitle_preset.selected_object
+        if len(preset_objects) >= current_object_index + 1:
+            cls.current_object = preset_objects[current_object_index]
+            return True
+        else:
+            cls.current_object = None
+            return False
 
-            if current_object.animations:
-                row = subarea.row()
-                row.operator('quicktitler.apply_animations', text='Apply To All Objects')
+    def draw(self, context):
+        layout = self.layout
+        current_object = self.current_object
 
-                row = subarea.row()
-                row.template_list("QUICKTITLING_UL_AnimationListItem", "", current_object, 'animations', current_object, 'selected_animation', rows=2)
+        row = layout.row()
+        row.menu('QUICKTITLING_MT_animations_menu', text='Add Animation', icon="ANIM_DATA")
 
-                if current_object.selected_animation < len(current_object.animations):
-                    animation = current_object.animations[current_object.selected_animation]
+        if current_object.animations:
+            row = layout.row()
+            row.operator('quicktitler.apply_animations', text='Apply To All Objects')
 
-                    row = subarea.row()
-                    row.prop(animation, 'animate_in', text='Animate In')
-                    row.prop(animation, 'animate_out', text='Animate Out')
+            row = layout.row()
+            row.template_list("QUICKTITLING_UL_AnimationListItem", "", current_object, 'animations', current_object, 'selected_animation', rows=2)
 
-                    row = subarea.row()
-                    row.prop(animation, 'in_length', text='In Length')
-                    row.prop(animation, 'out_length', text='Out Length')
+            if current_object.selected_animation < len(current_object.animations):
+                animation = current_object.animations[current_object.selected_animation]
 
-                    row = subarea.row()
-                    row.prop(animation, 'in_offset', text='In Frame Offset')
-                    row.prop(animation, 'out_offset', text='Out Frame Offset')
+                row = layout.row()
+                row.prop(animation, 'animate_in', text='Animate In')
+                row.prop(animation, 'animate_out', text='Animate Out')
 
-                    row = subarea.row()
-                    row.prop(animation, 'in_amount', text='In Amount')
-                    row.prop(animation, 'out_amount', text='Out Amount')
+                row = layout.row()
+                row.prop(animation, 'in_length', text='In Length')
+                row.prop(animation, 'out_length', text='Out Length')
 
-                    row = subarea.row()
-                    row.prop(animation, 'cycle_type', text='Animation Cycle')
-                    if animation.cycle_type != 'NONE':
-                        row = subarea.row(align=True)
-                        row.prop(animation, 'cycle_x_scale')
-                        row.prop(animation, 'cycle_y_scale')
-                        row = subarea.row()
-                        row.prop(animation, 'cycle_offset')
+                row = layout.row()
+                row.prop(animation, 'in_offset', text='In Frame Offset')
+                row.prop(animation, 'out_offset', text='Out Frame Offset')
 
-        # Shadow section
-        outline = bottom.box()
+                row = layout.row()
+                row.prop(animation, 'in_amount', text='In Amount')
+                row.prop(animation, 'out_amount', text='Out Amount')
 
-        row = outline.row()
-        split = row.split(factor=.1)
-        split.prop(quicktitle_preset, 'enable_shadows', icon="TRIA_DOWN" if quicktitle_preset.enable_shadows else "TRIA_RIGHT", icon_only=True, emboss=True)
-        split.label(text='Title Lighting', icon="LIGHT")
+                row = layout.row()
+                row.prop(animation, 'cycle_type', text='Cyclic')
+                if animation.cycle_type != 'NONE':
+                    row = layout.row(align=True)
+                    row.prop(animation, 'cycle_x_scale')
+                    row.prop(animation, 'cycle_y_scale')
+                    row = layout.row()
+                    row.prop(animation, 'cycle_offset')
 
-        if quicktitle_preset.enable_shadows:
-            suboutline = outline.box()
-            row = suboutline.row(align=True)
-            row.prop(quicktitle_preset, 'light_point_brightness', text='Point Bright')
-            row.prop(quicktitle_preset, 'light_sun_brightness', text='Sun Bright')
 
-            row = suboutline.row(align=True)
-            row.prop(quicktitle_preset, 'lightscalex', text='Width')
-            row.prop(quicktitle_preset, 'lightscaley', text='Height')
+class QUICKTITLING_PT_LightingPanel(bpy.types.Panel):
+    #Panel for QuickTitling lighting settings
+    bl_label = "Lighting Settings"
+    bl_space_type = "SEQUENCE_EDITOR"
+    bl_region_type = "UI"
+    bl_category = "QuickTitling"
 
-            row = suboutline.row(align=True)
-            row.prop(quicktitle_preset, 'lightx', text='X Pos')
-            row.prop(quicktitle_preset, 'lighty', text='Y Pos')
+    def draw(self, context):
+        layout = self.layout
+        quicktitle_sequence = titling_scene_selected()
+        quicktitle_preset = current_quicktitle(quicktitle_sequence)
 
-            row = suboutline.row()
-            row.prop(quicktitle_preset, 'lightrot', text='Rotation')
+        row = layout.row(align=True)
+        row.prop(quicktitle_preset, 'light_point_brightness', text='Point Bright')
+        row.prop(quicktitle_preset, 'light_sun_brightness', text='Sun Bright')
 
-            suboutline = outline.box()
-            row = suboutline.row()
-            row.prop(quicktitle_preset, 'shadowamount')
+        row = layout.row(align=True)
+        row.prop(quicktitle_preset, 'lightscalex', text='Width')
+        row.prop(quicktitle_preset, 'lightscaley', text='Height')
 
-            row = suboutline.row()
-            row.prop(quicktitle_preset, 'shadowsize', text='Shadow Distance')
-            row.prop(quicktitle_preset, 'shadowsoft', text='Shadow Soft')
+        row = layout.row(align=True)
+        row.prop(quicktitle_preset, 'lightx', text='X Pos')
+        row.prop(quicktitle_preset, 'lighty', text='Y Pos')
 
-            row = suboutline.row(align=True)
-            row.prop(quicktitle_preset, 'shadowx', text='Shadow X')
-            row.prop(quicktitle_preset, 'shadowy', text='Shadow Y')
+        row = layout.row()
+        row.prop(quicktitle_preset, 'lightrot', text='Rotation')
+
+        row = layout.row()
+        row = layout.row()
+        row.prop(quicktitle_preset, 'shadowamount')
+
+        row = layout.row()
+        row.prop(quicktitle_preset, 'shadowsize', text='Shadow Distance')
+        row.prop(quicktitle_preset, 'shadowsoft', text='Shadow Soft')
+
+        row = layout.row(align=True)
+        row.prop(quicktitle_preset, 'shadowx', text='Shadow X')
+        row.prop(quicktitle_preset, 'shadowy', text='Shadow Y')
 
 
 class QuickTitlingSavePreset(bpy.types.Operator):
@@ -4616,7 +4700,8 @@ classes = [QuickTitlingGrab, QuickTitleAnimation, QuickTitleObject, QuickTitle, 
            QuickTitlingFontMenu, QuickTitlingChangeFont, QuickTitlingMaterialMenu, QuickTitlingChangeMaterial,
            QuickTitlingCreate, QuickTitleSettings, QuickTitlingRotate, QuickTitlingScale, QuickTitlingSelect,
            QuickTitlingAddObject, QuickTitlingDeleteMenu, QuickTitlingPresetSelectAdd, QuickTitlingPresetMenuAdd,
-           QuickTitlingNewMaterial]
+           QuickTitlingNewMaterial, QUICKTITLING_PT_TitlePanel, QUICKTITLING_PT_ObjectPanel, QUICKTITLING_PT_ObjectMaterialPanel,
+           QUICKTITLING_PT_ObjectAnimationPanel, QUICKTITLING_PT_LightingPanel]
 
 
 def register():
