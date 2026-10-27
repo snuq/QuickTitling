@@ -40,9 +40,11 @@ You can add a new title from a built-in or custom preset directly in the sequenc
 This menu will also appear as a 'QuickTitle' sub-menu in the default sequencer strip add menu.  
 
 
-The QuickTitling panel is divided into two sections:
-### Presets Selction
-The top lets you select or import presets, create titles, and update the selected title.
+The editing panels are located in a tab called "QuickTitling" in the Sequencer sidebar. The contents of these panels will vary depending on if a title is selected or not.  
+The panels are as follows:
+
+### Quick Titling Panel
+This panel lets you select or import presets, create titles, or update the selected title.
 * Select Preset Menu
 
    Displays the internal presets, and all presets you have created in the current scene.  
@@ -72,13 +74,22 @@ The top lets you select or import presets, create titles, and update the selecte
    This will force a manual update of all objects in the selected title.  
    Use this to fix anything that might be displaying improperly, or when not using auto-update mode.
 
+* Convert Active Strip To Title
+
+    This will only be visible when a video or image strip is selected and active in the timeline.  Clicking this button will generate a new title that only includes the strip as an image object.
+
 * Auto-Update Titles Checkbox
    
    When activated, the title will be automatically updated when any settings are changed in the interface.  
    Disable this if you wish to make several changes without slowing Blender down, or if you wish to make manual changes to the title scene.  
 
-### Preset Editor
-The bottom section is an editor for the currently selected preset, or title.
+* Animation In Length/Animation Out Length
+
+    These variable inputs will set the default in and out lengths for new animations added to title objects.
+
+
+### Title Settings Panel
+This panel will edit general settings relating to the selected preset or title.
 
 * Save To Custom Titles Button
 
@@ -119,7 +130,7 @@ The bottom section is an editor for the currently selected preset, or title.
    The list order determines how close objects are to the camera. Objects higher in the list will be placed in front of objects lower in the list.  
    Use the arrows on the right to change the object order.  
    Click the 'X' button next to an object to delete it.  
-   Click on an object to select it, and edit it in the settings below.  
+   Click on an object to select it, and edit it in the object settings panels.  
 
 * Add Buttons
 
@@ -130,10 +141,9 @@ The bottom section is an editor for the currently selected preset, or title.
 
    Create a complete copy of the currently selected object in the list.
 
-### Object Editor
+### Object Settings Panel
 
-Edit the settings for the currently selected object.  
-Some settings and features will only be available for some object types.  
+Edit the general and geometry settings for the currently selected object. This panel will only be visible if an object exists in the currently selected title or preset. Some settings and features will only be available for some object types.  
 
 ##### General Object Settings:
 * Object Name
@@ -238,7 +248,9 @@ Some settings and features will only be available for some object types.
    Color of the outline.  
    Note that the outline will have no shading applied, it will be completely this color.  
 
-##### Material Settings
+### Object Material Settings Panel
+
+This panel sets or configures the material for the currently selected object in the title or preset.  This panel will not be visible if an object is not yet created in the title or preset.  Some settings will only be visible for certain object types.  
 
 * Set Material
 
@@ -305,7 +317,9 @@ Some settings and features will only be available for some object types.
    This value will be set automatically to the length of the video when a new video is loaded.  
    Set this lower than the default to cut off the end of the video.  
 
-##### Animations
+### Object Animation Settings Panel
+
+This panel allows adding and editing animations for the currently selected object in the title or preset.  This panel will not be visible if the title or preset does not have any objects.  
 
 * Add Animation Menu
 
@@ -359,33 +373,44 @@ Some settings and features will only be available for some object types.
    Time offset of animation curve.  
    Use this to desync multiple animation curves of the same type.  
 
-### Title Lighting
+### Lighting Settings Panel
 
-This section controls the light positions and shadows of the title.  
-Each title is lit by 4 front lights, and one shadow casting lamp.  
+This panel controls the light positions and shadows of the title.  
+Each title may be lit by one shadow casting lamp, 4 front point lights, or one sun lamp. 
+
+* Point Bright
+
+    Sets the brightness of 4 point lights at the corners of the title scene.  
+    A value of 0 will result in these turned off, 1 will result in even lighting (default).
+
+* Sun Bright
+
+    Sets the brightness of the sun lamp at the center of the title scene.  
+    A value of 0 will result in this turned off (default), a value of 1 will result in even lighting.  
 
 * Lighting Width  
 
-   Determines the horizontal spacing for the front lights.  
-   1 is an average value, higher values will result in the light being further apart, lower values for closer together.  
+    Determines the horizontal spacing for the front lights, and the size angle of the sun light.  
+    For the point lights, 1 is an average value, higher values will result in the light being further apart, lower values for closer together.  
+    For the sun light, this is the "angle" value in radians.  1 will result in a large angle giving smooth and even lighting, 0 will result in a single point with extreme lighting.  
 
 * Lighting Height  
 
-   Determines the vertical spacing for the front lights.
+   Determines the vertical spacing for the front point lights.  This value has no affect on the sun light.  See Lighting Width for more details.  
 
 * Lights X Offset  
 
-   Move all front lights along the horizontal axis.  
+   Move all front point lights along the horizontal axis.  This also controls the angle of the sun light.  
    0 will result in the lights being centered, negative values will move them to the left, positive values will move them to the right.  
 
 * Lights Y Offset  
 
-   Move all front lights along the vertical axis.  
+   Move all front point lights along the vertical axis.  This also controls the angle of the sun light.  
    0 will result in the lights being centered, negative values will move the lights down, positive values will move the lights up.  
 
 * Lights Rotation
 
-   Rotate all front lights around their center point.  
+   Rotate all front point lights around their center point.  This value does not affect on the sun light.  
    Rotation values are in degrees.  
 
 * Shadow Amount
@@ -403,7 +428,7 @@ Each title is lit by 4 front lights, and one shadow casting lamp.
 
    Softness of the shadows.  0 results in fully sharp shadows, higher values result in softer shadows.  
 
-* X Offset/Y Offset
+* X/Y
 
    Position of the shadow casting lamp.  
    Use this to change the direction and angle of the shadows.  
