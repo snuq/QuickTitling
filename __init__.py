@@ -1182,6 +1182,8 @@ def load_quicktitle(filepath, preset):
             newobject.align = align
         else:
             newobject.align = 'CENTER'
+        space_line = abs(float(title_object.findtext('space_line', default=str(get_default('space_line')))))
+        newobject.space_line = space_line
         newobject.outline = to_bool(title_object.findtext('outline', default=str(get_default('outline'))))
         newobject.outline_size = abs(float(title_object.findtext('outline_size', default=str(get_default('outline_size')))))
         outline_alpha = abs(float(title_object.findtext('outline_alpha', default=str(get_default('outline_alpha')))))
@@ -1331,6 +1333,7 @@ def copy_object(oldobject, newobject):
     newobject.font = oldobject.font
     newobject.word_wrap = oldobject.word_wrap
     newobject.wrap_width = oldobject.wrap_width
+    newobject.space_line = oldobject.space_line
     newobject.align = oldobject.align
     newobject.outline = oldobject.outline
     newobject.outline_size = oldobject.outline_size
@@ -1895,6 +1898,7 @@ def setup_object(title_object, object_preset, scale_multiplier):
         else:
             title_object.data.text_boxes[0].width = 0
             title_object.data.text_boxes[0].x = 0
+        title_object.data.space_line = object_preset.space_line
 
 
 def get_shaders(material, use_shadeless=False, mat_type=None):
@@ -2554,6 +2558,13 @@ class QuickTitleObject(bpy.types.PropertyGroup):
         default='CENTER',
         description="Determines the position of the text within the wrapping box.",
         update=quicktitle_autoupdate)
+    space_line: bpy.props.FloatProperty(
+        name="Text Line Spacing",
+        default=1,
+        min=0,
+        max=10,
+        description="Distance between text lines, 1 is the default height for the font.",
+        update=quicktitle_autoupdate)
 
     #Variables specific to all but Image type:
     outline: bpy.props.BoolProperty(
@@ -2930,6 +2941,9 @@ class QUICKTITLING_PT_ObjectPanel(bpy.types.Panel):
             row = subarea.row()
             row.prop(current_object, 'word_wrap', text='Wrapping')
             row.prop(current_object, 'wrap_width', text='Width')
+
+            row = subarea.row()
+            row.prop(current_object, 'space_line', text='Line Height')
 
             row = subarea.row()
             row.prop(current_object, 'align', expand=True)
@@ -3673,6 +3687,8 @@ class QuickTitlingPresetExport(bpy.types.Operator, ExportHelper):
                 Tree.SubElement(objects, 'word_wrap').text = str(title_object.word_wrap)
             if title_object.wrap_width != get_default('wrap_width'):
                 Tree.SubElement(objects, 'wrap_width').text = str(title_object.wrap_width)
+            if title_object.space_line != get_default('space_line'):
+                Tree.SubElement(objects, 'space_line').text = str(title_object.space_line)
             if title_object.align != get_default('align'):
                 Tree.SubElement(objects, 'align').text = title_object.align
             if title_object.outline != get_default('outline'):
