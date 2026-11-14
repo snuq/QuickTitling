@@ -33,7 +33,7 @@ bl_info = {
     "name": "VSE Quick Titling",
     "description": "Enables easy creation of simple title scenes in the VSE",
     "author": "Hudson Barkley (Snu)",
-    "version": (0, 6, 9),
+    "version": (0, 7, 0),
     "blender": (5, 2, 0),
     "location": "Sequencer Panels",
     "wiki_url": "https://github.com/snuq/QuickTitling",
@@ -479,20 +479,9 @@ overlay_info = ''
 keymap = None
 
 
-class ShadersHelper:
+class ShadersHelperBase:
     material = None
-    use_shadeless = False
-    mat_type = None
-    shader = None
-    output_node = None
-    mix_shader = None
-    transparency_factor = None
-    transparent_shader = None
-    light_path_factor = None
-    image_node = None
-    alpha_image_node = None
-    alpha_mix_node = None
-    texture_map_node = None
+    output_node_type = ''
 
     def disconnect_node(self, connect_from, connect_to):
         if not connect_from:
@@ -506,6 +495,12 @@ class ShadersHelper:
         links = self.material.node_tree.links
         links.new(from_socket, to_socket)
 
+    def node_is_connected(self, from_socket, to_socket):
+        for link in to_socket.links:
+            if link.from_socket == from_socket:
+                return True
+        return False
+
     def ensure_socket_connected(self, from_socket, to_socket):
         if not self.node_is_connected(from_socket, to_socket):
             self.connect_socket(from_socket, to_socket)
@@ -515,6 +510,9 @@ class ShadersHelper:
 
     def set_node_input(self, node, input_name, value):
         node.inputs[input_name].default_value = value
+
+    def get_node_input(self, node, input_name):
+        return node.inputs[input_name].default_value
 
     def find_node_type(self, node_type):
         for check_node in self.material.node_tree.nodes:
@@ -526,16 +524,6 @@ class ShadersHelper:
         for node in self.material.node_tree.nodes:
             self.material.node_tree.nodes.remove(node)
 
-    def get_output_node(self):
-        #for a material, returns the output node, while ensuring that such node exists
-        output_node = None
-        for check_node in self.material.node_tree.nodes:
-            #find the output node
-            if check_node.type == 'OUTPUT_MATERIAL':
-                output_node = check_node
-                break
-        return output_node
-
     def get_connected_node(self, node, socket_name):
         try:
             socket = node.inputs[socket_name]
@@ -543,11 +531,128 @@ class ShadersHelper:
         except:
             return None
 
-    def node_is_connected(self, from_socket, to_socket):
-        for link in to_socket.links:
-            if link.from_socket == from_socket:
-                return True
-        return False
+    def get_output_node(self):
+        #for a material, returns the output node, while ensuring that such node exists
+        output_node = None
+        for check_node in self.material.node_tree.nodes:
+            #find the output node
+            if check_node.type == self.output_node_type:
+                output_node = check_node
+                break
+        return output_node
+
+
+class WorldShadersHelper(ShadersHelperBase):
+    shader = None
+    output_node = None
+    background_node = None
+    texture_node = None
+    mapping_node = None
+
+    output_node_type = 'OUTPUT_WORLD'
+
+    def check_shaders(self):
+        if not self.output_node:
+            return None
+        if not self.background_node:
+            return None
+        if self.background_node.type != 'BACKGROUND':
+            return None
+        if not self.texture_node:
+            return None
+        if self.texture_node.type != 'TEX_ENVIRONMENT':
+            return None
+        if not self.mapping_node:
+            return None
+        if self.mapping_node.type != 'MAPPING':
+            return None
+        return True
+
+    def setup_material(self):
+        #re/creates a material
+        self.clear_material()
+
+        #create nodes
+        self.output_node = self.add_node('ShaderNodeOutputWorld')
+        self.background_node = self.add_node('ShaderNodeBackground')
+        self.texture_node = self.add_node('ShaderNodeTexEnvironment')
+        self.mapping_node = self.add_node('ShaderNodeMapping')
+        geometry_node = self.add_node('ShaderNodeNewGeometry')
+
+        #connect nodes
+        self.connect_socket(self.background_node.outputs[0], self.output_node.inputs['Surface'])
+        self.connect_socket(self.texture_node.outputs[0], self.background_node.inputs[0])
+        self.connect_socket(self.mapping_node.outputs[0], self.texture_node.inputs[0])
+        self.connect_socket(geometry_node.outputs[0], self.mapping_node.inputs['Vector'])
+
+        #set up basic values on nodes
+        self.set_node_input(self.background_node, 1, 0)
+        self.set_node_input(self.mapping_node, 'Rotation', (3.141592653589793/2, 0, 0))
+
+    def load_from_material(self, material): #(material is a world)
+        self.material = material
+        self.output_node = self.get_output_node()
+        self.background_node = self.get_connected_node(self.output_node, 'Surface')
+        self.texture_node = self.get_connected_node(self.background_node, 0)
+        self.mapping_node = self.get_connected_node(self.texture_node, 0)
+        if not self.check_shaders():
+            self.setup_material()
+
+    def update_shader(self, preset):
+        self.set_node_input(self.background_node, 1, preset.light_background_brightness)
+        current_rotation = self.get_node_input(self.mapping_node, 'Rotation')
+        new_rotation = (current_rotation[0], current_rotation[1], preset.lightrot * (3.141592653589793 / 180.0))
+        self.set_node_input(self.mapping_node, 'Rotation', new_rotation)
+        current_scale = self.get_node_input(self.mapping_node, 'Scale')
+        new_scale = (1/preset.lightscalex, 1/preset.lightscaley, current_scale[2])
+        self.set_node_input(self.mapping_node, 'Scale', new_scale)
+
+    def update_image(self, preset):
+        if preset.background_texture:
+            #image texture is set
+            path = os.path.abspath(bpy.path.abspath(preset.background_texture))
+            extension = os.path.splitext(path)[1].lower()
+            if extension in bpy.path.extensions_movie:
+                #The file is a known video file type, load it
+                video = True
+            else:
+                video = False
+            if os.path.isfile(path) and (extension in bpy.path.extensions_image or video):
+                #The file is a known file type, load it
+                image = find_load_image(path)
+                image.update()
+                self.texture_node.image = image
+                if video:
+                    #set video defaults
+                    if preset.frame_length == -1 or preset.frame_offset == -1:
+                        preset.frame_offset = 0
+                    preset.frame_length = image.frame_duration
+                    self.texture_node.image_user.frame_duration = image.frame_duration
+                    self.texture_node.image_user.frame_start = 1
+                    self.texture_node.image_user.use_cyclic = True
+                    self.texture_node.image_user.use_auto_refresh = True
+
+        else:
+            #image texture is not set or has been unset
+            self.set_node_input(self.background_node, 1, 0)
+            self.texture_node.image = None
+
+
+class ShadersHelper(ShadersHelperBase):
+    use_shadeless = False
+    mat_type = None
+    shader = None
+    output_node = None
+    mix_shader = None
+    transparency_factor = None
+    transparent_shader = None
+    light_path_factor = None
+    image_node = None
+    alpha_image_node = None
+    alpha_mix_node = None
+    texture_map_node = None
+
+    output_node_type = 'OUTPUT_MATERIAL'
 
     def check_shaders(self):
         if not self.output_node:
@@ -1016,6 +1121,8 @@ def set_default(preset):
     preset.lampcenter_internal_name = ""
     preset.light_point_brightness = get_default('light_point_brightness', class_type='Title')
     preset.light_sun_brightness = get_default('light_sun_brightness', class_type='Title')
+    preset.light_background_brightness = get_default('light_background_brightness', class_type='Title')
+    preset.background_texture = get_default('background_texture', class_type='Title')
     preset.shadowsize = get_default('shadowsize', class_type='Title')
     preset.shadowamount = get_default('shadowamount', class_type='Title')
     preset.shadowsoft = get_default('shadowsoft', class_type='Title')
@@ -1087,6 +1194,13 @@ def load_quicktitle(filepath, preset):
     preset.shadowy = float(root.findtext('shadowy', default=str(get_default('shadowy', class_type='Title'))))
     preset.light_point_brightness = float(root.findtext('light_point_brightness', default=str(get_default('light_point_brightness', class_type='Title'))))
     preset.light_sun_brightness = float(root.findtext('light_sun_brightness', default=str(get_default('light_sun_brightness', class_type='Title'))))
+    preset.light_background_brightness = float(root.findtext('light_background_brightness', default=str(get_default('light_background_brightness', class_type='Title'))))
+    background_texture = root.findtext('background_texture', default=get_default('background_texture', class_type='Title'))
+    if not os.path.isfile(os.path.abspath(bpy.path.abspath(background_texture))):
+        test_texture = os.path.join(preset_location, background_texture)
+        if os.path.isfile(test_texture):
+            background_texture = test_texture
+    preset.background_texture = background_texture
     preset.lightscalex = float(root.findtext('lightscalex', default=str(get_default('lightscalex', class_type='Title'))))
     preset.lightscaley = float(root.findtext('lightscaley', default=str(get_default('lightscaley', class_type='Title'))))
     preset.lightx = float(root.findtext('lightx', default=str(get_default('lightx', class_type='Title'))))
@@ -1379,6 +1493,8 @@ def copy_title_preset(old_title, title):
     title.shadowy = old_title.shadowy
     title.light_point_brightness = old_title.light_point_brightness
     title.light_sun_brightness = old_title.light_sun_brightness
+    title.light_background_brightness = old_title.light_background_brightness
+    title.background_texture = old_title.background_texture
     title.lightscalex = old_title.lightscalex
     title.lightscaley = old_title.lightscaley
     title.lightx = old_title.lightx
@@ -1580,6 +1696,12 @@ def quicktitle_create(quicktitle=False, frame=None):
     shadow_lamp.data.shadow_soft_size = 0
     shadow_lamp.data.use_shadow = False
     shadow_lamp.data.spot_size = 2.6
+
+    #World setup
+    world = bpy.data.worlds.new(title_scene.name)
+    title_scene.world = world
+    background = WorldShadersHelper()
+    background.load_from_material(world)
 
     #Add scene to sequencer
     bpy.context.window.scene = scene
@@ -2014,6 +2136,16 @@ def quicktitle_update(sequence, quicktitle, update_all=False):
         sun_lamp.data.angle = quicktitle.lightscalex
     else:
         print('Selected Title Scene Is Incomplete: Missing Sun Lamp')
+
+    #attempt to update world/background
+    world = scene.world
+    if not world:
+        print('Selected Title Scene Is Incomplete: Missing World')
+    else:
+        background = WorldShadersHelper()
+        background.load_from_material(world)
+        background.update_shader(quicktitle)
+        background.update_image(quicktitle)
 
     #update individual scene objects
     for object_layer, object_preset in enumerate(quicktitle.objects):
@@ -2737,6 +2869,18 @@ class QuickTitle(bpy.types.PropertyGroup):
         max=4,
         description="Controls the brightness of the single sun lamp that evenly lights the whole scene.  0 is no sun lamp, 1 is average brightness.",
         update=quicktitle_autoupdate)
+    light_background_brightness: bpy.props.FloatProperty(
+        name="Background Lamp Brightness",
+        default=0,
+        min=0,
+        description="Controls the brightness of the background equirectangular image to light the scene.  An image must be loaded or this will cast pink light on the scene.  0 is no background lighting, 1 is average brightness.",
+        update=quicktitle_autoupdate)
+    background_texture: bpy.props.StringProperty(
+        name="Background Texture",
+        default="",
+        description="File path to the background image texture for HDRI lighting.",
+        subtype='FILE_PATH',
+        update=quicktitle_autoupdate)
     lightx: bpy.props.FloatProperty(
         name="Lamps X Position",
         default=0,
@@ -2992,6 +3136,7 @@ class QUICKTITLING_PT_ObjectPanel(bpy.types.Panel):
             subsplit.prop(current_object, 'outline_alpha', text='Alpha')
             split.prop(current_object, 'outline_diffuse_color', text="")
 
+
 class QUICKTITLING_PT_ObjectMaterialPanel(bpy.types.Panel):
     #Panel for QuickTitling object material settings
     bl_label = "Object Material Settings"
@@ -3153,6 +3298,12 @@ class QUICKTITLING_PT_LightingPanel(bpy.types.Panel):
         row = layout.row(align=True)
         row.prop(quicktitle_preset, 'light_point_brightness', text='Point Bright')
         row.prop(quicktitle_preset, 'light_sun_brightness', text='Sun Bright')
+
+        row = layout.row()
+        row.prop(quicktitle_preset, 'light_background_brightness', text='Background Bright')
+
+        row = layout.row()
+        row.prop(quicktitle_preset, 'background_texture', text='BG Texture', icon="IMAGE_RGB")
 
         row = layout.row(align=True)
         row.prop(quicktitle_preset, 'lightscalex', text='Width')
@@ -3616,6 +3767,10 @@ class QuickTitlingPresetExport(bpy.types.Operator, ExportHelper):
             Tree.SubElement(root, 'light_point_brightness').text = str(preset.light_point_brightness)
         if preset.light_sun_brightness != get_default('light_sun_brightness', class_type='Title'):
             Tree.SubElement(root, 'light_sun_brightness').text = str(preset.light_sun_brightness)
+        if preset.light_background_brightness != get_default('light_background_brightness', class_type='Title'):
+            Tree.SubElement(root, 'light_background_brightness').text = str(preset.light_background_brightness)
+        if preset.background_texture != get_default('background_texture', class_type='Title'):
+            Tree.SubElement(root, 'background_texture').text = preset.background_texture
         if preset.lightscalex != get_default('lightscalex', class_type='Title'):
             Tree.SubElement(root, 'lightscalex').text = str(preset.lightscalex)
         if preset.lightscaley != get_default('lightscaley', class_type='Title'):
@@ -4059,6 +4214,7 @@ class QuickTitlingCreate(bpy.types.Operator):
             quicktitle.name = sequence.name
             quicktitle.light_point_brightness = 0
             quicktitle.light_sun_brightness = 1
+            quicktitle.light_background_brightness = 0
             strip_object = quicktitle.objects.add()
             strip_object.name = sequence.name
             strip_object.type = 'IMAGE'
