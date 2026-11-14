@@ -2,21 +2,22 @@
   <name>Full Screen - Shiny Angled Text</name>
   <z_scale>21.0</z_scale>
   <shadowamount>0.0</shadowamount>
+  <light_sun_brightness>1.0</light_sun_brightness>
+  <lightrot>15.119999885559082</lightrot>
   <objects>
     <name>Text</name>
     <type>TEXT</type>
     <y>-0.08999999612569809</y>
     <scale>4.0</scale>
-    <material>QuickTitler TEXT Material</material>
+    <material>QuickTitler TEXT Material.005</material>
     <diffuse_color>255, 255, 255</diffuse_color>
-    <metallic>1.0</metallic>
     <specular_intensity>1.0</specular_intensity>
-    <specular_hardness>31</specular_hardness>
-    <specular_color>255, 255, 255</specular_color>
-    <extrude>0.029999999329447746</extrude>
-    <bevel>0.0299999937415123</bevel>
+    <metallic>1.0</metallic>
+    <roughness>0.1899999976158142</roughness>
+    <extrude>0.14000000059604645</extrude>
+    <bevel>0.009999999776482582</bevel>
+    <bevel_resolution>3</bevel_resolution>
     <text>Text</text>
-    <wrap_width>0.8999999761581421</wrap_width>
     <outline_size>0.46000003814697266</outline_size>
     <outline_alpha>0.6600000262260437</outline_alpha>
     <outline_diffuse_color>255, 255, 255</outline_diffuse_color>
@@ -60,8 +61,6 @@
     <use_shadeless>True</use_shadeless>
     <diffuse_color>0, 0, 0</diffuse_color>
     <specular_intensity>0.0</specular_intensity>
-    <specular_color>255, 255, 255</specular_color>
-    <wrap_width>0.8999999761581421</wrap_width>
     <outline_diffuse_color>0, 0, 0</outline_diffuse_color>
     <animations>
       <variable>Alpha</variable>
