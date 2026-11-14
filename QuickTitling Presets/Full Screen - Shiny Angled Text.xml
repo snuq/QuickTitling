@@ -8,7 +8,8 @@
     <y>-0.08999999612569809</y>
     <scale>4.0</scale>
     <material>QuickTitler TEXT Material</material>
-    <diffuse_color>0, 0, 0</diffuse_color>
+    <diffuse_color>255, 255, 255</diffuse_color>
+    <metallic>1.0</metallic>
     <specular_intensity>1.0</specular_intensity>
     <specular_hardness>31</specular_hardness>
     <specular_color>255, 255, 255</specular_color>
